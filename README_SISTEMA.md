@@ -36,9 +36,33 @@ cd Back-End/Accenture
 # Compilar
 ./mvnw clean compile
 
-# Executar
-./mvnw spring-boot:run
+# Executar com gerenciamento automático
+./start-app.sh start
 ```
+
+## Manter aplicação online
+
+A aplicação pode ser gerenciada com o script `start-app.sh` que mantém a aplicação rodando mesmo fechando o terminal:
+
+```bash
+# Iniciar (mantém rodando em background)
+./start-app.sh start
+
+# Verificar status
+./start-app.sh status
+
+# Ver logs em tempo real
+./start-app.sh logs
+
+# Parar quando necessário
+./start-app.sh stop
+```
+
+**Arquivos criados automaticamente:**
+- `.app.pid` — rastreia o PID da aplicação
+- `app.log` — logs persistentes
+
+Para mais detalhes, veja [KEEP_ONLINE.md](KEEP_ONLINE.md).
 
 ## Acessos
 
@@ -290,4 +314,3 @@ Projeto Final do Treinamento Accenture — 2025
 
 ---
 
-**Desenvolvido com ❤️ em Java 21 + Spring Boot**
