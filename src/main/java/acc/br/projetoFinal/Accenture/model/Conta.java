@@ -1,0 +1,43 @@
+package acc.br.projetoFinal.Accenture.model;
+
+import acc.br.projetoFinal.Accenture.enums.TipoConta;
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "conta")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Conta {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "numero_conta", unique = true, nullable = false)
+    private String numeroConta;
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal saldo = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoConta tipo;
+
+    // Obrigatório — toda conta pertence a um cliente (ou empresa)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cliente_id", nullable = false)
+    private Cliente cliente;
+
+    @Column(nullable = false)
+    private boolean ativo = true;
+
+    // 1:N com extratos
+    @OneToMany(mappedBy = "conta", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Extrato> extratos = new ArrayList<>();
+}
