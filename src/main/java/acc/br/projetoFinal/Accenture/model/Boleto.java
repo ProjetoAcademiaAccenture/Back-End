@@ -29,10 +29,37 @@ public class Boleto {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private StatusBoleto status = StatusBoleto.PENDENTE;
 
-    // 1:1 com pedido
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pedido_id", nullable = false, unique = true)
     private Pedido pedido;
+
+    // REGRAS DE NEGÓCIO
+    public void validarPagamento() {
+        if (this.status == StatusBoleto.PAGO)
+            throw new IllegalArgumentException("Boleto já foi pago");
+        if (this.status == StatusBoleto.CANCELADO)
+            throw new IllegalArgumentException("Boleto está cancelado");
+    }
+
+    public void pagar() {
+        validarPagamento();
+        this.status = StatusBoleto.PAGO;
+    }
+
+    public void validarCancelamento() {
+        if (this.status == StatusBoleto.CANCELADO)
+            throw new IllegalArgumentException("Boleto já está cancelado");
+    }
+
+    public void cancelar() {
+        validarCancelamento();
+        this.status = StatusBoleto.CANCELADO;
+    }
+
+    public boolean estaAtrasado() {
+        return dataVencimento.isBefore(LocalDate.now());
+    }
 }

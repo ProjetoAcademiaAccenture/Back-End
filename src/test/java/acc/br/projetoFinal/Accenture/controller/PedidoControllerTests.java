@@ -1,6 +1,7 @@
 package acc.br.projetoFinal.Accenture.controller;
 
 import acc.br.projetoFinal.Accenture.dto.request.PedidoRequestDTO;
+import acc.br.projetoFinal.Accenture.dto.request.ItemPedidoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.response.PedidoResponseDTO;
 import acc.br.projetoFinal.Accenture.service.PedidoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
@@ -44,8 +46,15 @@ class PedidoControllerTests {
 
     @BeforeEach
     void setup() {
+        List<ItemPedidoRequestDTO> itens = new ArrayList<>();
+        itens.add(ItemPedidoRequestDTO.builder()
+                .produtoId(1L)
+                .quantidade(2)
+                .build());
+
         pedidoRequest = PedidoRequestDTO.builder()
                 .clienteId(1L)
+                .itens(itens)
                 .build();
 
         pedidoResponse = PedidoResponseDTO.builder()

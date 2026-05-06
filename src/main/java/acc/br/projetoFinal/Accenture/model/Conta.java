@@ -23,6 +23,7 @@ public class Conta {
     private String numeroConta;
 
     @Column(nullable = false, precision = 15, scale = 2)
+    @Builder.Default
     private BigDecimal saldo = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
@@ -35,9 +36,11 @@ public class Conta {
     private Cliente cliente;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean ativo = true;
 
     // 1:N com extratos
     @OneToMany(mappedBy = "conta", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Extrato> extratos = new ArrayList<>();
 }

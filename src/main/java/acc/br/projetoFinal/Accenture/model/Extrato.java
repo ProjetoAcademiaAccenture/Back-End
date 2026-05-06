@@ -43,5 +43,6 @@ public class Extrato {
     private Pedido pedido;
 
     @Column(name = "data_hora", nullable = false)
+    @Builder.Default
     private LocalDateTime dataHora = LocalDateTime.now();
 }

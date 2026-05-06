@@ -149,4 +149,21 @@ class ClienteControllerTests {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    void deveAdicionarEnderecoAoCliente() throws Exception {
+        EnderecoRequestDTO enderecoRequest = EnderecoRequestDTO.builder()
+                .cep("01310100")
+                .tipoEndereco(acc.br.projetoFinal.Accenture.enums.TipoEndereco.RESIDENCIAL)
+                .numero("100")
+                .complemento("Apto 12")
+                .build();
+
+        doNothing().when(clienteService).adicionarEndereco(eq(1L), any(EnderecoRequestDTO.class));
+
+        mockMvc.perform(post("/api/clientes/1/enderecos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(enderecoRequest)))
+                .andExpect(status().isCreated());
+    }
 }

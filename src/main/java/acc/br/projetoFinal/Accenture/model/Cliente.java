@@ -33,15 +33,36 @@ public class Cliente {
     @Column(name = "data_nascimento")
     private LocalDate dataNascimento;
 
-    // 1:N — cliente pode ter vários endereços (residencial, comercial...)
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Endereco> enderecos = new ArrayList<>();
 
-    // 1:1 obrigatório — todo cliente tem uma conta
     @OneToOne(mappedBy = "cliente", cascade = CascadeType.ALL)
     private Conta conta;
 
-    // 1:N com pedidos
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Pedido> pedidos = new ArrayList<>();
+
+    // REGRAS DE NEGÓCIO
+    public void validarCpf() {
+        if (cpf == null || cpf.isEmpty() || cpf.length() != 11)
+            throw new IllegalArgumentException("CPF deve ter 11 dígitos");
+        if (!cpf.matches("\\d+"))
+            throw new IllegalArgumentException("CPF deve conter apenas dígitos");
+    }
+
+    public void validarEmail() {
+        if (email == null || email.isEmpty())
+            throw new IllegalArgumentException("Email não pode estar vazio");
+        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$"))
+            throw new IllegalArgumentException("Email deve ser válido");
+    }
+
+    public void validarNome() {
+        if (nome == null || nome.trim().isEmpty())
+            throw new IllegalArgumentException("Nome não pode estar vazio");
+        if (nome.length() < 3 || nome.length() > 100)
+            throw new IllegalArgumentException("Nome deve ter entre 3 e 100 caracteres");
+    }
 }

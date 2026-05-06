@@ -7,40 +7,50 @@
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::                (v3.2.5)
 
-2026-05-05T10:04:05.998-03:00  INFO 40760 --- [Accenture] [  restartedMain] a.b.p.Accenture.AccentureApplication     : Starting AccentureApplication using Java 21.0.10 with PID 40760 (/home/henriquefurtado/Área de Trabalho/Accenture/projeto/Back-End/Accenture/target/classes started by henriquefurtado in /home/henriquefurtado/Área de Trabalho/Accenture/projeto/Back-End/Accenture)
-2026-05-05T10:04:06.000-03:00  INFO 40760 --- [Accenture] [  restartedMain] a.b.p.Accenture.AccentureApplication     : No active profile set, falling back to 1 default profile: "default"
-2026-05-05T10:04:06.040-03:00  INFO 40760 --- [Accenture] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
-2026-05-05T10:04:06.040-03:00  INFO 40760 --- [Accenture] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
-2026-05-05T10:04:06.683-03:00  INFO 40760 --- [Accenture] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-05-05T10:04:06.748-03:00  INFO 40760 --- [Accenture] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 59 ms. Found 8 JPA repository interfaces.
-2026-05-05T10:04:07.166-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
-2026-05-05T10:04:07.176-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-05-05T10:04:07.176-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
-2026-05-05T10:04:07.205-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
-2026-05-05T10:04:07.206-03:00  INFO 40760 --- [Accenture] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1164 ms
-2026-05-05T10:04:07.231-03:00  INFO 40760 --- [Accenture] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-05-05T10:04:07.367-03:00  INFO 40760 --- [Accenture] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:loja_db user=SA
-2026-05-05T10:04:07.368-03:00  INFO 40760 --- [Accenture] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-05-05T10:04:07.376-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:mem:loja_db'
-2026-05-05T10:04:07.472-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-05-05T10:04:07.506-03:00  INFO 40760 --- [Accenture] [  restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
-2026-05-05T10:04:07.528-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
-2026-05-05T10:04:07.674-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-05-05T10:04:07.703-03:00  WARN 40760 --- [Accenture] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-05-05T10:04:08.462-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-05-05T10:04:08.516-03:00  INFO 40760 --- [Accenture] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-05-05T10:04:09.003-03:00  WARN 40760 --- [Accenture] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-05-05T10:04:09.275-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
-2026-05-05T10:04:09.300-03:00  INFO 40760 --- [Accenture] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
-2026-05-05T10:04:09.308-03:00  INFO 40760 --- [Accenture] [  restartedMain] a.b.p.Accenture.AccentureApplication     : Started AccentureApplication in 3.564 seconds (process running for 3.84)
+2026-05-05T13:38:36.880-03:00  INFO 86009 --- [Accenture] [  restartedMain] a.b.p.Accenture.AccentureApplication     : Starting AccentureApplication using Java 21.0.10 with PID 86009 (/home/henriquefurtado/Área de Trabalho/Accenture/projeto/Back-End/Accenture/target/classes started by henriquefurtado in /home/henriquefurtado/Área de Trabalho/Accenture/projeto/Back-End/Accenture)
+2026-05-05T13:38:36.882-03:00  INFO 86009 --- [Accenture] [  restartedMain] a.b.p.Accenture.AccentureApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-05-05T13:38:36.925-03:00  INFO 86009 --- [Accenture] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-05-05T13:38:36.926-03:00  INFO 86009 --- [Accenture] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-05-05T13:38:37.662-03:00  INFO 86009 --- [Accenture] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-05T13:38:37.728-03:00  INFO 86009 --- [Accenture] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 57 ms. Found 8 JPA repository interfaces.
+2026-05-05T13:38:38.233-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-05-05T13:38:38.246-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-05T13:38:38.247-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-05-05T13:38:38.281-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-05T13:38:38.282-03:00  INFO 86009 --- [Accenture] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1355 ms
+2026-05-05T13:38:38.308-03:00  INFO 86009 --- [Accenture] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-05T13:38:38.465-03:00  INFO 86009 --- [Accenture] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:loja_db user=SA
+2026-05-05T13:38:38.467-03:00  INFO 86009 --- [Accenture] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-05T13:38:38.476-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:mem:loja_db'
+2026-05-05T13:38:38.588-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-05T13:38:38.661-03:00  INFO 86009 --- [Accenture] [  restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-05-05T13:38:38.705-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-05T13:38:38.981-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-05T13:38:39.030-03:00  WARN 86009 --- [Accenture] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-05T13:38:39.997-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-05T13:38:40.058-03:00  INFO 86009 --- [Accenture] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-05T13:38:40.665-03:00  WARN 86009 --- [Accenture] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-05T13:38:40.998-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-05-05T13:38:41.026-03:00  INFO 86009 --- [Accenture] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
+2026-05-05T13:38:41.036-03:00  INFO 86009 --- [Accenture] [  restartedMain] a.b.p.Accenture.AccentureApplication     : Started AccentureApplication in 4.476 seconds (process running for 4.868)
 ✓ Conta da empresa criada com sucesso!
   Número da conta: EMPRESA-001
   Saldo inicial: R$ 10.000,00
-2026-05-05T10:04:10.194-03:00  INFO 40760 --- [Accenture] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-05-05T10:04:10.194-03:00  INFO 40760 --- [Accenture] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2026-05-05T10:04:10.195-03:00  INFO 40760 --- [Accenture] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
-2026-05-05T10:04:18.936-03:00  INFO 40760 --- [Accenture] [nio-8080-exec-5] o.springdoc.api.AbstractOpenApiResource  : Init duration for springdoc-openapi is: 578 ms
-2026-05-05T10:07:53.189-03:00  INFO 40760 --- [Accenture] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
-2026-05-05T10:07:53.205-03:00  WARN 40760 --- [Accenture] [ionShutdownHook] o.s.b.f.support.DisposableBeanAdapter    : Invocation of destroy method failed on bean with name 'inMemoryDatabaseShutdownExecutor': org.h2.jdbc.JdbcSQLNonTransientConnectionException: Database is already closed (to disable automatic closing at VM shutdown, add ";DB_CLOSE_ON_EXIT=FALSE" to the db URL) [90121-224]
-2026-05-05T10:07:53.206-03:00  INFO 40760 --- [Accenture] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
-2026-05-05T10:07:53.208-03:00  INFO 40760 --- [Accenture] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-05-05T13:38:41.907-03:00  INFO 86009 --- [Accenture] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-05T13:38:41.907-03:00  INFO 86009 --- [Accenture] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-05T13:38:41.908-03:00  INFO 86009 --- [Accenture] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-05-05T13:38:57.763-03:00  INFO 86009 --- [Accenture] [nio-8080-exec-5] o.springdoc.api.AbstractOpenApiResource  : Init duration for springdoc-openapi is: 863 ms
+2026-05-05T14:06:59.031-03:00  WARN 86009 --- [Accenture] [nio-8080-exec-1] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:07:08.656-03:00  WARN 86009 --- [Accenture] [nio-8080-exec-4] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:07:43.572-03:00  WARN 86009 --- [Accenture] [nio-8080-exec-7] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:07:44.931-03:00  WARN 86009 --- [Accenture] [nio-8080-exec-9] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:08:23.716-03:00  WARN 86009 --- [Accenture] [nio-8080-exec-2] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:08:26.601-03:00  WARN 86009 --- [Accenture] [nio-8080-exec-4] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:13:27.313-03:00  WARN 86009 --- [Accenture] [nio-8080-exec-8] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:13:34.879-03:00  WARN 86009 --- [Accenture] [io-8080-exec-10] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:13:40.765-03:00  WARN 86009 --- [Accenture] [nio-8080-exec-3] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:13:42.002-03:00  WARN 86009 --- [Accenture] [nio-8080-exec-2] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+2026-05-05T14:46:37.684-03:00  INFO 86009 --- [Accenture] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-05T14:46:37.964-03:00  WARN 86009 --- [Accenture] [ionShutdownHook] o.s.b.f.support.DisposableBeanAdapter    : Invocation of destroy method failed on bean with name 'inMemoryDatabaseShutdownExecutor': org.h2.jdbc.JdbcSQLNonTransientConnectionException: Database is already closed (to disable automatic closing at VM shutdown, add ";DB_CLOSE_ON_EXIT=FALSE" to the db URL) [90121-224]
+2026-05-05T14:46:37.967-03:00  INFO 86009 --- [Accenture] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-05-05T14:46:37.998-03:00  INFO 86009 --- [Accenture] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

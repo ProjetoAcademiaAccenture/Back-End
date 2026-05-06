@@ -29,13 +29,44 @@ public class Produto {
     private BigDecimal preco;
 
     @Column(name = "quantidade_estoque", nullable = false)
+    @Builder.Default
     private Integer quantidadeEstoque = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "metodo_pgto", nullable = false)
+    @Builder.Default
     private MetodoPagamento metodoPgto = MetodoPagamento.PIX;
 
-    // 1:N com itens pedido
     @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ItemPedido> itens = new ArrayList<>();
+
+    // REGRAS DE NEGÓCIO
+    public void validarPreco() {
+        if (preco == null || preco.compareTo(BigDecimal.ZERO) <= 0)
+            throw new IllegalArgumentException("Preço deve ser maior que zero");
+    }
+
+    public void validarEstoque() {
+        if (quantidadeEstoque == null || quantidadeEstoque < 0)
+            throw new IllegalArgumentException("Quantidade de estoque não pode ser negativa");
+    }
+
+    public void reduzirEstoque(Integer quantidade) {
+        if (quantidade == null || quantidade < 0)
+            throw new IllegalArgumentException("Quantidade deve ser maior que zero");
+        if (this.quantidadeEstoque < quantidade)
+            throw new IllegalArgumentException("Estoque insuficiente");
+        this.quantidadeEstoque -= quantidade;
+    }
+
+    public void devolverEstoque(Integer quantidade) {
+        if (quantidade == null || quantidade < 0)
+            throw new IllegalArgumentException("Quantidade deve ser maior que zero");
+        this.quantidadeEstoque += quantidade;
+    }
+
+    public boolean temEstoque(Integer quantidade) {
+        return quantidadeEstoque != null && quantidadeEstoque >= quantidade;
+    }
 }
