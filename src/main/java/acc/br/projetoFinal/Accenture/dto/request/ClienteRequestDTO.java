@@ -1,7 +1,11 @@
 package acc.br.projetoFinal.Accenture.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
+
+import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -10,26 +14,28 @@ import lombok.*;
 public class ClienteRequestDTO {
 
     @NotBlank(message = "Nome é obrigatório")
-    @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")
+    @Size(min = 3, max = 100)
     private String nome;
 
     @NotBlank(message = "CPF é obrigatório")
-    @Size(min = 11, max = 11, message = "CPF deve ter 11 dígitos")
+    @Size(min = 11, max = 11)
     private String cpf;
 
     @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email deve ser válido")
+    @Email
     private String email;
 
-    @Size(max = 15, message = "Telefone deve ter no máximo 15 caracteres")
+    @NotBlank(message = "Senha é obrigatória")
+    @Size(min = 6, max = 100)
+    private String senha;
+
+    @Size(max = 15)
     private String telefone;
 
-    @NotBlank(message = "CEP é obrigatório")
-    private String cep;
+    @JsonFormat(pattern = "dd/MM/yyyy")
+    private LocalDate dtNascimento;
 
-    @Size(max = 10, message = "Número deve ter no máximo 10 caracteres")
-    private String numero;
-
-    @Size(max = 100, message = "Complemento deve ter no máximo 100 caracteres")
-    private String complemento;
+    @Valid
+    @NotNull
+    private EnderecoRequestDTO endereco;
 }
