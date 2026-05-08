@@ -105,6 +105,21 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Plugin customizado — relatório positivo × negativo -->
+            <plugin>
+                <groupId>br.com.jacoco</groupId>
+                <artifactId>jacoco-custom-report</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                        <id>custom-jacoco-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>custom-report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
