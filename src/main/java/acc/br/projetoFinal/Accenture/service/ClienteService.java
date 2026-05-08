@@ -3,19 +3,16 @@ package acc.br.projetoFinal.Accenture.service;
 import acc.br.projetoFinal.Accenture.dto.request.ClienteRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.request.EnderecoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.response.ClienteResponseDTO;
-import acc.br.projetoFinal.Accenture.enums.TipoConta;
-import acc.br.projetoFinal.Accenture.enums.TipoEndereco;
+import acc.br.projetoFinal.Accenture.enums.TipoCliente;
 import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
 import acc.br.projetoFinal.Accenture.model.Cliente;
-import acc.br.projetoFinal.Accenture.model.Conta;
 import acc.br.projetoFinal.Accenture.model.Endereco;
 import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
-import acc.br.projetoFinal.Accenture.repository.ContaRepository;
 import acc.br.projetoFinal.Accenture.repository.EnderecoRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,46 +21,57 @@ import java.util.stream.Collectors;
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
-    private final ContaRepository contaRepository;
     private final EnderecoRepository enderecoRepository;
     private final ViaCepService viaCepService;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public ClienteResponseDTO criar(ClienteRequestDTO dto) {
-        // 1. Valida CPF e email únicos
-        if (clienteRepository.findByCpf(dto.getCpf()).isPresent())
-            throw new IllegalArgumentException("CPF já cadastrado");
-        if (clienteRepository.findByEmail(dto.getEmail()).isPresent())
-            throw new IllegalArgumentException("Email já cadastrado");
+        Cliente salvo = salvarCliente(dto);
+        return ClienteResponseDTO.fromEntity(salvo);
+    }
 
-        // 2. Cria o cliente
+    @Transactional
+    public Cliente criarEntidade(ClienteRequestDTO dto) {
+        return salvarCliente(dto);
+    }
+
+    private Cliente salvarCliente(ClienteRequestDTO dto) {
+        if (clienteRepository.findByCpf(dto.getCpf()).isPresent()) {
+            throw new IllegalArgumentException("CPF já cadastrado");
+        }
+
+        if (clienteRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email já cadastrado");
+        }
+
         Cliente cliente = Cliente.builder()
                 .nome(dto.getNome())
                 .cpf(dto.getCpf())
                 .email(dto.getEmail())
                 .telefone(dto.getTelefone())
+                .senha(passwordEncoder.encode(dto.getSenha()))
+                .tipoCliente(TipoCliente.ROLE_USER)
+                .dataNascimento(dto.getDtNascimento())
                 .build();
-        Cliente salvo = clienteRepository.save(cliente);
 
-        // 3. Busca endereço pelo CEP e associa ao cliente
-        Endereco endereco = viaCepService.buscarEnderecoPorCep(dto.getCep());
-        endereco.setCliente(salvo);
-        endereco.setNumero(dto.getNumero());
-        endereco.setComplemento(dto.getComplemento());
-        endereco.setTipoEndereco(TipoEndereco.RESIDENCIAL);
-        enderecoRepository.save(endereco);
+        EnderecoRequestDTO end = dto.getEndereco();
 
-        // 4. Cria conta corrente automaticamente (obrigatória)
-        Conta conta = Conta.builder()
-                .numeroConta("CLI-" + salvo.getId())
-                .saldo(BigDecimal.ZERO)
-                .tipo(TipoConta.CORRENTE)
-                .cliente(salvo)
-                .ativo(true)
+        Endereco endereco = Endereco.builder()
+                .cep(end.getCep())
+                .logradouro(end.getLogradouro())
+                .bairro(end.getBairro())
+                .cidade(end.getCidade())
+                .uf(end.getUf())
+                .tipoEndereco(end.getTipoEndereco())
+                .numero(end.getNumero())
+                .complemento(end.getComplemento())
+                .cliente(cliente)
                 .build();
-        contaRepository.save(conta);
 
-        return ClienteResponseDTO.fromEntity(salvo);
+        cliente.getEnderecos().add(endereco);
+
+        return clienteRepository.save(cliente);
     }
 
     public ClienteResponseDTO buscarPorId(Long id) {
