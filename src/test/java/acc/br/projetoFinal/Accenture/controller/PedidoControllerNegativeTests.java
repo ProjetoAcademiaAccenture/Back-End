@@ -16,11 +16,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,6 +49,8 @@ class PedidoControllerNegativeTests {
     @Test
     void deveRetornarBadRequestAoCriarPedidoComDadosInvalidos() throws Exception {
         mockMvc.perform(post("/api/pedidos")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(pedidoRequestInvalido)))
                 .andExpect(status().isBadRequest())
@@ -60,6 +62,7 @@ class PedidoControllerNegativeTests {
         when(pedidoService.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Pedido não encontrado"));
 
         mockMvc.perform(get("/api/pedidos/99")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Pedido não encontrado")));

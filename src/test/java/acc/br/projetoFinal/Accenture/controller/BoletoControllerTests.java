@@ -16,9 +16,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -51,6 +52,7 @@ class BoletoControllerTests {
         when(boletoService.buscarPorId(1L)).thenReturn(boletoResponse);
 
         mockMvc.perform(get("/api/boletos/1")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
@@ -62,6 +64,7 @@ class BoletoControllerTests {
         when(boletoService.buscarPorPedidoId(1L)).thenReturn(boletoResponse);
 
         mockMvc.perform(get("/api/boletos/pedido/1")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)));
@@ -72,6 +75,8 @@ class BoletoControllerTests {
         when(boletoService.gerar(1L)).thenReturn(boletoResponse);
 
         mockMvc.perform(post("/api/boletos/gerar/1")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
@@ -91,6 +96,8 @@ class BoletoControllerTests {
         when(boletoService.pagarBoleto(1L)).thenReturn(boletoPago);
 
         mockMvc.perform(patch("/api/boletos/1/pagar")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("PAGO")));
@@ -101,6 +108,8 @@ class BoletoControllerTests {
         doNothing().when(boletoService).cancelarBoleto(1L);
 
         mockMvc.perform(patch("/api/boletos/1/cancelar")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }

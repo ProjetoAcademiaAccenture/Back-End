@@ -10,15 +10,28 @@ import lombok.*;
 @Builder
 public class EnderecoRequestDTO {
 
-    @NotBlank(message = "CEP é obrigatório")
+    @NotBlank
     private String cep;
 
-    @NotNull(message = "Tipo de endereço é obrigatório")
+    @NotBlank
+    private String logradouro;
+
+    @NotBlank
+    private String bairro;
+
+    @NotBlank
+    private String cidade;
+
+    @NotBlank
+    @Size(min = 2, max = 2)
+    private String uf;
+
+    @NotNull
     private TipoEndereco tipoEndereco;
 
-    @Size(max = 10, message = "Número deve ter no máximo 10 caracteres")
+    @Size(max = 10)
     private String numero;
 
-    @Size(max = 100, message = "Complemento deve ter no máximo 100 caracteres")
+    @Size(max = 100)
     private String complemento;
 }

@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -44,14 +46,20 @@ class ClienteControllerNegativeTests {
         clienteRequestInvalido = ClienteRequestDTO.builder()
                 .nome("João Silva")
                 .cpf("12345678901")
-                .email("email-invalido")
-                .cep("01310100")
+                .email("email-invalido") // E-mail inválido dispara o BadRequest esperado
+                .senha("123456")
+                .endereco(acc.br.projetoFinal.Accenture.dto.request.EnderecoRequestDTO.builder()
+                        .cep("01310100")
+                        .numero("100")
+                        .build())
                 .build();
     }
 
     @Test
     void deveRetornarBadRequestAoCriarClienteComDadosInvalidos() throws Exception {
         mockMvc.perform(post("/api/clientes")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(clienteRequestInvalido)))
                 .andExpect(status().isBadRequest())
@@ -63,6 +71,7 @@ class ClienteControllerNegativeTests {
         when(clienteService.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Cliente não encontrado"));
 
         mockMvc.perform(get("/api/clientes/99")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Cliente não encontrado")));

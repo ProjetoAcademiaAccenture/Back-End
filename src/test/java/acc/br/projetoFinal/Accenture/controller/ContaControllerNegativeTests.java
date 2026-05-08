@@ -1,8 +1,5 @@
 package acc.br.projetoFinal.Accenture.controller;
 
-import acc.br.projetoFinal.Accenture.model.Cliente;
-import acc.br.projetoFinal.Accenture.model.Conta;
-import acc.br.projetoFinal.Accenture.enums.TipoConta;
 import acc.br.projetoFinal.Accenture.repository.ContaRepository;
 import acc.br.projetoFinal.Accenture.service.ContaService;
 import acc.br.projetoFinal.Accenture.service.ExtratoService;
@@ -16,14 +13,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
-import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -49,6 +45,7 @@ class ContaControllerNegativeTests {
         when(contaRepository.findById(99L)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/contas/99")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
     }
@@ -58,7 +55,9 @@ class ContaControllerNegativeTests {
         when(contaRepository.findById(99L)).thenReturn(Optional.empty());
 
         mockMvc.perform(patch("/api/contas/99/depositar")
-            .param("valor", "500.00")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
+                .param("valor", "500.00")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
     }

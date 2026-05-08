@@ -1,7 +1,7 @@
 package acc.br.projetoFinal.Accenture.controller;
 
-import acc.br.projetoFinal.Accenture.dto.request.PedidoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.request.ItemPedidoRequestDTO;
+import acc.br.projetoFinal.Accenture.dto.request.PedidoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.response.PedidoResponseDTO;
 import acc.br.projetoFinal.Accenture.service.PedidoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,15 +15,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -68,6 +67,7 @@ class PedidoControllerTests {
         when(pedidoService.listarTodos()).thenReturn(List.of(pedidoResponse));
 
         mockMvc.perform(get("/api/pedidos")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
@@ -79,6 +79,7 @@ class PedidoControllerTests {
         when(pedidoService.buscarPorId(1L)).thenReturn(pedidoResponse);
 
         mockMvc.perform(get("/api/pedidos/1")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)));
@@ -89,6 +90,7 @@ class PedidoControllerTests {
         when(pedidoService.listarPorCliente(1L)).thenReturn(List.of(pedidoResponse));
 
         mockMvc.perform(get("/api/pedidos/cliente/1")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)));
@@ -99,6 +101,8 @@ class PedidoControllerTests {
         when(pedidoService.reservarPedido(1L)).thenReturn(pedidoResponse);
 
         mockMvc.perform(patch("/api/pedidos/1/reservar")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
@@ -108,6 +112,8 @@ class PedidoControllerTests {
         when(pedidoService.pagarPedido(1L)).thenReturn(pedidoResponse);
 
         mockMvc.perform(patch("/api/pedidos/1/pagar")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
@@ -117,6 +123,8 @@ class PedidoControllerTests {
         when(pedidoService.cancelarPedido(1L)).thenReturn(pedidoResponse);
 
         mockMvc.perform(patch("/api/pedidos/1/cancelar")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }

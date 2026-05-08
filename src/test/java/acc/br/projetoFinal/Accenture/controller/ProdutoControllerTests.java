@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@org.springframework.security.test.context.support.WithMockUser 
 class ProdutoControllerTests {
 
     @Autowired

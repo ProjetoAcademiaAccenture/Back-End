@@ -20,6 +20,8 @@ import java.math.BigDecimal;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -48,7 +50,7 @@ class ProdutoControllerNegativeTests {
                 .nome("Produto Teste")
                 .descricao("Descrição teste")
                 .preco(new BigDecimal("10.00"))
-                .quantidade(-1)
+                .quantidade(-1) // Quantidade inválida
                 .metodoPgto(MetodoPagamento.PIX)
                 .build();
     }
@@ -56,6 +58,8 @@ class ProdutoControllerNegativeTests {
     @Test
     void deveRetornarBadRequestAoCriarProdutoComDadosInvalidos() throws Exception {
         mockMvc.perform(post("/api/produtos")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(produtoRequestInvalido)))
                 .andExpect(status().isBadRequest())
@@ -67,6 +71,7 @@ class ProdutoControllerNegativeTests {
         when(produtoService.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Produto não encontrado"));
 
         mockMvc.perform(get("/api/produtos/99")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Produto não encontrado")));
