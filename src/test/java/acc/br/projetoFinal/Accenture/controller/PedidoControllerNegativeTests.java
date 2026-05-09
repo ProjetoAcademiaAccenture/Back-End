@@ -1,8 +1,9 @@
 package acc.br.projetoFinal.Accenture.controller;
 
-import acc.br.projetoFinal.Accenture.dto.request.PedidoRequestDTO;
+import acc.br.projetoFinal.Accenture.dto.request.ProdutoRequestDTO;
+import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
 import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
-import acc.br.projetoFinal.Accenture.service.PedidoService;
+import acc.br.projetoFinal.Accenture.service.ProdutoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +15,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
@@ -37,34 +40,40 @@ class PedidoControllerNegativeTests {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private PedidoService pedidoService;
+    private ProdutoService produtoService;
 
-    private PedidoRequestDTO pedidoRequestInvalido;
+    private ProdutoRequestDTO produtoRequestInvalido;
 
     @BeforeEach
     void setup() {
-        pedidoRequestInvalido = PedidoRequestDTO.builder().build();
+        produtoRequestInvalido = ProdutoRequestDTO.builder()
+                .nome("Produto Teste")
+                .descricao("Descrição teste")
+                .preco(new BigDecimal("10.00"))
+                .quantidade(-1) // Quantidade inválida
+                .metodoPgto(MetodoPagamento.PIX)
+                .build();
     }
 
     @Test
-    void deveRetornarBadRequestAoCriarPedidoComDadosInvalidos() throws Exception {
-        mockMvc.perform(post("/api/pedidos")
+    void deveRetornarBadRequestAoCriarProdutoComDadosInvalidos() throws Exception {
+        mockMvc.perform(post("/api/produtos")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(pedidoRequestInvalido)))
+                .content(objectMapper.writeValueAsString(produtoRequestInvalido)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Validação de Entrada")));
     }
 
     @Test
-    void deveRetornarNotFoundAoBuscarPedidoInexistente() throws Exception {
-        when(pedidoService.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Pedido não encontrado"));
+    void deveRetornarNotFoundAoBuscarProdutoInexistente() throws Exception {
+        when(produtoService.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Produto não encontrado"));
 
-        mockMvc.perform(get("/api/pedidos/99")
+        mockMvc.perform(get("/api/produtos/99")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is("Pedido não encontrado")));
+                .andExpect(jsonPath("$.message", is("Produto não encontrado")));
     }
 }

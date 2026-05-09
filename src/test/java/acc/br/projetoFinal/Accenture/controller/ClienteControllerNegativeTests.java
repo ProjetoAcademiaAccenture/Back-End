@@ -46,7 +46,7 @@ class ClienteControllerNegativeTests {
         clienteRequestInvalido = ClienteRequestDTO.builder()
                 .nome("João Silva")
                 .cpf("12345678901")
-                .email("email-invalido") // E-mail inválido dispara o BadRequest esperado
+                .email("email-invalido") 
                 .senha("123456")
                 .endereco(acc.br.projetoFinal.Accenture.dto.request.EnderecoRequestDTO.builder()
                         .cep("01310100")
