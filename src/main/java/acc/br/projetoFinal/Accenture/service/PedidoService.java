@@ -15,6 +15,7 @@ import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
 import acc.br.projetoFinal.Accenture.repository.ItemPedidoRepository;
 import acc.br.projetoFinal.Accenture.repository.PedidoRepository;
 import acc.br.projetoFinal.Accenture.repository.ProdutoRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,15 +33,15 @@ public class PedidoService {
     private final ProdutoRepository produtoRepository;
     private final ItemPedidoRepository itemPedidoRepository;
     private final ContaService contaService;
+    private final EntityManager entityManager;
 
-    public static final BigDecimal PERCENTUAL_MULTA = new BigDecimal("0.10"); // 10%
+    public static final BigDecimal PERCENTUAL_MULTA = new BigDecimal("0.10");
 
     @Transactional
     public PedidoResponseDTO criar(PedidoRequestDTO dto) {
         Cliente cliente = clienteRepository.findById(dto.getClienteId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado"));
 
-        // 1. Cria o pedido
         Pedido pedido = Pedido.builder()
                 .cliente(cliente)
                 .status(StatusPedido.CRIADO)
@@ -49,13 +50,11 @@ public class PedidoService {
                 .build();
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
-        // 2. Adiciona itens e calcula valor total
         BigDecimal valorTotal = BigDecimal.ZERO;
         for (ItemPedidoRequestDTO itemDto : dto.getItens()) {
             Produto produto = produtoRepository.findById(itemDto.getProdutoId())
                     .orElseThrow(() -> new RecursoNaoEncontradoException("Produto não encontrado"));
 
-            // Valida estoque
             if (produto.getQuantidadeEstoque() < itemDto.getQuantidade())
                 throw new EstoqueInsuficienteException("Estoque insuficiente para o produto: " + produto.getNome());
 
@@ -67,15 +66,11 @@ public class PedidoService {
                     .build();
             itemPedidoRepository.save(item);
 
-            BigDecimal subtotal = produto.getPreco().multiply(BigDecimal.valueOf(itemDto.getQuantidade()));
-            valorTotal = valorTotal.add(subtotal);
+            valorTotal = valorTotal.add(produto.getPreco().multiply(BigDecimal.valueOf(itemDto.getQuantidade())));
         }
 
-        // 3. Atualiza valor total do pedido
         pedidoSalvo.setValorTotal(valorTotal);
-        Pedido pedidoAtualizado = pedidoRepository.save(pedidoSalvo);
-
-        return PedidoResponseDTO.fromEntity(pedidoAtualizado);
+        return PedidoResponseDTO.fromEntity(pedidoRepository.save(pedidoSalvo));
     }
 
     public PedidoResponseDTO buscarPorId(Long id) {
@@ -104,12 +99,12 @@ public class PedidoService {
         if (pedido.getStatus() != StatusPedido.CRIADO)
             throw new IllegalArgumentException("Pedido deve estar em status CRIADO para ser reservado");
 
-        // Valida e reserva estoque
         for (ItemPedido item : pedido.getItens()) {
             Produto produto = item.getProduto();
+            entityManager.flush();
+            entityManager.refresh(produto);
             if (produto.getQuantidadeEstoque() < item.getQuantidade())
                 throw new EstoqueInsuficienteException("Estoque insuficiente para: " + produto.getNome());
-
             produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() - item.getQuantidade());
             produtoRepository.save(produto);
         }
@@ -126,9 +121,7 @@ public class PedidoService {
         if (pedido.getStatus() != StatusPedido.RESERVADO)
             throw new IllegalArgumentException("Pedido deve estar RESERVADO para ser pago");
 
-        // Executa transferência bancária (débito cliente, crédito empresa)
         contaService.transferir(pedido.getCliente().getId(), pedido.getValorTotal(), pedido);
-
         pedido.setStatus(StatusPedido.PAGO);
         return PedidoResponseDTO.fromEntity(pedidoRepository.save(pedido));
     }
@@ -141,7 +134,6 @@ public class PedidoService {
         if (pedido.getStatus() == StatusPedido.CANCELADO)
             throw new CancelamentoException("Pedido já está cancelado");
 
-        // Devolve estoque se estava RESERVADO ou PAGO
         if (pedido.getStatus() == StatusPedido.RESERVADO || pedido.getStatus() == StatusPedido.PAGO) {
             pedido.getItens().forEach(item -> {
                 Produto p = item.getProduto();
@@ -150,12 +142,10 @@ public class PedidoService {
             });
         }
 
-        // Aplica multa e estorno apenas se estava PAGO
         if (pedido.getStatus() == StatusPedido.PAGO) {
             BigDecimal multa = pedido.getValorTotal().multiply(PERCENTUAL_MULTA)
                     .setScale(2, RoundingMode.HALF_UP);
             BigDecimal estorno = pedido.getValorTotal().subtract(multa);
-
             pedido.setMultaCancelamento(multa);
             contaService.estornarComMulta(pedido.getCliente().getId(), estorno, multa, pedido);
         }

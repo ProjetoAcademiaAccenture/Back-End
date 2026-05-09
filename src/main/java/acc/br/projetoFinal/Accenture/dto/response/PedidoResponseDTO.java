@@ -1,5 +1,6 @@
 package acc.br.projetoFinal.Accenture.dto.response;
 
+import acc.br.projetoFinal.Accenture.enums.StatusPedido;
 import acc.br.projetoFinal.Accenture.model.Pedido;
 import lombok.*;
 import java.math.BigDecimal;
@@ -15,7 +16,7 @@ public class PedidoResponseDTO {
 
     private Long id;
     private LocalDateTime dataCriacao;
-    private String status;
+    private StatusPedido status;
     private BigDecimal valorTotal;
     private BigDecimal multaCancelamento;
     private Long clienteId;
@@ -25,7 +26,7 @@ public class PedidoResponseDTO {
         return PedidoResponseDTO.builder()
                 .id(pedido.getId())
                 .dataCriacao(pedido.getDataCriacao())
-                .status(pedido.getStatus().name())
+                .status(pedido.getStatus())
                 .valorTotal(pedido.getValorTotal())
                 .multaCancelamento(pedido.getMultaCancelamento())
                 .clienteId(pedido.getCliente().getId())
