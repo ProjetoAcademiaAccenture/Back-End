@@ -71,6 +71,8 @@ class SystemIntegrationTests {
                                     .substring(0, 8)
                                     .toUpperCase())
                             .saldo(BigDecimal.ZERO)
+                            .senhaTransacao("senha123")
+                            .limiteCredito(BigDecimal.ZERO)
                             .tipo(TipoConta.CORRENTE)
                             .ativo(true)
                             .cliente(clienteRepository.findById(cliente.getId())

@@ -111,7 +111,7 @@ public class AuthController {
     @PostMapping("/register-bank")
     public ResponseEntity<AuthBankResponseDTO> registerBank(@RequestBody @Valid ContaRequestDTO dto) {
         Conta conta = contaService.criarEntidade(dto);
-        String token = jwtService.gerarToken(conta);
+        String token = jwtService.gerarToken(conta.getCliente());
         log.info("Nova conta bancária registrada com sucesso: {}", conta.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(AuthBankResponseDTO.builder()

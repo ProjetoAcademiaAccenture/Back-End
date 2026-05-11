@@ -36,33 +36,25 @@ class JwtServiceNegativeTests {
     @Test
     @DisplayName("Deve rejeitar token com valor null")
     void deveRejeitar_TokenNull() {
-        boolean valido = jwtService.tokenValido(null);
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido(null));
     }
 
     @Test
     @DisplayName("Deve rejeitar token vazio")
     void deveRejeitar_TokenVazio() {
-        boolean valido = jwtService.tokenValido("");
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido(""));
     }
 
     @Test
     @DisplayName("Deve rejeitar token inválido (sem pontos)")
     void deveRejeitar_TokenSemPontos() {
-        boolean valido = jwtService.tokenValido("tokeminvalidosempontos");
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido("tokeminvalidosempontos"));
     }
 
     @Test
     @DisplayName("Deve rejeitar token com formato incorreto")
     void deveRejeitar_TokenFormatoIncorreto() {
-        boolean valido = jwtService.tokenValido("header.payload");
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido("header.payload"));
     }
 
     @Test
@@ -71,72 +63,58 @@ class JwtServiceNegativeTests {
         String token = jwtService.gerarToken(cliente);
         String tokenModificado = token.substring(0, token.length() - 10) + "0000000000";
 
-        boolean valido = jwtService.tokenValido(tokenModificado);
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido(tokenModificado));
     }
 
     @Test
     @DisplayName("Deve rejeitar token com payload inválido")
     void deveRejeitar_TokenPayloadInvalido() {
-        String token = "header.payloadinvalido.signature";
-
-        boolean valido = jwtService.tokenValido(token);
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido("header.payloadinvalido.signature"));
     }
 
     @Test
     @DisplayName("Deve rejeitar token com caracteres especiais inválidos")
     void deveRejeitar_TokenCaracteresEspeciais() {
-        String token = "!@#$%^&*()_+";
-
-        boolean valido = jwtService.tokenValido(token);
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido("!@#$%^&*()_+"));
     }
 
     @Test
-    @DisplayName("Deve rejeitar ao extrair claims de token inválido")
+    @DisplayName("Deve lançar JwtException ao extrair claims de token inválido")
     void deveRejeitar_ExtrairClaimsTokenInvalido() {
-        String tokenInvalido = "header.payload.signature";
-
-        assertThrows(JwtException.class, () -> {
-            jwtService.extrairClaims(tokenInvalido);
-        });
+        assertThrows(JwtException.class, () ->
+                jwtService.extrairClaims("header.payload.signature"));
     }
 
     @Test
-    @DisplayName("Deve rejeitar token null ao extrair claims")
+    @DisplayName("Deve lançar IllegalArgumentException ao extrair claims de token null")
     void deveRejeitar_ExtrairClaimsTokenNull() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            jwtService.extrairClaims(null);
-        });
+        assertThrows(IllegalArgumentException.class, () ->
+                jwtService.extrairClaims(null));
     }
 
     @Test
-    @DisplayName("Deve rejeitar token vazio ao extrair claims")
+    @DisplayName("Deve lançar IllegalArgumentException ao extrair claims de token vazio")
     void deveRejeitar_ExtrairClaimsTokenVazio() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            jwtService.extrairClaims("");
-        });
+        assertThrows(IllegalArgumentException.class, () ->
+                jwtService.extrairClaims(""));
     }
 
     @Test
-    @DisplayName("Deve rejeitar cliente null ao gerar token")
+    @DisplayName("Deve lançar NullPointerException ao gerar token com cliente null")
     void deveRejeitar_ClienteNull() {
-        assertThrows(NullPointerException.class, () -> {
-            jwtService.gerarToken(null);
-        });
+        // cast explícito para resolver ambiguidade entre gerarToken(Cliente) e gerarToken(Conta)
+        assertThrows(NullPointerException.class, () ->
+                jwtService.gerarToken((Cliente) null));
     }
 
     @Test
-    @DisplayName("Deve rejeitar cliente sem email ao gerar token")
+    @DisplayName("Deve gerar token com subject null quando cliente sem email")
     void deveRejeitar_ClienteSemEmail() {
         Cliente clienteSemEmail = new Cliente();
         clienteSemEmail.setTipoCliente(TipoCliente.ROLE_USER);
         clienteSemEmail.setEmail(null);
 
+        // JWT aceita subject null — verificamos que o claims retorna null no subject
         String token = jwtService.gerarToken(clienteSemEmail);
         Claims claims = jwtService.extrairClaims(token);
 
@@ -144,15 +122,15 @@ class JwtServiceNegativeTests {
     }
 
     @Test
-    @DisplayName("Deve rejeitar cliente com tipo null ao gerar token")
+    @DisplayName("Deve lançar NullPointerException ao gerar token com tipoCliente null")
     void deveRejeitar_ClienteTipoNull() {
         Cliente clienteTipoNull = new Cliente();
         clienteTipoNull.setEmail("teste@example.com");
         clienteTipoNull.setTipoCliente(null);
 
-        assertThrows(NullPointerException.class, () -> {
-            jwtService.gerarToken(clienteTipoNull);
-        });
+        // cast explícito para resolver ambiguidade entre gerarToken(Cliente) e gerarToken(Conta)
+        assertThrows(NullPointerException.class, () ->
+                jwtService.gerarToken((Cliente) clienteTipoNull));
     }
 
     @Test
@@ -162,9 +140,7 @@ class JwtServiceNegativeTests {
         String[] partes = token.split("\\.");
         String tokenModificado = "headerfalso." + partes[1] + "." + partes[2];
 
-        boolean valido = jwtService.tokenValido(tokenModificado);
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido(tokenModificado));
     }
 
     @Test
@@ -174,19 +150,13 @@ class JwtServiceNegativeTests {
         String[] partes = token.split("\\.");
         String tokenModificado = partes[0] + ".payloadfalso." + partes[2];
 
-        boolean valido = jwtService.tokenValido(tokenModificado);
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido(tokenModificado));
     }
 
     @Test
     @DisplayName("Deve rejeitar token com múltiplos pontos extra")
     void deveRejeitar_TokenMultiplosPontosExtra() {
-        String tokenInvalido = "header.payload.signature.extra";
-
-        boolean valido = jwtService.tokenValido(tokenInvalido);
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido("header.payload.signature.extra"));
     }
 
     @Test
@@ -195,9 +165,7 @@ class JwtServiceNegativeTests {
         String token = jwtService.gerarToken(cliente);
         String tokenComEspacos = token.replace(".", ". ");
 
-        boolean valido = jwtService.tokenValido(tokenComEspacos);
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido(tokenComEspacos));
     }
 
     @Test
@@ -206,8 +174,6 @@ class JwtServiceNegativeTests {
         String token = jwtService.gerarToken(cliente);
         String tokenComQuebra = token + "\n";
 
-        boolean valido = jwtService.tokenValido(tokenComQuebra);
-
-        assertFalse(valido);
+        assertFalse(jwtService.tokenValido(tokenComQuebra));
     }
 }

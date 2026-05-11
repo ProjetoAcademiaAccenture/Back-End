@@ -6,8 +6,8 @@ import acc.br.projetoFinal.Accenture.model.Cliente;
 import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
 import acc.br.projetoFinal.Accenture.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -23,14 +23,9 @@ import static org.mockito.Mockito.*;
 @DisplayName("AuthService - Testes Negativos")
 class AuthServiceNegativeTests {
 
-    @Mock
-    private ClienteRepository clienteRepository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    @Mock
-    private JwtService jwtService;
+    @Mock private ClienteRepository clienteRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private JwtService jwtService;
 
     @InjectMocks
     private AuthService authService;
@@ -62,10 +57,8 @@ class AuthServiceNegativeTests {
     @Test
     @DisplayName("✗ Deve lançar exceção ao registrar com CPF duplicado")
     void testRegistrarComCpfDuplicado() {
-        // Arrange
         when(clienteRepository.findByCpf("12345678900")).thenReturn(Optional.of(clienteExistente));
 
-        // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> authService.register(dto));
         verify(clienteRepository, times(1)).findByCpf("12345678900");
         verify(clienteRepository, never()).save(any(Cliente.class));
@@ -74,11 +67,9 @@ class AuthServiceNegativeTests {
     @Test
     @DisplayName("✗ Deve lançar exceção ao registrar com email duplicado")
     void testRegistrarComEmailDuplicado() {
-        // Arrange
         when(clienteRepository.findByCpf("12345678900")).thenReturn(Optional.empty());
         when(clienteRepository.findByEmail("joao@test.com")).thenReturn(Optional.of(clienteExistente));
 
-        // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> authService.register(dto));
         verify(clienteRepository, times(1)).findByEmail("joao@test.com");
         verify(clienteRepository, never()).save(any(Cliente.class));
@@ -87,42 +78,35 @@ class AuthServiceNegativeTests {
     @Test
     @DisplayName("✗ Deve validar CPF antes de registrar")
     void testRegistrarValidaCpf() {
-        // Arrange
         when(clienteRepository.findByCpf(anyString())).thenReturn(Optional.empty());
         when(clienteRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(clienteExistente);
-        when(jwtService.gerarToken(any())).thenReturn("token");
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token"); // corrigido
 
-        // Act
         authService.register(dto);
 
-        // Assert
         verify(clienteRepository, times(1)).findByCpf(dto.getCpf());
     }
 
     @Test
     @DisplayName("✗ Deve validar email antes de registrar")
     void testRegistrarValidaEmail() {
-        // Arrange
         when(clienteRepository.findByCpf(anyString())).thenReturn(Optional.empty());
         when(clienteRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(clienteExistente);
-        when(jwtService.gerarToken(any())).thenReturn("token");
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token"); // corrigido
 
-        // Act
         authService.register(dto);
 
-        // Assert
         verify(clienteRepository, times(1)).findByEmail(dto.getEmail());
     }
 
     @Test
     @DisplayName("✗ Deve não permitir CPF duplicado mesmo em outro contexto")
     void testRegistrarComCpfDuplicadoEmContextoDiferente() {
-        // Arrange
-        Cliente outrCliente = Cliente.builder()
+        Cliente outroCliente = Cliente.builder()
                 .id(999L)
                 .nome("Outro Cliente")
                 .email("outro@test.com")
@@ -130,19 +114,14 @@ class AuthServiceNegativeTests {
                 .tipoCliente(TipoCliente.ROLE_USER)
                 .build();
 
-        when(clienteRepository.findByCpf("12345678900")).thenReturn(Optional.of(outrCliente));
+        when(clienteRepository.findByCpf("12345678900")).thenReturn(Optional.of(outroCliente));
 
-        // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> authService.register(dto));
     }
 
     @Test
     @DisplayName("✓ Verifica se múltiplos clientes podem ser registrados com dados diferentes")
     void testRegistrarMultiplosClientesSucessivamente() {
-        // Arrange - Primeiro cliente
-        when(clienteRepository.findByCpf("11111111111")).thenReturn(Optional.empty());
-        when(clienteRepository.findByEmail("cliente1@test.com")).thenReturn(Optional.empty());
-
         ClienteRequestDTO dto1 = ClienteRequestDTO.builder()
                 .nome("Cliente Um")
                 .email("cliente1@test.com")
@@ -159,14 +138,13 @@ class AuthServiceNegativeTests {
                 .tipoCliente(TipoCliente.ROLE_USER)
                 .build();
 
+        when(clienteRepository.findByCpf("11111111111")).thenReturn(Optional.empty());
+        when(clienteRepository.findByEmail("cliente1@test.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(cliente1);
-        when(jwtService.gerarToken(any())).thenReturn("token1");
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token1"); // corrigido
 
-        // Act
         assertDoesNotThrow(() -> authService.register(dto1));
-
-        // Assert
         verify(clienteRepository, times(1)).save(any(Cliente.class));
     }
 }
