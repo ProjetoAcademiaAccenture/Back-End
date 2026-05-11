@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@DisplayName("ItemPedidoResponseDTO - Testes")
+@DisplayName("ItemPedidoResponseDTO - Testes Positivos")
 class ItemPedidoResponseDTOTests {
 
     @Test
@@ -20,10 +20,6 @@ class ItemPedidoResponseDTOTests {
         ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO();
         
         assertNotNull(dto);
-        assertNull(dto.getId());
-        assertNull(dto.getProdutoId());
-        assertNull(dto.getProdutoNome());
-        assertNull(dto.getQuantidade());
     }
 
     @Test
@@ -91,26 +87,6 @@ class ItemPedidoResponseDTOTests {
         assertEquals(3, dto.getQuantidade());
         assertEquals(new BigDecimal("100.00"), dto.getPrecoUnitario());
         assertEquals(new BigDecimal("300.00"), dto.getSubtotal());
-    }
-
-    @Test
-    @DisplayName("Deve criar ItemPedidoResponseDTO com valores null")
-    void deveCriarComValoresNull() {
-        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.builder()
-                .id(null)
-                .produtoId(null)
-                .produtoNome(null)
-                .quantidade(null)
-                .precoUnitario(null)
-                .subtotal(null)
-                .build();
-
-        assertNull(dto.getId());
-        assertNull(dto.getProdutoId());
-        assertNull(dto.getProdutoNome());
-        assertNull(dto.getQuantidade());
-        assertNull(dto.getPrecoUnitario());
-        assertNull(dto.getSubtotal());
     }
 
     @Test

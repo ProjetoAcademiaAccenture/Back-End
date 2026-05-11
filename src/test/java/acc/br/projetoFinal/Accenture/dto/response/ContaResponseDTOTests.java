@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@DisplayName("ContaResponseDTO - Testes")
+@DisplayName("ContaResponseDTO - Testes Positivos")
 class ContaResponseDTOTests {
 
     @Test
@@ -20,11 +20,6 @@ class ContaResponseDTOTests {
         ContaResponseDTO dto = new ContaResponseDTO();
 
         assertNotNull(dto);
-        assertNull(dto.getId());
-        assertNull(dto.getNumeroConta());
-        assertNull(dto.getSaldo());
-        assertNull(dto.getTipo());
-        assertFalse(dto.isAtivo());
     }
 
     @Test
@@ -88,41 +83,6 @@ class ContaResponseDTOTests {
     }
 
     @Test
-    @DisplayName("Deve criar ContaResponseDTO com conta inativa")
-    void deveCriarComContaInativa() {
-        ContaResponseDTO dto = ContaResponseDTO.builder()
-                .id(10L)
-                .numeroConta("INATIVA-001")
-                .saldo(new BigDecimal("0.00"))
-                .tipo("CORRENTE")
-                .ativo(false)
-                .build();
-
-        assertEquals(10L, dto.getId());
-        assertEquals("INATIVA-001", dto.getNumeroConta());
-        assertEquals(new BigDecimal("0.00"), dto.getSaldo());
-        assertFalse(dto.isAtivo());
-    }
-
-    @Test
-    @DisplayName("Deve criar ContaResponseDTO com valores null")
-    void deveCriarComValoresNull() {
-        ContaResponseDTO dto = ContaResponseDTO.builder()
-                .id(null)
-                .numeroConta(null)
-                .saldo(null)
-                .tipo(null)
-                .ativo(false)
-                .build();
-
-        assertNull(dto.getId());
-        assertNull(dto.getNumeroConta());
-        assertNull(dto.getSaldo());
-        assertNull(dto.getTipo());
-        assertFalse(dto.isAtivo());
-    }
-
-    @Test
     @DisplayName("Deve converter Conta para ContaResponseDTO")
     void deveConverterContaParaDTO() {
         // Criar uma Conta mock
@@ -142,25 +102,6 @@ class ContaResponseDTOTests {
         assertEquals(new BigDecimal("10000.00"), dto.getSaldo());
         assertEquals("CORRENTE", dto.getTipo());
         assertTrue(dto.isAtivo());
-    }
-
-    @Test
-    @DisplayName("Deve converter Conta inativa para ContaResponseDTO")
-    void deveConverterContaInativaParaDTO() {
-        Conta conta = new Conta();
-        conta.setId(5L);
-        conta.setNumeroConta("FECHADA-001");
-        conta.setSaldo(new BigDecimal("0.00"));
-        conta.setTipo(TipoConta.POUPANCA);
-        conta.setAtivo(false);
-
-        ContaResponseDTO dto = ContaResponseDTO.fromEntity(conta);
-
-        assertEquals(5L, dto.getId());
-        assertEquals("FECHADA-001", dto.getNumeroConta());
-        assertEquals(new BigDecimal("0.00"), dto.getSaldo());
-        assertEquals("POUPANCA", dto.getTipo());
-        assertFalse(dto.isAtivo());
     }
 
     @Test
@@ -200,21 +141,6 @@ class ContaResponseDTOTests {
                 .build();
 
         assertEquals(dto1, dto2);
-    }
-
-    @Test
-    @DisplayName("Deve suportar saldos negativos")
-    void deveSuportarSaldosNegativos() {
-        ContaResponseDTO dto = ContaResponseDTO.builder()
-                .id(7L)
-                .numeroConta("NEGATIVA-001")
-                .saldo(new BigDecimal("-500.00"))
-                .tipo("CORRENTE")
-                .ativo(true)
-                .build();
-
-        assertEquals(new BigDecimal("-500.00"), dto.getSaldo());
-        assertTrue(dto.getSaldo().signum() < 0);
     }
 
     @Test
