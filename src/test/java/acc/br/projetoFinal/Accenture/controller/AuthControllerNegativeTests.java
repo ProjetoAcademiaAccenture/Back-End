@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@DisplayName("AuthController - Testes")
+@DisplayName("AuthController - Testes Negativos")
 class AuthControllerNegativeTests {
 
     @Mock private AuthenticationManager authenticationManager;
@@ -111,6 +111,18 @@ class AuthControllerNegativeTests {
     }
 
     @Test
+    @DisplayName("✗ Não deve consultar o repositório quando a autenticação falha")
+    void testLoginFalhaDeveInterromperFluxo() {
+        doThrow(new BadCredentialsException("Credenciais inválidas"))
+                .when(authenticationManager)
+                .authenticate(any(UsernamePasswordAuthenticationToken.class));
+
+        assertThrows(SenhaInvalidaException.class, () -> authController.login(loginDto));
+
+        verifyNoInteractions(clienteRepository);
+    }
+
+    @Test
     @DisplayName("✗ Deve lançar RecursoNaoEncontradoException ao não encontrar cliente no login")
     void testLoginClienteNaoEncontrado() {
         when(authenticationManager.authenticate(any())).thenReturn(null);
@@ -124,28 +136,25 @@ class AuthControllerNegativeTests {
     }
 
     @Test
-    @DisplayName("✓ Deve buscar cliente pelo email no login")
-    void testLoginValidaEmail() {
+    @DisplayName("✗ Não deve gerar token quando o cliente não é encontrado")
+    void testLoginClienteNaoEncontradoNaoGeraToken() {
         when(authenticationManager.authenticate(any())).thenReturn(null);
-        when(clienteRepository.findByEmail("joao@test.com")).thenReturn(Optional.of(cliente));
-        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+        when(clienteRepository.findByEmail(any())).thenReturn(Optional.empty());
 
-        authController.login(loginDto);
+        assertThrows(RecursoNaoEncontradoException.class, () -> authController.login(loginDto));
 
-        verify(clienteRepository, times(1)).findByEmail("joao@test.com");
+        verifyNoInteractions(jwtService);
     }
 
     @Test
-    @DisplayName("✓ Deve autenticar antes de fazer login")
-    void testLoginAutenticaUsuario() {
+    @DisplayName("✗ Deve propagar exceção do jwtService no login")
+    void testLoginFalhaNoJwtServicePropaga() {
         when(authenticationManager.authenticate(any())).thenReturn(null);
         when(clienteRepository.findByEmail(any())).thenReturn(Optional.of(cliente));
-        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+        when(jwtService.gerarToken(any(Cliente.class)))
+                .thenThrow(new RuntimeException("Erro ao gerar token"));
 
-        authController.login(loginDto);
-
-        verify(authenticationManager, times(1))
-                .authenticate(any(UsernamePasswordAuthenticationToken.class));
+        assertThrows(RuntimeException.class, () -> authController.login(loginDto));
     }
 
     // -------------------------------------------------------
@@ -161,6 +170,16 @@ class AuthControllerNegativeTests {
     }
 
     @Test
+    @DisplayName("✗ Não deve verificar senha quando a conta não é encontrada")
+    void testLoginBankContaNaoEncontradaNaoVerificaSenha() {
+        when(contaRepository.findByNumeroConta("12345-6")).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> authController.loginBank(loginBankDto));
+
+        verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
     @DisplayName("✗ Deve lançar SenhaInvalidaException ao login-bank com senha inválida")
     void testLoginBankSenhaInvalida() {
         when(contaRepository.findByNumeroConta("12345-6")).thenReturn(Optional.of(conta));
@@ -170,42 +189,30 @@ class AuthControllerNegativeTests {
     }
 
     @Test
-    @DisplayName("✓ Deve realizar login-bank com sucesso")
-    void testLoginBankSucesso() {
+    @DisplayName("✗ Não deve gerar token quando a senha de transação é inválida")
+    void testLoginBankSenhaInvalidaNaoGeraToken() {
         when(contaRepository.findByNumeroConta("12345-6")).thenReturn(Optional.of(conta));
-        when(passwordEncoder.matches("senha123", "senhaCriptografada")).thenReturn(true);
-        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+        when(passwordEncoder.matches(any(), any())).thenReturn(false);
 
-        authController.loginBank(loginBankDto);
+        assertThrows(SenhaInvalidaException.class, () -> authController.loginBank(loginBankDto));
 
-        verify(jwtService, times(1)).gerarToken(cliente);
+        verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    @DisplayName("✗ Deve comparar senha com os argumentos exatos da conta")
+    void testLoginBankPasswordEncoderRecebeArgumentosExatos() {
+        when(contaRepository.findByNumeroConta("12345-6")).thenReturn(Optional.of(conta));
+        when(passwordEncoder.matches("senha123", "senhaCriptografada")).thenReturn(false);
+
+        assertThrows(SenhaInvalidaException.class, () -> authController.loginBank(loginBankDto));
+
+        verify(passwordEncoder).matches("senha123", "senhaCriptografada");
     }
 
     // -------------------------------------------------------
     // REGISTER
     // -------------------------------------------------------
-
-    @Test
-    @DisplayName("✓ Deve usar ClienteService ao registrar")
-    void testRegistrarUsaClienteService() {
-        when(clienteService.criarEntidade(registerDto)).thenReturn(cliente);
-        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
-
-        authController.register(registerDto);
-
-        verify(clienteService, times(1)).criarEntidade(registerDto);
-    }
-
-    @Test
-    @DisplayName("✓ Deve gerar token após registrar com sucesso")
-    void testRegistrarGeraTokenAposRegistro() {
-        when(clienteService.criarEntidade(any())).thenReturn(cliente);
-        when(jwtService.gerarToken(cliente)).thenReturn("novo_token");
-
-        authController.register(registerDto);
-
-        verify(jwtService, times(1)).gerarToken(cliente);
-    }
 
     @Test
     @DisplayName("✗ Deve lançar exceção se ClienteService falhar no registro")
@@ -216,32 +223,30 @@ class AuthControllerNegativeTests {
         assertThrows(IllegalArgumentException.class, () -> authController.register(registerDto));
     }
 
+    @Test
+    @DisplayName("✗ Não deve gerar token quando clienteService lança exceção")
+    void testRegistrarFalhaNoClienteServiceNaoGeraToken() {
+        when(clienteService.criarEntidade(any()))
+                .thenThrow(new IllegalArgumentException("Email já existe"));
+
+        assertThrows(IllegalArgumentException.class, () -> authController.register(registerDto));
+
+        verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    @DisplayName("✗ Deve propagar exceção do jwtService no register")
+    void testRegistrarFalhaNoJwtServicePropaga() {
+        when(clienteService.criarEntidade(any())).thenReturn(cliente);
+        when(jwtService.gerarToken(any(Cliente.class)))
+                .thenThrow(new RuntimeException("Falha ao gerar JWT"));
+
+        assertThrows(RuntimeException.class, () -> authController.register(registerDto));
+    }
+
     // -------------------------------------------------------
     // REGISTER BANK
     // -------------------------------------------------------
-
-    @Test
-    @DisplayName("✓ Deve usar ContaService ao registrar conta")
-    void testRegisterBankUsaContaService() {
-        when(contaService.criarEntidade(contaRequestDTO)).thenReturn(conta);
-        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
-
-        authController.registerBank(contaRequestDTO);
-
-        verify(contaService, times(1)).criarEntidade(contaRequestDTO);
-    }
-
-    @Test
-    @DisplayName("✓ Deve gerar token com o cliente da conta ao registrar")
-    void testRegisterBankGeraTokenComCliente() {
-        when(contaService.criarEntidade(any())).thenReturn(conta);
-        when(jwtService.gerarToken(cliente)).thenReturn("token");
-
-        authController.registerBank(contaRequestDTO);
-
-        // gerarToken deve receber o Cliente, não a Conta
-        verify(jwtService, times(1)).gerarToken(cliente);
-    }
 
     @Test
     @DisplayName("✗ Deve lançar exceção se ContaService falhar no registro")
@@ -250,5 +255,26 @@ class AuthControllerNegativeTests {
                 .thenThrow(new IllegalArgumentException("Cliente não encontrado"));
 
         assertThrows(IllegalArgumentException.class, () -> authController.registerBank(contaRequestDTO));
+    }
+
+    @Test
+    @DisplayName("✗ Não deve gerar token quando contaService lança exceção")
+    void testRegisterBankFalhaNoContaServiceNaoGeraToken() {
+        when(contaService.criarEntidade(any()))
+                .thenThrow(new IllegalArgumentException("Cliente não encontrado"));
+
+        assertThrows(IllegalArgumentException.class, () -> authController.registerBank(contaRequestDTO));
+
+        verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    @DisplayName("✗ Deve propagar exceção do jwtService no register-bank")
+    void testRegisterBankFalhaNoJwtServicePropaga() {
+        when(contaService.criarEntidade(any())).thenReturn(conta);
+        when(jwtService.gerarToken(any(Cliente.class)))
+                .thenThrow(new RuntimeException("Falha ao gerar JWT"));
+
+        assertThrows(RuntimeException.class, () -> authController.registerBank(contaRequestDTO));
     }
 }

@@ -18,6 +18,7 @@ import acc.br.projetoFinal.Accenture.service.ContaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -33,6 +34,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @DisplayName("AuthController - Testes Positivos")
@@ -123,7 +125,33 @@ class AuthControllerTests {
     }
 
     @Test
-    @DisplayName("✓ Deve buscar cliente por email durante login")
+    @DisplayName("✓ Deve retornar status 200 (OK) no login bem-sucedido")
+    void testLoginRetornaStatusOk() {
+        when(authenticationManager.authenticate(any())).thenReturn(null);
+        when(clienteRepository.findByEmail(anyString())).thenReturn(Optional.of(cliente));
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+
+        ResponseEntity<AuthResponseDTO> response = authController.login(loginDto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("✓ Deve retornar email e tipoCliente no body do login")
+    void testLoginRetornaEmailETipoCliente() {
+        when(authenticationManager.authenticate(any())).thenReturn(null);
+        when(clienteRepository.findByEmail("joao@test.com")).thenReturn(Optional.of(cliente));
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+
+        AuthResponseDTO body = authController.login(loginDto).getBody();
+
+        assertNotNull(body);
+        assertEquals("joao@test.com", body.getEmail());
+        assertEquals("ROLE_USER", body.getTipoCliente());
+    }
+
+    @Test
+    @DisplayName("✓ Deve buscar cliente pelo email correto durante o login")
     void testLoginBuscaClientePorEmail() {
         when(authenticationManager.authenticate(any())).thenReturn(null);
         when(clienteRepository.findByEmail("joao@test.com")).thenReturn(Optional.of(cliente));
@@ -148,15 +176,29 @@ class AuthControllerTests {
     }
 
     @Test
-    @DisplayName("✓ Deve retornar status 200 (OK) no login bem-sucedido")
-    void testLoginRetornaStatusOk() {
+    @DisplayName("✓ Deve chamar authenticate() antes de buscar o cliente")
+    void testLoginAutenticaAntesDebusar() {
         when(authenticationManager.authenticate(any())).thenReturn(null);
-        when(clienteRepository.findByEmail(anyString())).thenReturn(Optional.of(cliente));
+        when(clienteRepository.findByEmail(any())).thenReturn(Optional.of(cliente));
         when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
 
-        ResponseEntity<AuthResponseDTO> response = authController.login(loginDto);
+        authController.login(loginDto);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        InOrder ordem = inOrder(authenticationManager, clienteRepository);
+        ordem.verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        ordem.verify(clienteRepository).findByEmail("joao@test.com");
+    }
+
+    @Test
+    @DisplayName("✓ Deve passar exatamente o cliente encontrado para gerarToken()")
+    void testLoginGerarTokenRecebeClienteExato() {
+        when(authenticationManager.authenticate(any())).thenReturn(null);
+        when(clienteRepository.findByEmail("joao@test.com")).thenReturn(Optional.of(cliente));
+        when(jwtService.gerarToken(cliente)).thenReturn("token-preciso");
+
+        authController.login(loginDto);
+
+        verify(jwtService).gerarToken(cliente);
     }
 
     // -------------------------------------------------------
@@ -181,8 +223,22 @@ class AuthControllerTests {
     }
 
     @Test
-    @DisplayName("✓ Deve verificar senha da conta no login-bank")
-    void testLoginBankVerificaSenha() {
+    @DisplayName("✓ Deve retornar tipoConta e clienteId no body do login-bank")
+    void testLoginBankRetornaTipoContaEClienteId() {
+        when(contaRepository.findByNumeroConta("12345-6")).thenReturn(Optional.of(conta));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+
+        AuthBankResponseDTO body = authController.loginBank(loginBankDto).getBody();
+
+        assertNotNull(body);
+        assertEquals("CORRENTE", body.getTipoConta());
+        assertEquals(1L, body.getClienteId());
+    }
+
+    @Test
+    @DisplayName("✓ Deve verificar a senha da conta com os argumentos exatos")
+    void testLoginBankVerificaSenhaComArgumentosExatos() {
         when(contaRepository.findByNumeroConta("12345-6")).thenReturn(Optional.of(conta));
         when(passwordEncoder.matches("senha123", "senhaCriptografada")).thenReturn(true);
         when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
@@ -193,15 +249,15 @@ class AuthControllerTests {
     }
 
     @Test
-    @DisplayName("✓ Deve gerar token com o cliente da conta no login-bank")
-    void testLoginBankGeraTokenComCliente() {
+    @DisplayName("✓ Deve gerar token com o cliente vinculado à conta no login-bank")
+    void testLoginBankGeraTokenComClienteDaConta() {
         when(contaRepository.findByNumeroConta("12345-6")).thenReturn(Optional.of(conta));
-        when(passwordEncoder.matches("senha123", "senhaCriptografada")).thenReturn(true);
-        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        when(jwtService.gerarToken(eq(cliente))).thenReturn("token");
 
         authController.loginBank(loginBankDto);
 
-        verify(jwtService, times(1)).gerarToken(any(Cliente.class));
+        verify(jwtService, times(1)).gerarToken(eq(cliente));
     }
 
     // -------------------------------------------------------
@@ -234,6 +290,21 @@ class AuthControllerTests {
     }
 
     @Test
+    @DisplayName("✓ Deve retornar nome, email e tipoCliente no body do register")
+    void testRegistrarRetornaDados() {
+        when(clienteService.criarEntidade(any())).thenReturn(cliente);
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+
+        AuthResponseDTO body = authController.register(registerDto).getBody();
+
+        assertNotNull(body);
+        assertEquals("João Silva", body.getNome());
+        assertEquals("joao@test.com", body.getEmail());
+        assertEquals(1L, body.getClienteId());
+        assertEquals("ROLE_USER", body.getTipoCliente());
+    }
+
+    @Test
     @DisplayName("✓ Deve gerar token após registro")
     void testRegistrarGeraToken() {
         when(clienteService.criarEntidade(registerDto)).thenReturn(cliente);
@@ -246,16 +317,16 @@ class AuthControllerTests {
     }
 
     @Test
-    @DisplayName("✓ Deve retornar dados do cliente no registro")
-    void testRegistrarRetornaDados() {
+    @DisplayName("✓ Deve chamar criarEntidade() antes de gerarToken() no register")
+    void testRegistrarOrdemDeOperacoes() {
         when(clienteService.criarEntidade(any())).thenReturn(cliente);
         when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
 
-        ResponseEntity<AuthResponseDTO> response = authController.register(registerDto);
+        authController.register(registerDto);
 
-        assertEquals("João Silva", response.getBody().getNome());
-        assertEquals(1L, response.getBody().getClienteId());
-        assertEquals("ROLE_USER", response.getBody().getTipoCliente());
+        InOrder ordem = inOrder(clienteService, jwtService);
+        ordem.verify(clienteService).criarEntidade(any());
+        ordem.verify(jwtService).gerarToken(eq(cliente));
     }
 
     // -------------------------------------------------------
@@ -289,14 +360,28 @@ class AuthControllerTests {
     }
 
     @Test
-    @DisplayName("✓ Deve gerar token com o cliente da conta ao registrar")
-    void testRegisterBankGeraTokenComCliente() {
+    @DisplayName("✓ Deve retornar tipoConta, saldo e clienteId no body do register-bank")
+    void testRegisterBankRetornaDados() {
         when(contaService.criarEntidade(any())).thenReturn(conta);
         when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
 
+        AuthBankResponseDTO body = authController.registerBank(contaRequestDTO).getBody();
+
+        assertNotNull(body);
+        assertEquals("CORRENTE", body.getTipoConta());
+        assertEquals("1000", body.getSaldo());
+        assertEquals(1L, body.getClienteId());
+    }
+
+    @Test
+    @DisplayName("✓ Deve gerar token com o cliente da conta ao registrar")
+    void testRegisterBankGeraTokenComCliente() {
+        when(contaService.criarEntidade(any())).thenReturn(conta);
+        when(jwtService.gerarToken(eq(cliente))).thenReturn("token");
+
         authController.registerBank(contaRequestDTO);
 
-        verify(jwtService, times(1)).gerarToken(any(Cliente.class));
+        verify(jwtService, times(1)).gerarToken(eq(cliente));
     }
 
     @Test
