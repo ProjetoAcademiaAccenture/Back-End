@@ -9,7 +9,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "conta")
-@Data
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -22,8 +22,14 @@ public class Conta {
     @Column(name = "numero_conta", unique = true, nullable = false)
     private String numeroConta;
 
+    @Column(name = "senha_transacao", nullable = false)
+    private String senhaTransacao;
+
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal saldo = BigDecimal.ZERO;
+
+    @Column(name = "limite_credito", nullable = false, precision = 15, scale = 2)
+    private BigDecimal limiteCredito = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -40,8 +40,10 @@ public class DataInitializer {
                 Cliente empresaSalva = clienteRepository.save(empresa);
 
                 Conta contaEmpresa = Conta.builder()
-                    .numeroConta("EMPRESA-001")
+                    .numeroConta("1234567-8")
+                    .senhaTransacao(passwordEncoder.encode("1234"))
                     .saldo(new BigDecimal("10000.00"))
+                    .limiteCredito (new BigDecimal("5000.00"))
                     .tipo(TipoConta.JURIDICA)
                     .cliente(empresaSalva)
                     .ativo(true)

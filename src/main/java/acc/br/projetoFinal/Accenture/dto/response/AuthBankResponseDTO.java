@@ -5,10 +5,11 @@ import lombok.Data;
 
 @Data
 @Builder
-public class AuthResponseDTO {
+public class AuthBankResponseDTO {
 	private String token;
 	private Long clienteId;
-	private String nome;
-	private String email;
-	private String tipoCliente;
+	private Long contaId;
+	private String numeroConta;
+	private String saldo;
+	private String tipoConta;
 }
