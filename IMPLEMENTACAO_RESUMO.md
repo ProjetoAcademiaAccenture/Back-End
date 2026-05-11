@@ -26,7 +26,7 @@ Implementação **COMPLETA** do Sistema Loja + Banco conforme o **Guia Técnico 
 
 ### 3️⃣ **DTOs Request/Response** ✓
 - **Request**: ClienteRequestDTO, EnderecoRequestDTO, ProdutoRequestDTO, PedidoRequestDTO, ItemPedidoRequestDTO
-- **Response**: ClienteResponseDTO, EnderecoResponseDTO, ContaResponseDTO, ProdutoResponseDTO, PedidoResponseDTO, ItemPedidoResponseDTO, BoletoResponseDTO, ExtratoResponseDTO, ViaCepResponseDTO
+- **Response**: ClienteResponseDTO, EnderecoResponseDTO, ContaResponseDTO, ProdutoResponseDTO, PedidoResponseDTO, ItemPedidoResponseDTO, BoletoResponseDTO, ExtratoResponseDTO
 
 **Todos com validação Jakarta Validation e mapeamento Entity↔DTO**
 
@@ -41,9 +41,6 @@ Implementação **COMPLETA** do Sistema Loja + Banco conforme o **Guia Técnico 
 - `ExtratoRepository` — find com filtros por período, tipo
 
 ### 5️⃣ **Services (Lógica de Negócio)** ✓
-
-#### **ViaCepService**
-- Integração com API ViaCEP para buscar endereços automaticamente
 
 #### **ContaService** (🔥 crítico)
 - `depositar()` — credita valor na conta
@@ -95,7 +92,7 @@ Implementação **COMPLETA** do Sistema Loja + Banco conforme o **Guia Técnico 
 
 ### 8️⃣ **Configurações** ✓
 - **application.properties** — H2 em memória, JPA, Swagger
-- **RestTemplateConfig** — RestTemplate com timeout para ViaCEP
+- **RestTemplateConfig** — RestTemplate genérico
 - **SwaggerConfig** — OpenAPI 3.0 com info + contact
 - **DatabaseConfig** — placeholder para futuras customizações
 - **DataInitializer** — CommandLineRunner que cria cliente EMPRESA e conta JURIDICA
@@ -108,7 +105,7 @@ Implementação **COMPLETA** do Sistema Loja + Banco conforme o **Guia Técnico 
 |-------|:---:|---------|
 | Cliente com múltiplos endereços | ✓ | `ClienteService.adicionarEndereco()` |
 | Conta obrigatória ao criar cliente | ✓ | `ClienteService.criar()` |
-| CEP automático via ViaCEP | ✓ | `ViaCepService.buscarEnderecoPorCep()` |
+| Endereço recebido do frontend | ✓ | `ClienteService.salvarCliente()` |
 | Validação estoque ao criar pedido | ✓ | `PedidoService.criar()` |
 | Validação estoque ao reservar | ✓ | `PedidoService.reservarPedido()` |
 | Débito cliente + crédito empresa | ✓ | `ContaService.transferir()` |
@@ -138,7 +135,7 @@ src/main/java/acc/br/projetoFinal/Accenture/
 │   ├── BoletoService.java             ✓
 │   ├── ContaService.java              ✓ (lógica crítica)
 │   ├── ExtratoService.java            ✓
-│   └── ViaCepService.java             ✓
+
 ├── repository/
 │   ├── ClienteRepository.java         ✓
 │   ├── EnderecoRepository.java        ✓
@@ -173,7 +170,7 @@ src/main/java/acc/br/projetoFinal/Accenture/
 │       ├── ItemPedidoResponseDTO.java ✓
 │       ├── BoletoResponseDTO.java     ✓
 │       ├── ExtratoResponseDTO.java    ✓
-│       └── ViaCepResponseDTO.java     ✓
+
 ├── enums/
 │   ├── TipoConta.java                 ✓
 │   ├── MetodoPagamento.java           ✓
@@ -295,7 +292,7 @@ curl http://localhost:8080/api/contas/2/extrato
 2. **Transações**: Operações críticas usam `@Transactional`
 3. **Validações**: DTOs com Jakarta Validation + custom exceptions
 4. **Extrato automático**: Cada operação em conta registra linha no extrato
-5. **ViaCEP**: Integração automática, sem chave API
+5. **Endereço**: Frontend envia todos os campos necessários
 6. **H2 em memória**: Ideal para desenvolvimento, dados reset a cada inicialização
 7. **Multa 10%**: Configurável em `PedidoService.PERCENTUAL_MULTA`
 

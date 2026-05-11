@@ -22,7 +22,6 @@ public class ClienteService {
 
     private final ClienteRepository clienteRepository;
     private final EnderecoRepository enderecoRepository;
-    private final ViaCepService viaCepService;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -117,11 +116,18 @@ public class ClienteService {
         Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado"));
 
-        Endereco endereco = viaCepService.buscarEnderecoPorCep(dto.getCep());
-        endereco.setCliente(cliente);
-        endereco.setNumero(dto.getNumero());
-        endereco.setComplemento(dto.getComplemento());
-        endereco.setTipoEndereco(dto.getTipoEndereco());
+        Endereco endereco = Endereco.builder()
+                .cep(dto.getCep())
+                .logradouro(dto.getLogradouro())
+                .bairro(dto.getBairro())
+                .cidade(dto.getCidade())
+                .uf(dto.getUf())
+                .numero(dto.getNumero())
+                .complemento(dto.getComplemento())
+                .tipoEndereco(dto.getTipoEndereco())
+                .cliente(cliente)
+                .build();
+
         enderecoRepository.save(endereco);
     }
 

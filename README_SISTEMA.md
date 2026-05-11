@@ -80,13 +80,17 @@ POST /api/clientes
   "cpf": "12345678901",
   "email": "joao@email.com",
   "telefone": "11999999999",
-  "cep": "01310100",  // ViaCEP busca automaticamente logradouro, bairro, cidade, uf
+  "cep": "01310100",
+  "logradouro": "Avenida Paulista",
+  "bairro": "Bela Vista",
+  "cidade": "São Paulo",
+  "uf": "SP",
   "numero": "100",
   "complemento": "Apto 42"
 }
 ```
 - ✓ Cria cliente
-- ✓ Busca endereço via ViaCEP
+- ✓ Recebe endereço completo do frontend
 - ✓ Cria conta CORRENTE automaticamente (obrigatória)
 
 ### 2. Depositar saldo na conta
@@ -303,7 +307,7 @@ Use este cliente para cadastrar produtos (a empresa "compra" os produtos).
 ## Notas importantes
 
 1. **H2 em memória**: Dados são perdidos ao reiniciar a aplicação
-2. **ViaCEP**: Integração automática com API pública de CEP brasileiro
+2. **Endereço completo**: O frontend deve enviar todos os campos do endereço (CEP, logradouro, bairro, cidade, UF)
 3. **Transações**: Todas as operações críticas usam `@Transactional`
 4. **Validações**: Implementadas em DTOs com Jakarta Validation
 5. **Multa 10%**: Configurável em `PedidoService.PERCENTUAL_MULTA`

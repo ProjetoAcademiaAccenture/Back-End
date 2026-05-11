@@ -92,4 +92,14 @@ public class GlobalExceptionHandler {
                 .build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
+       @ExceptionHandler(SenhaInvalidaException.class)
+    public ResponseEntity<ErrorResponse> handleSenhaInvalida(SenhaInvalidaException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error("Não Autorizado")
+                .message(ex.getMessage())
+                .build());
+    }
+
 }
