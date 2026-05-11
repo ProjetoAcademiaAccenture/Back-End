@@ -1,5 +1,6 @@
 package acc.br.projetoFinal.Accenture.service;
 
+import acc.br.projetoFinal.Accenture.dto.request.ContaRequestDTO;
 import acc.br.projetoFinal.Accenture.enums.TipoExtrato;
 import acc.br.projetoFinal.Accenture.enums.TipoConta;
 import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
@@ -9,11 +10,16 @@ import acc.br.projetoFinal.Accenture.model.Extrato;
 import acc.br.projetoFinal.Accenture.model.Pedido;
 import acc.br.projetoFinal.Accenture.repository.ContaRepository;
 import acc.br.projetoFinal.Accenture.repository.ExtratoRepository;
+import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +27,8 @@ public class ContaService {
 
     private final ContaRepository contaRepository;
     private final ExtratoRepository extratoRepository;
+    private final ClienteRepository clienteRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // Helper interno: grava uma linha no extrato
     private void registrarExtrato(Conta conta, TipoExtrato tipo, BigDecimal valor,
@@ -35,6 +43,34 @@ public class ContaService {
                 .pedido(pedido)
                 .dataHora(LocalDateTime.now())
                 .build());
+    }
+
+    @Transactional
+    public Conta criarEntidade(ContaRequestDTO dto) {
+        return salvarConta(dto);
+    }
+
+    private Conta salvarConta(ContaRequestDTO dto) {
+        // Verify client exists and doesn't already have an account of this type
+        var clienteExistente = clienteRepository.findById(dto.getClienteId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado"));
+
+        var contaExistente = contaRepository.findByClienteId(dto.getClienteId());
+        if (contaExistente.isPresent()) {
+            throw new IllegalArgumentException("Cliente já possui uma conta");
+        }
+
+        Conta newConta = new Conta();
+        newConta.setSaldo(gerarSaldo(100.00, 500.00));
+        newConta.setLimiteCredito(gerarLimiteCredito());
+        newConta.setNumeroConta(gerarNumeroConta());
+        newConta.setTipo(dto.getTipoConta());
+        newConta.setSenhaTransacao(
+            passwordEncoder.encode(dto.getSenhaTransacao())
+        );
+        newConta.setCliente(clienteExistente);
+
+        return contaRepository.save(newConta);
     }
 
     @Transactional
@@ -91,5 +127,29 @@ public class ContaService {
         registrarExtrato(contaCliente, TipoExtrato.ESTORNO, estorno, antesCliente, descEstorno, pedido);
         registrarExtrato(contaEmpresa, TipoExtrato.ESTORNO, estorno, antesEmpresa, descEstorno, pedido);
         registrarExtrato(contaEmpresa, TipoExtrato.MULTA, multa, contaEmpresa.getSaldo(), descMulta, pedido);
+    }
+
+    private String gerarNumeroConta() {
+        StringBuilder sb = new StringBuilder();
+        int[] conta = new int[6];
+        for (int i = 0; i < conta.length; i++) {
+            conta[i] = (int) (Math.random() * 100);
+            sb.append(conta[i]);
+        }
+        sb.append("-").append((int) (Math.random() * 10));
+        return sb.toString();
+    }
+
+    private BigDecimal gerarSaldo(double min, double max) {
+        // Gera um double aleatório no intervalo
+        double randomDouble = ThreadLocalRandom.current().nextDouble(min, max);
+
+        // Converte para BigDecimal com 2 casas decimais e arredondamento padrão
+        return BigDecimal.valueOf(randomDouble)
+            .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal gerarLimiteCredito() {
+        return gerarSaldo (1000.00, 5000.00);
     }
 }
