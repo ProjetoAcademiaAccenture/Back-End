@@ -48,11 +48,11 @@ class BoletoControllerNegativeTests {
     }
 
     @Test
-    @DisplayName("✗ Deve retornar 401 ao buscar boleto sem autenticação")
+    @DisplayName("✗ Deve retornar 403 ao buscar boleto sem autenticação")
     void deveRetornarUnauthorizedAoBuscarSemAutenticacao() throws Exception {
         mockMvc.perform(get("/api/boletos/1")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     // -------------------------------------------------------
@@ -72,11 +72,11 @@ class BoletoControllerNegativeTests {
     }
 
     @Test
-    @DisplayName("✗ Deve retornar 401 ao buscar boleto por pedidoId sem autenticação")
+    @DisplayName("✗ Deve retornar 403 ao buscar boleto por pedidoId sem autenticação")
     void deveRetornarUnauthorizedAoBuscarPorPedidoIdSemAutenticacao() throws Exception {
         mockMvc.perform(get("/api/boletos/pedido/1")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     // -------------------------------------------------------
@@ -110,12 +110,12 @@ class BoletoControllerNegativeTests {
     }
 
     @Test
-    @DisplayName("✗ Deve retornar 401 ao gerar boleto sem autenticação")
+    @DisplayName("✗ Deve retornar 403 ao gerar boleto sem autenticação")
     void deveRetornarUnauthorizedAoGerarSemAutenticacao() throws Exception {
         mockMvc.perform(post("/api/boletos/gerar/1")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     // -------------------------------------------------------
@@ -149,12 +149,12 @@ class BoletoControllerNegativeTests {
     }
 
     @Test
-    @DisplayName("✗ Deve retornar 401 ao pagar boleto sem autenticação")
+    @DisplayName("✗ Deve retornar 403 ao pagar boleto sem autenticação")
     void deveRetornarUnauthorizedAoPagarSemAutenticacao() throws Exception {
         mockMvc.perform(patch("/api/boletos/1/pagar")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     // -------------------------------------------------------
@@ -190,11 +190,11 @@ class BoletoControllerNegativeTests {
     }
 
     @Test
-    @DisplayName("✗ Deve retornar 401 ao cancelar boleto sem autenticação")
+    @DisplayName("✗ Deve retornar 403 ao cancelar boleto sem autenticação")
     void deveRetornarUnauthorizedAoCancelarSemAutenticacao() throws Exception {
         mockMvc.perform(patch("/api/boletos/1/cancelar")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 }
