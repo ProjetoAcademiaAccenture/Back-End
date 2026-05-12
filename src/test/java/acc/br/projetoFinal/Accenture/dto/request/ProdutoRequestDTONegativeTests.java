@@ -22,20 +22,9 @@ class ProdutoRequestDTONegativeTests {
 
     private ProdutoRequestDTO dto;
 
-    @Test
-    @DisplayName("Deve rejeitar quando nome é vazio")
-    void deveRejeitar_NomeVazio() {
-        dto = ProdutoRequestDTO.builder()
-                .nome("")
-                .preco(new BigDecimal("100.00"))
-                .quantidade(10)
-                .metodoPgto(MetodoPagamento.CREDITO)
-                .build();
-
-        Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty(), "Deve haver violação para nome vazio");
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("nome")));
-    }
+    // ─────────────────────────────────────────────
+    //  nome
+    // ─────────────────────────────────────────────
 
     @Test
     @DisplayName("Deve rejeitar quando nome é null")
@@ -43,7 +32,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome(null)
                 .preco(new BigDecimal("100.00"))
-                .quantidade(10)
+                .quantidade(1)
                 .metodoPgto(MetodoPagamento.CREDITO)
                 .build();
 
@@ -53,12 +42,42 @@ class ProdutoRequestDTONegativeTests {
     }
 
     @Test
+    @DisplayName("Deve rejeitar quando nome é vazio")
+    void deveRejeitar_NomeVazio() {
+        dto = ProdutoRequestDTO.builder()
+                .nome("")
+                .preco(new BigDecimal("100.00"))
+                .quantidade(1)
+                .metodoPgto(MetodoPagamento.CREDITO)
+                .build();
+
+        Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
+        assertFalse(violations.isEmpty(), "Deve haver violação para nome vazio");
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("nome")));
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar quando nome é apenas espaços em branco")
+    void deveRejeitar_NomeBlank() {
+        dto = ProdutoRequestDTO.builder()
+                .nome("   ")
+                .preco(new BigDecimal("100.00"))
+                .quantidade(1)
+                .metodoPgto(MetodoPagamento.CREDITO)
+                .build();
+
+        Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
+        assertFalse(violations.isEmpty(), "Deve haver violação para nome em branco");
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("nome")));
+    }
+
+    @Test
     @DisplayName("Deve rejeitar quando nome tem menos de 3 caracteres")
     void deveRejeitar_NomeMenor3Caracteres() {
         dto = ProdutoRequestDTO.builder()
                 .nome("AB")
                 .preco(new BigDecimal("100.00"))
-                .quantidade(10)
+                .quantidade(1)
                 .metodoPgto(MetodoPagamento.CREDITO)
                 .build();
 
@@ -70,11 +89,10 @@ class ProdutoRequestDTONegativeTests {
     @Test
     @DisplayName("Deve rejeitar quando nome excede 100 caracteres")
     void deveRejeitar_NomeMaior100Caracteres() {
-        String nomeLongo = "a".repeat(101);
         dto = ProdutoRequestDTO.builder()
-                .nome(nomeLongo)
+                .nome("A".repeat(101))
                 .preco(new BigDecimal("100.00"))
-                .quantidade(10)
+                .quantidade(1)
                 .metodoPgto(MetodoPagamento.CREDITO)
                 .build();
 
@@ -83,22 +101,29 @@ class ProdutoRequestDTONegativeTests {
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("nome")));
     }
 
+    // ─────────────────────────────────────────────
+    //  descricao
+    // ─────────────────────────────────────────────
+
     @Test
-    @DisplayName("Deve rejeitar quando descrição excede 500 caracteres")
+    @DisplayName("Deve rejeitar quando descricao excede 500 caracteres")
     void deveRejeitar_DescricaoMaior500Caracteres() {
-        String descricaoLonga = "a".repeat(501);
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
-                .descricao(descricaoLonga)
+                .descricao("a".repeat(501))
                 .preco(new BigDecimal("100.00"))
-                .quantidade(10)
+                .quantidade(1)
                 .metodoPgto(MetodoPagamento.CREDITO)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty(), "Deve haver violação para descrição com mais de 500 caracteres");
+        assertFalse(violations.isEmpty(), "Deve haver violação para descricao com mais de 500 caracteres");
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("descricao")));
     }
+
+    // ─────────────────────────────────────────────
+    //  preco
+    // ─────────────────────────────────────────────
 
     @Test
     @DisplayName("Deve rejeitar quando preco é null")
@@ -106,7 +131,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(null)
-                .quantidade(10)
+                .quantidade(1)
                 .metodoPgto(MetodoPagamento.CREDITO)
                 .build();
 
@@ -116,17 +141,17 @@ class ProdutoRequestDTONegativeTests {
     }
 
     @Test
-    @DisplayName("Deve rejeitar quando preco é menor ou igual a zero")
-    void deveRejeitar_PrecoMenorIgualZero() {
+    @DisplayName("Deve rejeitar quando preco é zero")
+    void deveRejeitar_PrecoZero() {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(new BigDecimal("0.00"))
-                .quantidade(10)
+                .quantidade(1)
                 .metodoPgto(MetodoPagamento.CREDITO)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty(), "Deve haver violação para preco menor ou igual a 0");
+        assertFalse(violations.isEmpty(), "Deve haver violação para preco igual a 0");
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("preco")));
     }
 
@@ -135,8 +160,8 @@ class ProdutoRequestDTONegativeTests {
     void deveRejeitar_PrecoNegativo() {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
-                .preco(new BigDecimal("-100.00"))
-                .quantidade(10)
+                .preco(new BigDecimal("-0.01"))
+                .quantidade(1)
                 .metodoPgto(MetodoPagamento.CREDITO)
                 .build();
 
@@ -144,6 +169,10 @@ class ProdutoRequestDTONegativeTests {
         assertFalse(violations.isEmpty(), "Deve haver violação para preco negativo");
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("preco")));
     }
+
+    // ─────────────────────────────────────────────
+    //  quantidade
+    // ─────────────────────────────────────────────
 
     @Test
     @DisplayName("Deve rejeitar quando quantidade é null")
@@ -166,7 +195,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(new BigDecimal("100.00"))
-                .quantidade(-5)
+                .quantidade(-1)
                 .metodoPgto(MetodoPagamento.CREDITO)
                 .build();
 
@@ -175,18 +204,42 @@ class ProdutoRequestDTONegativeTests {
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("quantidade")));
     }
 
+    // ─────────────────────────────────────────────
+    //  metodoPgto
+    // ─────────────────────────────────────────────
+
     @Test
     @DisplayName("Deve rejeitar quando metodoPgto é null")
     void deveRejeitar_MetodoPgtoNull() {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(new BigDecimal("100.00"))
-                .quantidade(10)
+                .quantidade(1)
                 .metodoPgto(null)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty(), "Deve haver violação para metodoPgto null");
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("metodoPgto")));
+    }
+
+    // ─────────────────────────────────────────────
+    //  Múltiplas violações simultâneas
+    // ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("Deve rejeitar DTO completamente inválido com múltiplas violações")
+    void deveRejeitar_DtoCompletamenteInvalido() {
+        dto = ProdutoRequestDTO.builder()
+                .nome(null)
+                .descricao("a".repeat(501))
+                .preco(null)
+                .quantidade(null)
+                .metodoPgto(null)
+                .build();
+
+        Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
+        assertFalse(violations.isEmpty(), "Deve haver múltiplas violações");
+        assertTrue(violations.size() >= 4, "Devem existir ao menos 4 violações simultâneas");
     }
 }
