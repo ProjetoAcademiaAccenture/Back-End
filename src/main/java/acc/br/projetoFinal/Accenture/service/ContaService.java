@@ -11,16 +11,18 @@ import acc.br.projetoFinal.Accenture.model.Pedido;
 import acc.br.projetoFinal.Accenture.repository.ContaRepository;
 import acc.br.projetoFinal.Accenture.repository.ExtratoRepository;
 import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ContaService {
@@ -29,8 +31,8 @@ public class ContaService {
     private final ExtratoRepository extratoRepository;
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService; // <- adicionado
 
-    // Helper interno: grava uma linha no extrato
     private void registrarExtrato(Conta conta, TipoExtrato tipo, BigDecimal valor,
                                   BigDecimal saldoAntes, String descricao, Pedido pedido) {
         extratoRepository.save(Extrato.builder()
@@ -51,7 +53,6 @@ public class ContaService {
     }
 
     private Conta salvarConta(ContaRequestDTO dto) {
-        // Verify client exists and doesn't already have an account of this type
         var clienteExistente = clienteRepository.findById(dto.getClienteId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado"));
 
@@ -60,19 +61,29 @@ public class ContaService {
             throw new IllegalArgumentException("Cliente já possui uma conta");
         }
 
-        Conta newConta = new Conta();
-        newConta.setSaldo(gerarSaldo(100.00, 500.00));
-        newConta.setLimiteCredito(gerarLimiteCredito());
-        newConta.setNumeroConta(gerarNumeroConta());
-        newConta.setTipo(dto.getTipoConta());
-        newConta.setSenhaTransacao(
-            passwordEncoder.encode(dto.getSenhaTransacao())
-        );
-        newConta.setCliente(clienteExistente);
+        Conta novaConta = new Conta();
+        novaConta.setSaldo(gerarSaldo(100.00, 500.00));
+        novaConta.setLimiteCredito(gerarLimiteCredito());
+        novaConta.setNumeroConta(gerarNumeroConta());
+        novaConta.setTipo(dto.getTipoConta());
+        novaConta.setSenhaTransacao(passwordEncoder.encode(dto.getSenhaTransacao()));
+        novaConta.setCliente(clienteExistente);
 
-        return contaRepository.save(newConta);
+        Conta contaSalva = contaRepository.save(novaConta);
+        log.info("Conta criada com sucesso. ID: {}", contaSalva.getId());
+
+        // Envia email com os dados da conta após salvar
+        emailService.enviarDadosConta(
+                clienteExistente.getEmail(),
+                clienteExistente.getNome(),
+                contaSalva.getNumeroConta(),
+                contaSalva.getTipo().name()
+        );
+
+        return contaSalva;
     }
 
+    // ... restante dos métodos sem alteração
     @Transactional
     public void depositar(Long contaId, BigDecimal valor) {
         Conta conta = contaRepository.findById(contaId)
@@ -141,15 +152,11 @@ public class ContaService {
     }
 
     private BigDecimal gerarSaldo(double min, double max) {
-        // Gera um double aleatório no intervalo
         double randomDouble = ThreadLocalRandom.current().nextDouble(min, max);
-
-        // Converte para BigDecimal com 2 casas decimais e arredondamento padrão
-        return BigDecimal.valueOf(randomDouble)
-            .setScale(2, RoundingMode.HALF_UP);
+        return BigDecimal.valueOf(randomDouble).setScale(2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal gerarLimiteCredito() {
-        return gerarSaldo (1000.00, 5000.00);
+        return gerarSaldo(1000.00, 5000.00);
     }
 }

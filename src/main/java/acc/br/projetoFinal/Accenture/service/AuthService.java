@@ -2,7 +2,6 @@ package acc.br.projetoFinal.Accenture.service;
 
 import acc.br.projetoFinal.Accenture.dto.request.ClienteRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.response.AuthResponseDTO;
-import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
 import acc.br.projetoFinal.Accenture.model.Cliente;
 import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
 import acc.br.projetoFinal.Accenture.security.JwtService;
@@ -20,6 +19,7 @@ public class AuthService {
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final EmailService emailService; // <- adicionado
 
     @Transactional
     public AuthResponseDTO register(ClienteRequestDTO dto) {
@@ -34,33 +34,28 @@ public class AuthService {
             throw new IllegalArgumentException("Email já cadastrado");
         }
 
-        try {
-            Cliente cliente = Cliente.builder()
-                    .nome(dto.getNome())
-                    .email(dto.getEmail())
-                    .cpf(dto.getCpf())
-                    .telefone(dto.getTelefone())
-                    .senha(passwordEncoder.encode(dto.getSenha()))
-                    .build();
+        Cliente cliente = Cliente.builder()
+                .nome(dto.getNome())
+                .email(dto.getEmail())
+                .cpf(dto.getCpf())
+                .telefone(dto.getTelefone())
+                .senha(passwordEncoder.encode(dto.getSenha()))
+                .build();
 
-            Cliente salvo = clienteRepository.save(cliente);
-            log.info("Cliente registrado com sucesso. ID: {}", salvo.getId());
+        Cliente salvo = clienteRepository.save(cliente);
+        log.info("Cliente registrado com sucesso. ID: {}", salvo.getId());
 
-            String token = jwtService.gerarToken(salvo);
+        // Email de boas-vindas ao cliente
+        emailService.enviarBoasVindas(salvo.getEmail(), salvo.getNome());
 
-            return AuthResponseDTO.builder()
-                    .token(token)
-                    .clienteId(salvo.getId())
-                    .nome(salvo.getNome())
-                    .email(salvo.getEmail())
-                    .tipoCliente(salvo.getTipoCliente().name())
-                    .build();
+        String token = jwtService.gerarToken(salvo);
 
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Erro inesperado ao registrar cliente: {}", e.getMessage(), e);
-            throw new RuntimeException("Erro ao registrar cliente. Tente novamente mais tarde.");
-        }
+        return AuthResponseDTO.builder()
+                .token(token)
+                .clienteId(salvo.getId())
+                .nome(salvo.getNome())
+                .email(salvo.getEmail())
+                .tipoCliente(salvo.getTipoCliente().name())
+                .build();
     }
 }
