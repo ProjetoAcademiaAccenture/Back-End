@@ -49,6 +49,7 @@ public class JwtService {
 
 		return Jwts.builder()
 				.subject(conta.getNumeroConta())
+				.claim("role", "ROLE_CLIENTE")  // ← adicionado
 				.claim("tipo", conta.getTipo().name())
 				.issuedAt(now)
 				.expiration(exp)
