@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import java.net.URI;
 import java.util.List;
 
@@ -24,6 +25,11 @@ public class ProdutoController {
         return ResponseEntity.ok(produtoService.listarTodos());
     }
 
+    @GetMapping("categoria/{categoria}")
+    public ResponseEntity<List<ProdutoResponseDTO>> listarPorCategoria(@RequestParam String categoria) {
+        return ResponseEntity.ok(produtoService.listarPorCategoria(categoria));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ProdutoResponseDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(produtoService.buscarPorId(id));
@@ -33,7 +39,9 @@ public class ProdutoController {
     public ResponseEntity<ProdutoResponseDTO> criar(@RequestBody @Valid ProdutoRequestDTO dto) {
         ProdutoResponseDTO criado = produtoService.criar(dto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}").buildAndExpand(criado.getId()).toUri();
+            .path("/{id}")
+            .buildAndExpand(criado.getId())
+            .toUri();
         return ResponseEntity.created(location).body(criado);
     }
 
