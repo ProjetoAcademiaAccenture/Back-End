@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import java.net.URI;
 import java.util.List;
 
@@ -39,7 +40,9 @@ public class ClienteController {
     public ResponseEntity<ClienteResponseDTO> criar(@RequestBody @Valid ClienteRequestDTO dto) {
         ClienteResponseDTO criado = clienteService.criar(dto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}").buildAndExpand(criado.getId()).toUri();
+            .path("/{id}")
+            .buildAndExpand(criado.getId())
+            .toUri();
         return ResponseEntity.created(location).body(criado);
     }
 
