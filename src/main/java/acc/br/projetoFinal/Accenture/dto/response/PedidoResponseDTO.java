@@ -1,5 +1,6 @@
 package acc.br.projetoFinal.Accenture.dto.response;
 
+import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
 import acc.br.projetoFinal.Accenture.enums.StatusPedido;
 import acc.br.projetoFinal.Accenture.model.Pedido;
 import lombok.*;
@@ -41,5 +42,13 @@ public class PedidoResponseDTO {
                 : List.of())
             .pagamento(pedido.getPagamento() != null ? PagamentoResponseDTO.fromEntity(pedido.getPagamento()) : null)
             .build();
+    }
+
+    public static PedidoResponseDTO fromEntity(Pedido pedido, MetodoPagamento metodoPagamento) {
+        PedidoResponseDTO dto = fromEntity(pedido);
+        dto.setPagamento(PagamentoResponseDTO.builder()
+            .metodoPagamento(metodoPagamento)
+            .build());
+        return dto;
     }
 }

@@ -16,4 +16,7 @@ public class PedidoRequestDTO {
 
     @NotEmpty(message = "Pedido deve ter pelo menos um item")
     private List<ItemPedidoRequestDTO> itens;
+
+    @NotEmpty(message = "Metodo de pagamento é obrigatório")
+    private String metodoPagamento;
 }

@@ -3,6 +3,7 @@ package acc.br.projetoFinal.Accenture.service;
 import acc.br.projetoFinal.Accenture.dto.request.ItemPedidoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.request.PedidoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.response.PedidoResponseDTO;
+import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
 import acc.br.projetoFinal.Accenture.enums.StatusPedido;
 import acc.br.projetoFinal.Accenture.exception.CancelamentoException;
 import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +35,8 @@ public class PedidoService {
     private final ProdutoRepository produtoRepository;
     private final EstoqueService estoqueService;
     private final PagamentoService pagamentoService;
+
+    public static final BigDecimal DESCONTO_PIX_BOLETO = new BigDecimal("0.05");
 
     @Transactional
     public PedidoResponseDTO criar(PedidoRequestDTO dto) {
@@ -73,18 +77,23 @@ public class PedidoService {
 
         pedido.setItens(itens);
         pedido.setValorBruto(valorBruto);
-        pedido.setDesconto(BigDecimal.ZERO);
-        pedido.setValorFinal(valorBruto);
+        MetodoPagamento metodo = MetodoPagamento.valueOf(dto.getMetodoPagamento());
+        BigDecimal desconto = pagamentoService.calcularDesconto(
+            metodo,
+            valorBruto
+        );
+        pedido.setDesconto(desconto);
+        pedido.setValorFinal(valorBruto.subtract(desconto));
 
         Pedido salvo = pedidoRepository.save(pedido);
 
         estoqueService.reservarItens(salvo);
         salvo.setStatus(StatusPedido.RESERVADO);
+
+        pagamentoService.criarParaPedido(salvo, dto.getMetodoPagamento());
         salvo = pedidoRepository.save(salvo);
 
-        pagamentoService.criarParaPedido(salvo);
-
-        return PedidoResponseDTO.fromEntity(salvo);
+        return PedidoResponseDTO.fromEntity(salvo, metodo);
     }
 
     public PedidoResponseDTO buscarPorId(Long id) {

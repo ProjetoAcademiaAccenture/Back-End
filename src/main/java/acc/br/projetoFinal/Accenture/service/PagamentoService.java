@@ -26,11 +26,11 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import static acc.br.projetoFinal.Accenture.service.PedidoService.DESCONTO_PIX_BOLETO;
+
 @Service
 @RequiredArgsConstructor
 public class PagamentoService {
-
-	private static final BigDecimal DESCONTO_PIX_BOLETO = new BigDecimal("0.05");
 	private static final BigDecimal MULTA_ATRASO_BOLETO = new BigDecimal("0.02");
 
 	private final PagamentoRepository pagamentoRepository;
@@ -42,25 +42,25 @@ public class PagamentoService {
 	private final EstoqueService estoqueService;
 
 	@Transactional
-	public PagamentoResponseDTO criarParaPedido(Pedido pedido) {
+	public PagamentoResponseDTO criarParaPedido(Pedido pedido, String metodoPagamento) {
+		MetodoPagamento metodo = MetodoPagamento.valueOf(metodoPagamento.toUpperCase());
 
 		Pagamento pagamento = Pagamento.builder()
 				.pedido(pedido)
 				.status(StatusPagamento.PENDENTE)
+				.metodo(metodo)
 				.valorBruto(pedido.getValorBruto())
-				.desconto(BigDecimal.ZERO)
-				.valorFinal(pedido.getValorBruto())
+				.desconto(pedido.getDesconto())
+				.valorFinal(pedido.getValorFinal())
 				.dataCriacao(LocalDateTime.now())
 				.build();
 
 		Pagamento salvo = pagamentoRepository.save(pagamento);
-
 		return PagamentoResponseDTO.fromEntity(salvo);
 	}
 
 	@Transactional
 	public PagamentoResponseDTO processar(PagamentoRequestDTO dto) {
-
 		Pagamento pagamento = pagamentoRepository.findById(dto.getPagamentoId())
 				.orElseThrow(() -> new RecursoNaoEncontradoException("Pagamento não encontrado"));
 
@@ -90,15 +90,8 @@ public class PagamentoService {
 		);
 
 		BigDecimal valorBruto = pedido.getValorBruto();
-
-		BigDecimal desconto = calcularDesconto(
-				metodo,
-				valorBruto
-		);
-
-		BigDecimal valorFinal = valorBruto
-				.subtract(desconto)
-				.setScale(2, RoundingMode.HALF_UP);
+		BigDecimal desconto = pedido.getDesconto();
+		BigDecimal valorFinal = pagamento.getValorFinal();
 
 		TentativaPagamento tentativa = TentativaPagamento.builder()
 				.pagamento(pagamento)
@@ -109,11 +102,9 @@ public class PagamentoService {
 				.build();
 
 		try {
-
 			String descricao = "Pagamento pedido #" + pedido.getId();
 
 			if (metodo == MetodoPagamento.CREDITO) {
-
 				contaService.debitarLimiteCredito(
 						contaCliente,
 						valorFinal,
@@ -121,14 +112,12 @@ public class PagamentoService {
 						pagamento,
 						descricao
 				);
-
 			} else {
 				if (contaCliente.getSaldo().compareTo(valorFinal) < 0) {
 					throw new SaldoInsuficienteException(
 							"Saldo insuficiente"
 					);
 				}
-
 				contaService.debitarSaldo(
 						contaCliente,
 						valorFinal,
@@ -137,7 +126,6 @@ public class PagamentoService {
 						descricao
 				);
 			}
-
 			contaService.creditarSaldo(
 					contaEmpresa,
 					valorFinal,
@@ -161,7 +149,6 @@ public class PagamentoService {
 			tentativa.setMensagem("Pagamento aprovado");
 
 		} catch (RuntimeException ex) {
-
 			pagamento.setStatus(StatusPagamento.RECUSADO);
 
 			tentativa.setStatus(StatusPagamento.RECUSADO);
@@ -396,24 +383,6 @@ public class PagamentoService {
 		return PagamentoResponseDTO.fromEntity(pagamento);
 	}
 
-	private BigDecimal calcularDesconto(
-			MetodoPagamento metodo,
-			BigDecimal valorBruto
-	) {
-
-		if (
-				metodo == MetodoPagamento.PIX
-						|| metodo == MetodoPagamento.BOLETO
-		) {
-
-			return valorBruto
-					.multiply(DESCONTO_PIX_BOLETO)
-					.setScale(2, RoundingMode.HALF_UP);
-		}
-
-		return BigDecimal.ZERO;
-	}
-
 	private String gerarCodigoBarras() {
 
 		StringBuilder codigo = new StringBuilder();
@@ -423,5 +392,21 @@ public class PagamentoService {
 		}
 
 		return codigo.toString();
+	}
+
+	protected BigDecimal calcularDesconto(
+			MetodoPagamento metodo,
+			BigDecimal valorBruto
+	) {
+		if (
+				metodo == MetodoPagamento.PIX
+						|| metodo == MetodoPagamento.BOLETO
+		) {
+			return valorBruto
+					.multiply(DESCONTO_PIX_BOLETO)
+					.setScale(2, RoundingMode.HALF_UP);
+		}
+
+		return BigDecimal.ZERO;
 	}
 }

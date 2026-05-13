@@ -44,7 +44,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowedOrigins(List.of("http://localhost:3000"));
-		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));
 		config.setAllowCredentials(true);
 
@@ -72,9 +72,10 @@ public class SecurityConfig {
 						.requestMatchers("/api/clientes/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
 
 						// --- Pedidos ---
-						.requestMatchers(HttpMethod.POST, "/api/pedidos").hasAuthority("ROLE_USER")
-						.requestMatchers(HttpMethod.GET, "/api/pedidos/cliente/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-						.requestMatchers("/api/pedidos/**").hasAuthority("ROLE_ADMIN")
+								.requestMatchers(HttpMethod.POST, "/api/pedidos").hasAuthority("ROLE_USER")
+								.requestMatchers(HttpMethod.GET, "/api/pedidos/cliente/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+								.requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/cancelar").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+								.requestMatchers("/api/pedidos/**").hasAuthority("ROLE_ADMIN")
 
 						// ... aplique o mesmo para os demais (Pagamentos, Contas, etc)
 						.requestMatchers("/api/pagamentos/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
