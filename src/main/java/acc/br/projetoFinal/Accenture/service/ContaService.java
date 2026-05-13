@@ -7,149 +7,222 @@ import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
 import acc.br.projetoFinal.Accenture.exception.SaldoInsuficienteException;
 import acc.br.projetoFinal.Accenture.model.Conta;
 import acc.br.projetoFinal.Accenture.model.Extrato;
+import acc.br.projetoFinal.Accenture.model.Pagamento;
 import acc.br.projetoFinal.Accenture.model.Pedido;
-import acc.br.projetoFinal.Accenture.repository.ContaRepository;
-import acc.br.projetoFinal.Accenture.repository.ExtratoRepository;
 import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import acc.br.projetoFinal.Accenture.repository.ContaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
 public class ContaService {
 
+    private static final String NUMERO_CONTA_EMPRESA = "1234567-8";
+    private static final BigDecimal LIMITE_INICIAL = new BigDecimal("1000.00");
+
     private final ContaRepository contaRepository;
-    private final ExtratoRepository extratoRepository;
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
-
-    // Helper interno: grava uma linha no extrato
-    private void registrarExtrato(Conta conta, TipoExtrato tipo, BigDecimal valor,
-                                  BigDecimal saldoAntes, String descricao, Pedido pedido) {
-        extratoRepository.save(Extrato.builder()
-                .conta(conta)
-                .tipo(tipo)
-                .valor(valor)
-                .saldoAntes(saldoAntes)
-                .saldoDepois(conta.getSaldo())
-                .descricao(descricao)
-                .pedido(pedido)
-                .dataHora(LocalDateTime.now())
-                .build());
-    }
+    private final ExtratoService extratoService;
 
     @Transactional
     public Conta criarEntidade(ContaRequestDTO dto) {
-        return salvarConta(dto);
-    }
+        var cliente = clienteRepository.findById(dto.getClienteId())
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado"));
 
-    private Conta salvarConta(ContaRequestDTO dto) {
-        // Verify client exists and doesn't already have an account of this type
-        var clienteExistente = clienteRepository.findById(dto.getClienteId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado"));
-
-        var contaExistente = contaRepository.findByClienteId(dto.getClienteId());
-        if (contaExistente.isPresent()) {
+        if (contaRepository.findByClienteId(dto.getClienteId()).isPresent()) {
             throw new IllegalArgumentException("Cliente já possui uma conta");
         }
 
-        Conta newConta = new Conta();
-        newConta.setSaldo(gerarSaldo(100.00, 500.00));
-        newConta.setLimiteCredito(gerarLimiteCredito());
-        newConta.setNumeroConta(gerarNumeroConta());
-        newConta.setTipo(dto.getTipoConta());
-        newConta.setSenhaTransacao(
-            passwordEncoder.encode(dto.getSenhaTransacao())
+        Conta conta = Conta.builder()
+            .numeroConta(gerarNumeroConta())
+            .senhaTransacao(passwordEncoder.encode(dto.getSenhaTransacao()))
+            .saldo(BigDecimal.ZERO)
+            .limiteCreditoDisponivel(BigDecimal.ZERO)
+            .tipo(dto.getTipoConta())
+            .cliente(cliente)
+            .build();
+
+        conta = contaRepository.save(conta);
+
+        creditarLimiteCredito(
+            conta,
+            LIMITE_INICIAL,
+            null,
+            null,
+            "Limite inicial da conta"
         );
-        newConta.setCliente(clienteExistente);
 
-        return contaRepository.save(newConta);
+        return conta;
+    }
+
+    public Conta buscarPorId(Long id) {
+        return contaRepository.findById(id)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Conta não encontrada"));
+    }
+
+    public Conta buscarContaDoCliente(Long clienteId) {
+        return contaRepository.findByClienteId(clienteId)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Conta não encontrada"));
+    }
+
+    public Conta buscarContaEmpresa() {
+        return contaRepository.findByNumeroConta(NUMERO_CONTA_EMPRESA)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Conta empresa não encontrada"));
+    }
+
+    public void validarSenhaTransacao(Conta conta, String senhaDigitada) {
+        if (!passwordEncoder.matches(senhaDigitada, conta.getSenhaTransacao())) {
+            throw new IllegalArgumentException("Senha de transação inválida");
+        }
     }
 
     @Transactional
-    public void depositar(Long contaId, BigDecimal valor) {
-        Conta conta = contaRepository.findById(contaId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Conta não encontrada"));
+    public Conta depositar(Long contaId, BigDecimal valor) {
+        Conta conta = buscarPorId(contaId);
+
         BigDecimal saldoAntes = conta.getSaldo();
-        conta.setSaldo(saldoAntes.add(valor));
+        BigDecimal saldoDepois = saldoAntes.add(valor);
+
+        conta.setSaldo(saldoDepois);
         contaRepository.save(conta);
-        registrarExtrato(conta, TipoExtrato.CREDITO, valor, saldoAntes,
-                "Depósito em conta", null);
+
+        extratoService.registrar(
+            conta,
+            TipoExtrato.CREDITO,
+            valor,
+            saldoAntes,
+            saldoDepois,
+            "Depósito em conta",
+            null,
+            null
+        );
+
+        return conta;
     }
 
     @Transactional
-    public void transferir(Long clienteId, BigDecimal valor, Pedido pedido) {
-        Conta contaCliente = contaRepository.findByClienteId(clienteId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Conta não encontrada"));
-        Conta contaEmpresa = contaRepository.findByTipo(TipoConta.JURIDICA)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Conta empresa não encontrada"));
+    public void debitarSaldo(Conta conta, BigDecimal valor, Pedido pedido, Pagamento pagamento, String descricao) {
+        BigDecimal saldoAntes = conta.getSaldo();
 
-        if (contaCliente.getSaldo().compareTo(valor) < 0)
-            throw new SaldoInsuficienteException("Saldo insuficiente: " + contaCliente.getSaldo());
+        if (saldoAntes.compareTo(valor) < 0) {
+            throw new SaldoInsuficienteException("Saldo insuficiente");
+        }
 
-        BigDecimal antesCliente = contaCliente.getSaldo();
-        BigDecimal antesEmpresa = contaEmpresa.getSaldo();
+        BigDecimal saldoDepois = saldoAntes.subtract(valor);
+        conta.setSaldo(saldoDepois);
+        contaRepository.save(conta);
 
-        contaCliente.setSaldo(antesCliente.subtract(valor));
-        contaEmpresa.setSaldo(antesEmpresa.add(valor));
-        contaRepository.save(contaCliente);
-        contaRepository.save(contaEmpresa);
-
-        String desc = "Pagamento pedido #" + pedido.getId();
-        registrarExtrato(contaCliente, TipoExtrato.DEBITO, valor, antesCliente, desc, pedido);
-        registrarExtrato(contaEmpresa, TipoExtrato.CREDITO, valor, antesEmpresa, desc, pedido);
+        extratoService.registrar(
+            conta,
+            TipoExtrato.DEBITO,
+            valor,
+            saldoAntes,
+            saldoDepois,
+            descricao,
+            pedido,
+            pagamento
+        );
     }
 
     @Transactional
-    public void estornarComMulta(Long clienteId, BigDecimal estorno, BigDecimal multa, Pedido pedido) {
-        Conta contaCliente = contaRepository.findByClienteId(clienteId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Conta não encontrada"));
-        Conta contaEmpresa = contaRepository.findByTipo(TipoConta.JURIDICA)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Conta empresa não encontrada"));
+    public void creditarSaldo(Conta conta, BigDecimal valor, Pedido pedido, Pagamento pagamento, String descricao) {
+        BigDecimal saldoAntes = conta.getSaldo();
+        BigDecimal saldoDepois = saldoAntes.add(valor);
 
-        BigDecimal antesCliente = contaCliente.getSaldo();
-        BigDecimal antesEmpresa = contaEmpresa.getSaldo();
+        conta.setSaldo(saldoDepois);
+        contaRepository.save(conta);
 
-        contaCliente.setSaldo(antesCliente.add(estorno));
-        contaEmpresa.setSaldo(antesEmpresa.subtract(estorno));
-        contaRepository.save(contaCliente);
-        contaRepository.save(contaEmpresa);
+        extratoService.registrar(
+            conta,
+            TipoExtrato.CREDITO,
+            valor,
+            saldoAntes,
+            saldoDepois,
+            descricao,
+            pedido,
+            pagamento
+        );
+    }
 
-        String descEstorno = "Estorno pedido #" + pedido.getId();
-        String descMulta = "Multa cancelamento pedido #" + pedido.getId();
-        registrarExtrato(contaCliente, TipoExtrato.ESTORNO, estorno, antesCliente, descEstorno, pedido);
-        registrarExtrato(contaEmpresa, TipoExtrato.ESTORNO, estorno, antesEmpresa, descEstorno, pedido);
-        registrarExtrato(contaEmpresa, TipoExtrato.MULTA, multa, contaEmpresa.getSaldo(), descMulta, pedido);
+    @Transactional
+    public void debitarLimiteCredito(Conta conta, BigDecimal valor, Pedido pedido, Pagamento pagamento, String descricao) {
+        BigDecimal antes = conta.getLimiteCreditoDisponivel();
+
+        if (antes.compareTo(valor) < 0) {
+            throw new SaldoInsuficienteException("Limite de crédito insuficiente");
+        }
+
+        BigDecimal depois = antes.subtract(valor);
+        conta.setLimiteCreditoDisponivel(depois);
+        contaRepository.save(conta);
+
+        extratoService.registrar(
+            conta,
+            TipoExtrato.DEBITO,
+            valor,
+            antes,
+            depois,
+            descricao,
+            pedido,
+            pagamento
+        );
+    }
+
+    @Transactional
+    public void creditarLimiteCredito(Conta conta, BigDecimal valor, Pedido pedido, Pagamento pagamento, String descricao) {
+        BigDecimal antes = conta.getLimiteCreditoDisponivel();
+        BigDecimal depois = antes.add(valor);
+
+        conta.setLimiteCreditoDisponivel(depois);
+        contaRepository.save(conta);
+
+        extratoService.registrar(
+            conta,
+            TipoExtrato.CREDITO,
+            valor,
+            antes,
+            depois,
+            descricao,
+            pedido,
+            pagamento
+        );
+    }
+
+    @Transactional
+    public Conta creditarLimiteCredito(Long contaId, BigDecimal valor) {
+        Conta conta = buscarPorId(contaId);
+        BigDecimal limiteAntes = conta.getLimiteCreditoDisponivel();
+        BigDecimal limiteDepois = limiteAntes.add(valor);
+        conta.setLimiteCreditoDisponivel(limiteDepois);
+        contaRepository.save(conta);
+        extratoService.registrar(
+            conta,
+            TipoExtrato.CREDITO,
+            valor,
+            limiteAntes,
+            limiteDepois,
+            "Limite de crédito adicionado",
+            null,
+            null
+        );
+
+        return conta;
     }
 
     private String gerarNumeroConta() {
         StringBuilder sb = new StringBuilder();
-        int[] conta = new int[6];
-        for (int i = 0; i < conta.length; i++) {
-            conta[i] = (int) (Math.random() * 100);
-            sb.append(conta[i]);
+        for (int i = 0; i < 6; i++) {
+            sb.append((int) (Math.random() * 10));
         }
         sb.append("-").append((int) (Math.random() * 10));
         return sb.toString();
-    }
-
-    private BigDecimal gerarSaldo(double min, double max) {
-        // Gera um double aleatório no intervalo
-        double randomDouble = ThreadLocalRandom.current().nextDouble(min, max);
-
-        // Converte para BigDecimal com 2 casas decimais e arredondamento padrão
-        return BigDecimal.valueOf(randomDouble)
-            .setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal gerarLimiteCredito() {
-        return gerarSaldo (1000.00, 5000.00);
     }
 }
