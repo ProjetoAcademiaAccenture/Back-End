@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "extrato")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -22,27 +23,29 @@ public class Extrato {
     @JoinColumn(name = "conta_id", nullable = false)
     private Conta conta;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private TipoExtrato tipo;
-
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal valor;
-
-    @Column(name = "saldo_antes", nullable = false, precision = 10, scale = 2)
-    private BigDecimal saldoAntes;
-
-    @Column(name = "saldo_depois", nullable = false, precision = 10, scale = 2)
-    private BigDecimal saldoDepois;
-
-    @Column(length = 255)
-    private String descricao;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pedido_id")
     private Pedido pedido;
 
-    @Column(name = "data_hora", nullable = false)
-    @Builder.Default
-    private LocalDateTime dataHora = LocalDateTime.now();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pagamento_id")
+    private Pagamento pagamento;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoExtrato tipo;
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal valor;
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal saldoAntes;
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal saldoDepois;
+
+    private String descricao;
+
+    @Column(nullable = false)
+    private LocalDateTime dataHora;
 }
