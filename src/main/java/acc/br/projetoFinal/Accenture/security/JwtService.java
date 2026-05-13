@@ -49,7 +49,7 @@ public class JwtService {
 
 		return Jwts.builder()
 				.subject(conta.getNumeroConta())
-				.claim("tipo", conta.getTipo().name())
+				.claim("role", conta.getTipo().name())
 				.issuedAt(now)
 				.expiration(exp)
 				.signWith(getSigningKey())

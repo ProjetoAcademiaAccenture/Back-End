@@ -30,6 +30,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
+
 @Slf4j
 @RestController
 @RequestMapping("/auth")
@@ -89,6 +91,7 @@ public class AuthController {
                 .contaId(conta.getId())
                 .numeroConta(conta.getNumeroConta())
                 .saldo(conta.getSaldo().toString())
+                .limiteCeditoDisponivel(conta.getLimiteCreditoDisponivel().toString())
                 .tipoConta(conta.getTipo().name())
                 .build());
     }
@@ -112,6 +115,10 @@ public class AuthController {
     public ResponseEntity<AuthBankResponseDTO> registerBank(@RequestBody @Valid ContaRequestDTO dto) {
         Conta conta = contaService.criarEntidade(dto);
         String token = jwtService.gerarToken(conta.getCliente());
+        BigDecimal valorDeposito = new BigDecimal("1000.00"); // valor fixo para depósito inicial
+        BigDecimal limiteCreditoDisponivel = new BigDecimal("2000.00"); // valor fixo para limite de crédito
+        conta = (contaService.depositar(conta.getId(), valorDeposito));
+        conta = (contaService.creditarLimiteCredito(conta.getId(), limiteCreditoDisponivel));
         log.info("Nova conta bancária registrada com sucesso: {}", conta.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(AuthBankResponseDTO.builder()
@@ -120,6 +127,7 @@ public class AuthController {
                 .contaId(conta.getId())
                 .numeroConta(conta.getNumeroConta())
                 .saldo(conta.getSaldo().toString())
+                .limiteCeditoDisponivel(conta.getLimiteCreditoDisponivel().toString())
                 .tipoConta(conta.getTipo().name())
                 .build());
     }
