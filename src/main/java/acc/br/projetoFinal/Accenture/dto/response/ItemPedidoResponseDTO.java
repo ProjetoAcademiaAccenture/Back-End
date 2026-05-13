@@ -2,6 +2,7 @@ package acc.br.projetoFinal.Accenture.dto.response;
 
 import acc.br.projetoFinal.Accenture.model.ItemPedido;
 import lombok.*;
+
 import java.math.BigDecimal;
 
 @Data
@@ -19,12 +20,12 @@ public class ItemPedidoResponseDTO {
 
     public static ItemPedidoResponseDTO fromEntity(ItemPedido item) {
         return ItemPedidoResponseDTO.builder()
-                .id(item.getId())
-                .produtoId(item.getProduto().getId())
-                .produtoNome(item.getProduto().getNome())
-                .quantidade(item.getQuantidade())
-                .precoUnitario(item.getPrecoUnitario())
-                .subtotal(item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade())))
-                .build();
+            .id(item.getId())
+            .produtoId(item.getProduto().getId())
+            .produtoNome(item.getProduto().getNome())
+            .quantidade(item.getQuantidade())
+            .precoUnitario(item.getPrecoUnitario())
+            .subtotal(item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade())))
+            .build();
     }
 }
