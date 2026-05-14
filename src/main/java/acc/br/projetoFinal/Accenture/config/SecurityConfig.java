@@ -74,8 +74,12 @@ public class SecurityConfig {
 						// --- Pedidos ---
 								.requestMatchers(HttpMethod.POST, "/api/pedidos").hasAuthority("ROLE_USER")
 								.requestMatchers(HttpMethod.GET, "/api/pedidos/cliente/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+								.requestMatchers(HttpMethod.GET, "/api/pedidos/*").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
 								.requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/cancelar").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
 								.requestMatchers("/api/pedidos/**").hasAuthority("ROLE_ADMIN")
+
+						// --- Boletos ---
+						.requestMatchers("/api/boletos/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
 
 						// ... aplique o mesmo para os demais (Pagamentos, Contas, etc)
 						.requestMatchers("/api/pagamentos/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
