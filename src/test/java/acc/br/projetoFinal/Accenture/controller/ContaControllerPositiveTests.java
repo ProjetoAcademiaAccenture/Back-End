@@ -1,6 +1,5 @@
 package acc.br.projetoFinal.Accenture.controller;
 
-import acc.br.projetoFinal.Accenture.dto.response.ContaResponseDTO;
 import acc.br.projetoFinal.Accenture.dto.response.ExtratoResponseDTO;
 import acc.br.projetoFinal.Accenture.enums.TipoExtrato;
 import acc.br.projetoFinal.Accenture.enums.TipoConta;
@@ -72,7 +71,6 @@ class ContaControllerPositiveTests {
         conta.setSaldo(new BigDecimal("5000.00"));
         conta.setTipo(TipoConta.CORRENTE);
         conta.setCliente(cliente);
-        conta.setAtivo(true);
 
         when(contaRepository.findById(1L)).thenReturn(Optional.of(conta));
 
@@ -98,7 +96,6 @@ class ContaControllerPositiveTests {
         conta.setSaldo(new BigDecimal("5000.00"));
         conta.setTipo(TipoConta.CORRENTE);
         conta.setCliente(cliente);
-        conta.setAtivo(true);
 
         when(contaRepository.findById(1L)).thenReturn(Optional.of(conta));
 

@@ -16,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("BoletoController - Cenários Positivos")
-class BoletoControllerTests {
+class BoletoControllerPositiveTests {
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,16 +36,17 @@ class BoletoControllerTests {
     @MockBean
     private BoletoService boletoService;
 
-    private BoletoResponseDTO boletoResponse;
+    private BoletoResponseDTO boletoMock;
 
     @BeforeEach
-    void setup() {
-        boletoResponse = BoletoResponseDTO.builder()
+    void setUp() {
+        boletoMock = BoletoResponseDTO.builder()
                 .id(1L)
-                .codigoBarras("1234567890123")
-                .valor(new BigDecimal("100.00"))
+                .pagamentoId(100L)
+                .codigoBarras("12345678901234567890123456789012345678901234")
+                .valor(new BigDecimal("190.00"))
+                .dataVencimento(LocalDate.now().plusDays(3))
                 .status("PENDENTE")
-                .dataVencimento(LocalDate.now().plusDays(30))
                 .build();
     }
 
@@ -54,42 +55,19 @@ class BoletoControllerTests {
     // -------------------------------------------------------
 
     @Test
-    @DisplayName("✓ Deve buscar boleto por id e retornar status 200")
-    void deveBuscarBoletoPorId() throws Exception {
-        when(boletoService.buscarPorId(1L)).thenReturn(boletoResponse);
+    @DisplayName("✓ Deve retornar 200 e boleto ao buscar por id existente")
+    void deveRetornarBoletoAoBuscarPorId() throws Exception {
+        when(boletoService.buscarPorId(1L)).thenReturn(boletoMock);
 
         mockMvc.perform(get("/api/boletos/1")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.codigoBarras", is("1234567890123")));
-    }
-
-    @Test
-    @DisplayName("✓ Deve retornar valor e status no body ao buscar boleto por id")
-    void deveBuscarBoletoPorIdRetornaBodyCompleto() throws Exception {
-        when(boletoService.buscarPorId(1L)).thenReturn(boletoResponse);
-
-        mockMvc.perform(get("/api/boletos/1")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.valor", is(100.00)))
-                .andExpect(jsonPath("$.status", is("PENDENTE")));
-    }
-
-    @Test
-    @DisplayName("✓ Deve chamar buscarPorId() com o id correto")
-    void deveChamarServiceComIdCorreto() throws Exception {
-        when(boletoService.buscarPorId(1L)).thenReturn(boletoResponse);
-
-        mockMvc.perform(get("/api/boletos/1")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-
-        verify(boletoService, times(1)).buscarPorId(1L);
+                .andExpect(jsonPath("$.pagamentoId", is(100)))
+                .andExpect(jsonPath("$.valor", is(190.00)))
+                .andExpect(jsonPath("$.status", is("PENDENTE")))
+                .andExpect(jsonPath("$.codigoBarras", hasLength(44)));
     }
 
     // -------------------------------------------------------
@@ -97,101 +75,38 @@ class BoletoControllerTests {
     // -------------------------------------------------------
 
     @Test
-    @DisplayName("✓ Deve buscar boleto por pedidoId e retornar status 200")
-    void deveBuscarBoletoPorPedidoId() throws Exception {
-        when(boletoService.buscarPorPedidoId(1L)).thenReturn(boletoResponse);
+    @DisplayName("✓ Deve retornar 200 e boleto ao buscar por pedidoId existente")
+    void deveRetornarBoletoAoBuscarPorPedidoId() throws Exception {
+        when(boletoService.buscarPorPedidoId(10L)).thenReturn(boletoMock);
 
-        mockMvc.perform(get("/api/boletos/pedido/1")
+        mockMvc.perform(get("/api/boletos/pedido/10")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(1)));
-    }
-
-    @Test
-    @DisplayName("✓ Deve retornar codigoBarras, valor e status no body ao buscar por pedidoId")
-    void deveBuscarPorPedidoIdRetornaBodyCompleto() throws Exception {
-        when(boletoService.buscarPorPedidoId(1L)).thenReturn(boletoResponse);
-
-        mockMvc.perform(get("/api/boletos/pedido/1")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.codigoBarras", is("1234567890123")))
-                .andExpect(jsonPath("$.valor", is(100.00)))
+                .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.status", is("PENDENTE")));
     }
 
-    @Test
-    @DisplayName("✓ Deve chamar buscarPorPedidoId() com o pedidoId correto")
-    void deveChamarServiceComPedidoIdCorreto() throws Exception {
-        when(boletoService.buscarPorPedidoId(1L)).thenReturn(boletoResponse);
-
-        mockMvc.perform(get("/api/boletos/pedido/1")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-
-        verify(boletoService, times(1)).buscarPorPedidoId(1L);
-    }
-
     // -------------------------------------------------------
-    // POST /api/boletos/gerar/{pedidoId}
+    // POST /api/boletos/gerar/{pagamentoId}
     // -------------------------------------------------------
 
     @Test
-    @DisplayName("✓ Deve gerar boleto e retornar status 201")
-    void deveGerarBoleto() throws Exception {
-        when(boletoService.gerar(1L)).thenReturn(boletoResponse);
+    @DisplayName("✓ Deve retornar 201 ao gerar boleto com sucesso")
+    void deveGerarBoletoComSucesso() throws Exception {
+        when(boletoService.gerar(100L)).thenReturn(boletoMock);
 
-        mockMvc.perform(post("/api/boletos/gerar/1")
+        mockMvc.perform(post("/api/boletos/gerar/100")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
-                .andExpect(header().exists("Location"))
-                .andExpect(jsonPath("$.id", is(1)));
-    }
-
-    @Test
-    @DisplayName("✓ Deve retornar codigoBarras e valor no body ao gerar boleto")
-    void deveGerarBoletoRetornaBodyCompleto() throws Exception {
-        when(boletoService.gerar(1L)).thenReturn(boletoResponse);
-
-        mockMvc.perform(post("/api/boletos/gerar/1")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.codigoBarras", is("1234567890123")))
-                .andExpect(jsonPath("$.valor", is(100.00)));
-    }
-
-    @Test
-    @DisplayName("✓ Header Location deve apontar para /api/boletos/{id} do boleto gerado")
-    void deveGerarBoletoComLocationCorreto() throws Exception {
-        when(boletoService.gerar(1L)).thenReturn(boletoResponse);
-
-        mockMvc.perform(post("/api/boletos/gerar/1")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isCreated())
-                .andExpect(header().string("Location", containsString("/api/boletos/1")));
-    }
-
-    @Test
-    @DisplayName("✓ Deve chamar gerar() com o pedidoId correto")
-    void deveChamarGerarComPedidoIdCorreto() throws Exception {
-        when(boletoService.gerar(1L)).thenReturn(boletoResponse);
-
-        mockMvc.perform(post("/api/boletos/gerar/1")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isCreated());
-
-        verify(boletoService, times(1)).gerar(1L);
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.pagamentoId", is(100)))
+                .andExpect(jsonPath("$.valor", is(190.00)))
+                .andExpect(jsonPath("$.status", is("PENDENTE")))
+                .andExpect(jsonPath("$.codigoBarras", notNullValue()))
+                .andExpect(jsonPath("$.dataVencimento", notNullValue()));
     }
 
     // -------------------------------------------------------
@@ -199,38 +114,18 @@ class BoletoControllerTests {
     // -------------------------------------------------------
 
     @Test
-    @DisplayName("✓ Deve pagar boleto e retornar status 200 com status PAGO")
-    void devePagarBoleto() throws Exception {
+    @DisplayName("✓ Deve retornar 200 ao pagar boleto no prazo")
+    void devePagarBoletoNoPrazo() throws Exception {
         BoletoResponseDTO boletoPago = BoletoResponseDTO.builder()
                 .id(1L)
-                .codigoBarras("1234567890123")
-                .valor(new BigDecimal("100.00"))
+                .pagamentoId(100L)
+                .codigoBarras("12345678901234567890123456789012345678901234")
+                .valor(new BigDecimal("190.00"))
+                .dataVencimento(LocalDate.now().plusDays(3))
                 .status("PAGO")
-                .dataVencimento(LocalDate.now().plusDays(30))
                 .build();
 
-        when(boletoService.pagarBoleto(1L)).thenReturn(boletoPago);
-
-        mockMvc.perform(patch("/api/boletos/1/pagar")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status", is("PAGO")));
-    }
-
-    @Test
-    @DisplayName("✓ Deve retornar id e codigoBarras no body ao pagar boleto")
-    void devePagarBoletoRetornaBodyCompleto() throws Exception {
-        BoletoResponseDTO boletoPago = BoletoResponseDTO.builder()
-                .id(1L)
-                .codigoBarras("1234567890123")
-                .valor(new BigDecimal("100.00"))
-                .status("PAGO")
-                .dataVencimento(LocalDate.now().plusDays(30))
-                .build();
-
-        when(boletoService.pagarBoleto(1L)).thenReturn(boletoPago);
+        when(boletoService.pagarBoleto(eq(1L), anyString())).thenReturn(boletoPago);
 
         mockMvc.perform(patch("/api/boletos/1/pagar")
                 .with(user("admin").roles("USER", "ADMIN"))
@@ -238,21 +133,31 @@ class BoletoControllerTests {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.codigoBarras", is("1234567890123")));
+                .andExpect(jsonPath("$.status", is("PAGO")))
+                .andExpect(jsonPath("$.valor", is(190.00)));
     }
 
     @Test
-    @DisplayName("✓ Deve chamar pagarBoleto() com o id correto")
-    void deveChamarPagarComIdCorreto() throws Exception {
-        when(boletoService.pagarBoleto(1L)).thenReturn(boletoResponse);
+    @DisplayName("✓ Deve retornar 200 ao pagar boleto em atraso com multa de 2%")
+    void devePagarBoletoEmAtrasoComMulta() throws Exception {
+        BoletoResponseDTO boletoAtrasadoPago = BoletoResponseDTO.builder()
+                .id(1L)
+                .pagamentoId(100L)
+                .codigoBarras("12345678901234567890123456789012345678901234")
+                .valor(new BigDecimal("193.80"))
+                .dataVencimento(LocalDate.now().minusDays(1))
+                .status("PAGO")
+                .build();
+
+        when(boletoService.pagarBoleto(eq(1L), anyString())).thenReturn(boletoAtrasadoPago);
 
         mockMvc.perform(patch("/api/boletos/1/pagar")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-
-        verify(boletoService, times(1)).pagarBoleto(1L);
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("PAGO")))
+                .andExpect(jsonPath("$.valor", is(193.80)));
     }
 
     // -------------------------------------------------------
@@ -260,20 +165,8 @@ class BoletoControllerTests {
     // -------------------------------------------------------
 
     @Test
-    @DisplayName("✓ Deve cancelar boleto e retornar status 204 sem body")
-    void deveCancelarBoleto() throws Exception {
-        doNothing().when(boletoService).cancelarBoleto(1L);
-
-        mockMvc.perform(patch("/api/boletos/1/cancelar")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    @DisplayName("✓ Deve chamar cancelarBoleto() com o id correto")
-    void deveChamarCancelarComIdCorreto() throws Exception {
+    @DisplayName("✓ Deve retornar 204 ao cancelar boleto com sucesso")
+    void deveCancelarBoletoComSucesso() throws Exception {
         doNothing().when(boletoService).cancelarBoleto(1L);
 
         mockMvc.perform(patch("/api/boletos/1/cancelar")

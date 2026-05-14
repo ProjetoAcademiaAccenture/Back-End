@@ -1,6 +1,7 @@
 package acc.br.projetoFinal.Accenture.dto.response;
 
 import acc.br.projetoFinal.Accenture.model.Cliente;
+import acc.br.projetoFinal.Accenture.model.Conta;
 import acc.br.projetoFinal.Accenture.model.Endereco;
 import acc.br.projetoFinal.Accenture.enums.TipoEndereco;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,8 @@ class ClienteResponseDTOTests {
     private Cliente cliente;
     private Endereco endereco1;
     private Endereco endereco2;
+    private Conta conta;
+    private ContaResponseDTO contaResponse;
 
     @BeforeEach
     void setUp() {
@@ -45,6 +48,13 @@ class ClienteResponseDTOTests {
                 .numero("456")
                 .build();
 
+        // Ajuste o builder de Conta conforme seu modelo real
+        conta = Conta.builder()
+                .id(1L)
+                .build();
+
+        contaResponse = ContaResponseDTO.fromEntity(conta);
+
         cliente = Cliente.builder()
                 .id(1L)
                 .nome("Maria Silva")
@@ -52,6 +62,7 @@ class ClienteResponseDTOTests {
                 .email("maria@email.com")
                 .telefone("83999990000")
                 .dataNascimento(LocalDate.of(1990, 5, 20))
+                .conta(conta)
                 .enderecos(List.of(endereco1, endereco2))
                 .build();
     }
@@ -66,6 +77,24 @@ class ClienteResponseDTOTests {
                 .extracting("id", "nome", "cpf", "email", "telefone", "dataNascimento")
                 .containsExactly(1L, "Maria Silva", "12345678900", "maria@email.com",
                         "83999990000", LocalDate.of(1990, 5, 20));
+    }
+
+    @Test
+    @DisplayName("Deve mapear conta corretamente ao converter")
+    void deveMapearContaAoConverter() {
+        ClienteResponseDTO dto = ClienteResponseDTO.fromEntity(cliente);
+
+        assertThat(dto.getConta()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Deve mapear conta como null quando cliente não tem conta")
+    void deveMapearContaNull_quandoClienteSemConta() {
+        cliente.setConta(null);
+
+        ClienteResponseDTO dto = ClienteResponseDTO.fromEntity(cliente);
+
+        assertThat(dto.getConta()).isNull();
     }
 
     @Test
@@ -117,6 +146,7 @@ class ClienteResponseDTOTests {
                 .email("joao@email.com")
                 .telefone("83988880000")
                 .dataNascimento(LocalDate.of(1995, 3, 15))
+                .conta(contaResponse)
                 .enderecos(List.of())
                 .build();
 
@@ -124,6 +154,7 @@ class ClienteResponseDTOTests {
                 .extracting("id", "nome", "cpf", "email", "telefone", "dataNascimento")
                 .containsExactly(1L, "João Silva", "98765432100", "joao@email.com",
                         "83988880000", LocalDate.of(1995, 3, 15));
+        assertThat(dto.getConta()).isNotNull();
     }
 
     @Test
@@ -136,27 +167,32 @@ class ClienteResponseDTOTests {
         dto.setEmail("ana@email.com");
         dto.setTelefone("83987770000");
         dto.setDataNascimento(LocalDate.of(1988, 7, 10));
+        dto.setConta(contaResponse);
         dto.setEnderecos(List.of());
 
         assertThat(dto)
                 .extracting("id", "nome", "cpf", "email", "telefone", "dataNascimento")
                 .containsExactly(1L, "Ana Santos", "11122233344", "ana@email.com",
                         "83987770000", LocalDate.of(1988, 7, 10));
+        assertThat(dto.getConta()).isNotNull();
     }
 
     @Test
     @DisplayName("Deve criar DTO com construtor all-args")
     void deveCriarDTOComConstruutorAllArgs() {
         List<EnderecoResponseDTO> enderecos = List.of();
+        // Construtor all-args inclui: id, nome, cpf, email, telefone, dataNascimento, conta, enderecos
         ClienteResponseDTO dto = new ClienteResponseDTO(
                 2L, "Pedro Costa", "55566677788", "pedro@email.com",
-                "83986660000", LocalDate.of(1992, 11, 22), enderecos
+                "83986660000", LocalDate.of(1992, 11, 22), contaResponse, enderecos
         );
 
         assertThat(dto)
                 .extracting("id", "nome", "cpf", "email", "telefone", "dataNascimento")
                 .containsExactly(2L, "Pedro Costa", "55566677788", "pedro@email.com",
                         "83986660000", LocalDate.of(1992, 11, 22));
+        assertThat(dto.getConta()).isEqualTo(contaResponse);
+        assertThat(dto.getEnderecos()).isEqualTo(enderecos);
     }
 
     @Test
@@ -183,6 +219,7 @@ class ClienteResponseDTOTests {
         assertThat(dto.getEmail()).isNotBlank();
         assertThat(dto.getTelefone()).isNotBlank();
         assertThat(dto.getDataNascimento()).isNotNull();
+        assertThat(dto.getConta()).isNotNull();
         assertThat(dto.getEnderecos()).isNotNull();
     }
 
@@ -197,6 +234,7 @@ class ClienteResponseDTOTests {
         dto.setEmail("novo@email.com");
         dto.setTelefone("83985550000");
         dto.setDataNascimento(LocalDate.of(2000, 1, 1));
+        dto.setConta(contaResponse);
         dto.setEnderecos(List.of());
 
         assertThat(dto.getId()).isEqualTo(10L);
@@ -205,6 +243,7 @@ class ClienteResponseDTOTests {
         assertThat(dto.getEmail()).isEqualTo("novo@email.com");
         assertThat(dto.getTelefone()).isEqualTo("83985550000");
         assertThat(dto.getDataNascimento()).isEqualTo(LocalDate.of(2000, 1, 1));
+        assertThat(dto.getConta()).isEqualTo(contaResponse);
     }
 
     @Test
@@ -229,5 +268,4 @@ class ClienteResponseDTOTests {
                 .extracting("bairro")
                 .containsExactly("Centro", "Tambiá");
     }
-
 }

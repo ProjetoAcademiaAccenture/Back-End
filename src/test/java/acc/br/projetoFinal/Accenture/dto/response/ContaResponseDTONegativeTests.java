@@ -22,14 +22,12 @@ class ContaResponseDTONegativeTests {
                 .numeroConta(null)
                 .saldo(null)
                 .tipo(null)
-                .ativo(false)
                 .build();
 
         assertNull(dto.getId());
         assertNull(dto.getNumeroConta());
         assertNull(dto.getSaldo());
         assertNull(dto.getTipo());
-        assertFalse(dto.isAtivo());
     }
 
     @Test
@@ -40,7 +38,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-001")
                 .saldo(new BigDecimal("1000.00"))
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         assertNull(dto.getId());
@@ -54,7 +51,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta(null)
                 .saldo(new BigDecimal("1000.00"))
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         assertNull(dto.getNumeroConta());
@@ -68,7 +64,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-001")
                 .saldo(null)
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         assertNull(dto.getSaldo());
@@ -82,7 +77,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-001")
                 .saldo(new BigDecimal("1000.00"))
                 .tipo(null)
-                .ativo(true)
                 .build();
 
         assertNull(dto.getTipo());
@@ -96,7 +90,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-001")
                 .saldo(new BigDecimal("1000.00"))
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         assertTrue(dto.getId() < 0);
@@ -110,7 +103,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-001")
                 .saldo(new BigDecimal("-500.00"))
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         assertEquals(new BigDecimal("-500.00"), dto.getSaldo());
@@ -127,7 +119,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("ENDIVIDADA-001")
                 .saldo(saldoMuitoNegativo)
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         assertEquals(saldoMuitoNegativo, dto.getSaldo());
@@ -141,7 +132,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("VAZIA-001")
                 .saldo(BigDecimal.ZERO)
                 .tipo("CORRENTE")
-                .ativo(false)
                 .build();
 
         assertEquals(BigDecimal.ZERO, dto.getSaldo());
@@ -155,7 +145,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("")
                 .saldo(new BigDecimal("1000.00"))
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         assertEquals("", dto.getNumeroConta());
@@ -169,7 +158,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-001")
                 .saldo(new BigDecimal("1000.00"))
                 .tipo("")
-                .ativo(true)
                 .build();
 
         assertEquals("", dto.getTipo());
@@ -183,7 +171,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-001")
                 .saldo(new BigDecimal("1000.00"))
                 .tipo("TIPO_INEXISTENTE")
-                .ativo(true)
                 .build();
 
         assertEquals("TIPO_INEXISTENTE", dto.getTipo());
@@ -197,10 +184,8 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("INATIVA-001")
                 .saldo(new BigDecimal("5000.00"))
                 .tipo("CORRENTE")
-                .ativo(false)
                 .build();
 
-        assertFalse(dto.isAtivo());
         assertTrue(dto.getSaldo().signum() > 0);
     }
 
@@ -212,7 +197,6 @@ class ContaResponseDTONegativeTests {
         conta.setNumeroConta("FECHADA-001");
         conta.setSaldo(new BigDecimal("0.00"));
         conta.setTipo(TipoConta.POUPANCA);
-        conta.setAtivo(false);
 
         ContaResponseDTO dto = ContaResponseDTO.fromEntity(conta);
 
@@ -220,7 +204,6 @@ class ContaResponseDTONegativeTests {
         assertEquals("FECHADA-001", dto.getNumeroConta());
         assertEquals(new BigDecimal("0.00"), dto.getSaldo());
         assertEquals("POUPANCA", dto.getTipo());
-        assertFalse(dto.isAtivo());
     }
 
     @Test
@@ -233,7 +216,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta(numeroContaGrande)
                 .saldo(new BigDecimal("1000.00"))
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         assertEquals(numeroContaGrande, dto.getNumeroConta());
@@ -249,7 +231,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-001")
                 .saldo(new BigDecimal("1000.00"))
                 .tipo(tipoGrande)
-                .ativo(true)
                 .build();
 
         assertEquals(tipoGrande, dto.getTipo());
@@ -263,7 +244,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-001")
                 .saldo(new BigDecimal("1000.00"))
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         ContaResponseDTO dto2 = ContaResponseDTO.builder()
@@ -271,7 +251,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("CONTA-002")
                 .saldo(new BigDecimal("2000.00"))
                 .tipo("POUPANCA")
-                .ativo(false)
                 .build();
 
         assertNotEquals(dto1, dto2);
@@ -287,7 +266,6 @@ class ContaResponseDTONegativeTests {
                 .numeroConta("PRECISA-001")
                 .saldo(saldoPreciso)
                 .tipo("CORRENTE")
-                .ativo(true)
                 .build();
 
         assertEquals(saldoPreciso, dto.getSaldo());

@@ -50,8 +50,7 @@ class PedidoControllerNegativeTests {
                 .nome("Produto Teste")
                 .descricao("Descrição teste")
                 .preco(new BigDecimal("10.00"))
-                .quantidade(-1) // Quantidade inválida
-                .metodoPgto(MetodoPagamento.PIX)
+                .quantidadeEstoque(-1) // Quantidade inválida
                 .build();
     }
 

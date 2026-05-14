@@ -1,24 +1,25 @@
-package acc.br.projetoFinal.Accenture.dto.response;
+    package acc.br.projetoFinal.Accenture.dto.response;
 
-import acc.br.projetoFinal.Accenture.model.ItemPedido;
-import lombok.*;
-import java.math.BigDecimal;
+    import acc.br.projetoFinal.Accenture.model.ItemPedido;
+    import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ItemPedidoResponseDTO {
+    import java.math.BigDecimal;
 
-    private Long id;
-    private Long produtoId;
-    private String produtoNome;
-    private Integer quantidade;
-    private BigDecimal precoUnitario;
-    private BigDecimal subtotal;
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public class ItemPedidoResponseDTO {
 
-    public static ItemPedidoResponseDTO fromEntity(ItemPedido item) {
-        return ItemPedidoResponseDTO.builder()
+        private Long id;
+        private Long produtoId;
+        private String produtoNome;
+        private Integer quantidade;
+        private BigDecimal precoUnitario;
+        private BigDecimal subtotal;
+
+        public static ItemPedidoResponseDTO fromEntity(ItemPedido item) {
+            return ItemPedidoResponseDTO.builder()
                 .id(item.getId())
                 .produtoId(item.getProduto().getId())
                 .produtoNome(item.getProduto().getNome())
@@ -26,5 +27,5 @@ public class ItemPedidoResponseDTO {
                 .precoUnitario(item.getPrecoUnitario())
                 .subtotal(item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade())))
                 .build();
+        }
     }
-}

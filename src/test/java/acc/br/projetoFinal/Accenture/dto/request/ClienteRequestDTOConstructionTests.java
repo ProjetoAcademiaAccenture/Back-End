@@ -39,7 +39,7 @@ class ClienteRequestDTOConstructionTests {
                 .email("maria@email.com")
                 .senha("Senha@123")
                 .telefone("83999990000")
-                .dtNascimento(LocalDate.of(1990, 5, 20))
+                .dataNascimento(LocalDate.of(1990, 5, 20))
                 .endereco(endereco)
                 .build();
     }
@@ -53,7 +53,7 @@ class ClienteRequestDTOConstructionTests {
                 "Senha@123", "83999990000", LocalDate.of(1990, 5, 20), endereco);
 
         assertThat(dto)
-                .extracting("nome", "cpf", "email", "senha", "telefone", "dtNascimento")
+                .extracting("nome", "cpf", "email", "senha", "telefone", "dataNascimento")
                 .containsExactly("João Silva", "12345678900", "joao@email.com",
                         "Senha@123", "83999990000", LocalDate.of(1990, 5, 20));
         assertThat(dto.getEndereco()).isEqualTo(endereco);
@@ -69,7 +69,7 @@ class ClienteRequestDTOConstructionTests {
         assertThat(dto.getEmail()).isNull();
         assertThat(dto.getSenha()).isNull();
         assertThat(dto.getTelefone()).isNull();
-        assertThat(dto.getDtNascimento()).isNull();
+        assertThat(dto.getDataNascimento()).isNull();
         assertThat(dto.getEndereco()).isNull();
     }
 
@@ -82,7 +82,7 @@ class ClienteRequestDTOConstructionTests {
                 .email("maria@email.com")
                 .senha("Senha@456")
                 .telefone("83988880000")
-                .dtNascimento(LocalDate.of(1995, 3, 15))
+                .dataNascimento(LocalDate.of(1995, 3, 15))
                 .endereco(endereco)
                 .build();
 
@@ -91,7 +91,7 @@ class ClienteRequestDTOConstructionTests {
         assertThat(dto.getEmail()).isEqualTo("maria@email.com");
         assertThat(dto.getSenha()).isEqualTo("Senha@456");
         assertThat(dto.getTelefone()).isEqualTo("83988880000");
-        assertThat(dto.getDtNascimento()).isEqualTo(LocalDate.of(1995, 3, 15));
+        assertThat(dto.getDataNascimento()).isEqualTo(LocalDate.of(1995, 3, 15));
         assertThat(dto.getEndereco()).isEqualTo(endereco);
     }
 
@@ -120,7 +120,7 @@ class ClienteRequestDTOConstructionTests {
                 .email("pedro@email.com")
                 .senha("PedroSenha@789")
                 .telefone("83986665555")
-                .dtNascimento(dataNascimento)
+                .dataNascimento(dataNascimento)
                 .endereco(endereco)
                 .build();
 
@@ -129,7 +129,7 @@ class ClienteRequestDTOConstructionTests {
         assertThat(dto.getEmail()).isEqualTo("pedro@email.com");
         assertThat(dto.getSenha()).isEqualTo("PedroSenha@789");
         assertThat(dto.getTelefone()).isEqualTo("83986665555");
-        assertThat(dto.getDtNascimento()).isEqualTo(dataNascimento);
+        assertThat(dto.getDataNascimento()).isEqualTo(dataNascimento);
         assertThat(dto.getEndereco()).isEqualTo(endereco);
     }
 
@@ -185,9 +185,9 @@ class ClienteRequestDTOConstructionTests {
     void deveSettarEGettarDataNascimento() {
         dto = new ClienteRequestDTO();
         LocalDate data = LocalDate.of(1992, 7, 10);
-        dto.setDtNascimento(data);
+        dto.setDataNascimento(data);
 
-        assertThat(dto.getDtNascimento()).isEqualTo(data);
+        assertThat(dto.getDataNascimento()).isEqualTo(data);
     }
 
     @Test
@@ -228,7 +228,7 @@ class ClienteRequestDTOConstructionTests {
             dto.setCpf(null);
             dto.setSenha(null);
             dto.setTelefone(null);
-            dto.setDtNascimento(null);
+            dto.setDataNascimento(null);
             dto.setEndereco(null);
         }).doesNotThrowAnyException();
 
@@ -241,10 +241,10 @@ class ClienteRequestDTOConstructionTests {
     @DisplayName("Deve aceitar datas nulas sem erros")
     void deveAceitarDatasNulasSemErros() {
         dto = new ClienteRequestDTO();
-        assertThatCode(() -> dto.setDtNascimento(null))
+        assertThatCode(() -> dto.setDataNascimento(null))
                 .doesNotThrowAnyException();
 
-        assertThat(dto.getDtNascimento()).isNull();
+        assertThat(dto.getDataNascimento()).isNull();
     }
 
     @Test
@@ -353,11 +353,11 @@ class ClienteRequestDTOConstructionTests {
     }
 
     @Test
-    @DisplayName("equals deve retornar false quando dtNascimento difere")
-    void equals_deveRetornarFalse_quandoDtNascimentoDifere() {
+    @DisplayName("equals deve retornar false quando dataNascimento difere")
+    void equals_deveRetornarFalse_quandodataNascimentoDifere() {
         ClienteRequestDTO dto1 = dtoPadraoValido();
         ClienteRequestDTO dto2 = dtoPadraoValido();
-        dto2.setDtNascimento(LocalDate.of(2000, 1, 1));
+        dto2.setDataNascimento(LocalDate.of(2000, 1, 1));
 
         assertThat(dto1).isNotEqualTo(dto2);
     }

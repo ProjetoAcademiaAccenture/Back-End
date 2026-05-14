@@ -43,8 +43,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // ← PATCH adicionado
+        config.setAllowedOrigins(List.of("http://localhost:3000")); // Ajuste para o seu Front-end
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 
@@ -57,22 +57,38 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/h2-console/**")
+                        .ignoringRequestMatchers("/h2-console/**") // Mantém H2 acessível
                         .disable()
                 )
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
+                        .frameOptions(frame -> frame.sameOrigin()) // Necessário para o console do H2
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/clientes").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/clientes/**").hasAnyRole("CLIENTE", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/clientes/**").hasAnyRole("CLIENTE", "ADMIN")
+                        // --- Públicos ---
+                        .requestMatchers("/h2-console/**", "/auth/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        
+                        // --- Produtos ---
+                        .requestMatchers(HttpMethod.GET, "/api/produtos/**").permitAll()
+                        .requestMatchers("/api/produtos/**").hasRole("ADMIN")
+
+                        // --- Clientes ---
+                        .requestMatchers(HttpMethod.POST, "/api/clientes").permitAll() // Cadastro público
                         .requestMatchers(HttpMethod.DELETE, "/api/clientes/**").hasRole("ADMIN")
+                        .requestMatchers("/api/clientes/**").hasAnyRole("CLIENTE", "ADMIN")
+
+                        // --- Pedidos ---
+                        .requestMatchers(HttpMethod.POST, "/api/pedidos").hasRole("CLIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/pedidos/cliente/**").hasAnyRole("CLIENTE", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/cancelar").hasAnyRole("CLIENTE", "ADMIN")
+                        .requestMatchers("/api/pedidos/**").hasRole("ADMIN")
+
+                        // --- Pagamentos e Contas ---
+                        .requestMatchers("/api/pagamentos/**", "/api/contas/**").hasAnyRole("CLIENTE", "ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

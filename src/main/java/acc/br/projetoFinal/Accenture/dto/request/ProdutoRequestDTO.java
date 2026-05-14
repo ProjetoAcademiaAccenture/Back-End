@@ -1,8 +1,9 @@
 package acc.br.projetoFinal.Accenture.dto.request;
 
-import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
+import acc.br.projetoFinal.Accenture.enums.Categoria;
 import jakarta.validation.constraints.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 
 @Data
@@ -19,13 +20,16 @@ public class ProdutoRequestDTO {
     private String descricao;
 
     @NotNull(message = "Preço é obrigatório")
-    @DecimalMin(value = "0.01", message = "Preço deve ser maior que 0")
+    @DecimalMin(value = "0.01", message = "Preço deve ser maior que zero")
     private BigDecimal preco;
 
-    @NotNull(message = "Quantidade é obrigatória")
-    @Min(value = 0, message = "Quantidade não pode ser negativa")
-    private Integer quantidade;
+    @Size(max = 500, message = "URL da imagem muito longa")
+    private String urlImagem;
 
-    @NotNull(message = "Método de pagamento é obrigatório")
-    private MetodoPagamento metodoPgto;
+    @NotNull(message = "Quantidade em estoque é obrigatória")
+    @Min(value = 0, message = "Quantidade não pode ser negativa")
+    private Integer quantidadeEstoque;
+
+    @NotNull(message = "Categoria é obrigatória")
+    private Categoria categoria;
 }

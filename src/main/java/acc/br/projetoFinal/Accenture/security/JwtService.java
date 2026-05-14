@@ -18,59 +18,64 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtService {
 
-	@Value("${security.jwt.secret}")
-	private String secret;
+    @Value("${security.jwt.secret}")
+    private String secret;
 
-	@Value("${security.jwt.expiration-ms}")
-	private long expirationMs;
+    @Value("${security.jwt.expiration-ms}")
+    private long expirationMs;
 
-	private SecretKey getSigningKey() {
-		return Keys.hmacShaKeyFor(
-				secret.getBytes(StandardCharsets.UTF_8)
-		);
-	}
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
-	public String gerarToken(Cliente cliente) {
-		Date now = new Date();
-		Date exp = new Date(now.getTime() + expirationMs);
+    /**
+     * Gera token para o Cliente (Auth via Email)
+     */
+    public String gerarToken(Cliente cliente) {
+        return builder()
+                .subject(cliente.getEmail())
+                // Garante o prefixo ROLE_ para o Spring Security
+                .claim("role", "ROLE_" + cliente.getTipoCliente().name())
+                .compact();
+    }
 
-		return Jwts.builder()
-				.subject(cliente.getEmail())
-				.claim("role", cliente.getTipoCliente().name())
-				.issuedAt(now)
-				.expiration(exp)
-				.signWith(getSigningKey())
-				.compact();
-	}
+    /**
+     * Gera token para a Conta (Auth via Número da Conta)
+     */
+    public String gerarToken(Conta conta) {
+        return builder()
+                .subject(conta.getNumeroConta())
+                // Define uma Role padrão para acessos via conta
+                .claim("role", "ROLE_CLIENTE") 
+                .claim("tipoConta", conta.getTipo().name())
+                .compact();
+    }
 
-	public String gerarToken(Conta conta) {
-		Date now = new Date();
-		Date exp = new Date(now.getTime() + expirationMs);
+    /**
+     * Helper para evitar repetição de código (DRY)
+     */
+    private io.jsonwebtoken.JwtBuilder builder() {
+        Date now = new Date();
+        return Jwts.builder()
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + expirationMs))
+                .signWith(getSigningKey());
+    }
 
-		return Jwts.builder()
-				.subject(conta.getNumeroConta())
-				.claim("role", "ROLE_CLIENTE")  // ← adicionado
-				.claim("tipo", conta.getTipo().name())
-				.issuedAt(now)
-				.expiration(exp)
-				.signWith(getSigningKey())
-				.compact();
-	}
+    public Claims extrairClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
 
-	public Claims extrairClaims(String token) {
-		return Jwts.parser()
-				.verifyWith(getSigningKey())
-				.build()
-				.parseSignedClaims(token)
-				.getPayload();
-	}
-
-	public boolean tokenValido(String token) {
-		try {
-			extrairClaims(token);
-			return true;
-		} catch (JwtException | IllegalArgumentException ex) {
-			return false;
-		}
-	}
+    public boolean tokenValido(String token) {
+        try {
+            extrairClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
+    }
 }

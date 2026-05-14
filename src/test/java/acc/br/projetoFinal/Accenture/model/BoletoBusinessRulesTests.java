@@ -9,12 +9,14 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Testes de Cobertura Total - Boleto Model")
 class BoletoBusinessRulesTests {
 
     private Boleto boleto;
+    private Pagamento pagamento;
     private Pedido pedido;
     private Cliente cliente;
 
@@ -31,9 +33,14 @@ class BoletoBusinessRulesTests {
                 .status(StatusPedido.RESERVADO)
                 .build();
 
-        boleto = Boleto.builder()
+        pagamento = Pagamento.builder()
                 .id(1L)
                 .pedido(pedido)
+                .build();
+
+        boleto = Boleto.builder()
+                .id(1L)
+                .pagamento(pagamento)
                 .codigoBarras("12345678901234567890123456789012345678901234")
                 .valor(new BigDecimal("1000.00"))
                 .dataVencimento(LocalDate.now().plusDays(3))
@@ -42,7 +49,7 @@ class BoletoBusinessRulesTests {
     }
 
     // =========================================================
-    // TESTES: validarPagamento() — cobre todos os branches do if
+    // TESTES: validarPagamento()
     // =========================================================
 
     @Test
@@ -75,7 +82,7 @@ class BoletoBusinessRulesTests {
     }
 
     // =========================================================
-    // TESTES: pagar() — cobre fluxo feliz e fluxos de erro
+    // TESTES: pagar()
     // =========================================================
 
     @Test
@@ -109,7 +116,7 @@ class BoletoBusinessRulesTests {
     }
 
     // =========================================================
-    // TESTES: validarCancelamento() — cobre todos os branches
+    // TESTES: validarCancelamento()
     // =========================================================
 
     @Test
@@ -120,14 +127,18 @@ class BoletoBusinessRulesTests {
     }
 
     @Test
-    @DisplayName("validarCancelamento: não deve lançar exceção quando status é PAGO")
-    void validarCancelamento_StatusPago_NaoLancaExcecao() {
+    @DisplayName("validarCancelamento: deve lançar exceção quando status é PAGO (2º branch)")
+    void validarCancelamento_StatusPago_LancaExcecao() {
         boleto.setStatus(StatusBoleto.PAGO);
-        assertDoesNotThrow(() -> boleto.validarCancelamento());
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> boleto.validarCancelamento()
+        );
+        assertEquals("Boleto já foi pago", ex.getMessage());
     }
 
     @Test
-    @DisplayName("validarCancelamento: deve lançar exceção quando status já é CANCELADO")
+    @DisplayName("validarCancelamento: deve lançar exceção quando status já é CANCELADO (1º branch)")
     void validarCancelamento_StatusCancelado_LancaExcecao() {
         boleto.setStatus(StatusBoleto.CANCELADO);
         IllegalArgumentException ex = assertThrows(
@@ -138,21 +149,13 @@ class BoletoBusinessRulesTests {
     }
 
     // =========================================================
-    // TESTES: cancelar() — cobre fluxo feliz e fluxo de erro
+    // TESTES: cancelar()
     // =========================================================
 
     @Test
     @DisplayName("cancelar: deve alterar status para CANCELADO quando PENDENTE")
     void cancelar_StatusPendente_AlteraParaCancelado() {
         boleto.setStatus(StatusBoleto.PENDENTE);
-        boleto.cancelar();
-        assertEquals(StatusBoleto.CANCELADO, boleto.getStatus());
-    }
-
-    @Test
-    @DisplayName("cancelar: deve alterar status para CANCELADO quando PAGO")
-    void cancelar_StatusPago_AlteraParaCancelado() {
-        boleto.setStatus(StatusBoleto.PAGO);
         boleto.cancelar();
         assertEquals(StatusBoleto.CANCELADO, boleto.getStatus());
     }
@@ -168,8 +171,19 @@ class BoletoBusinessRulesTests {
         assertEquals("Boleto já está cancelado", ex.getMessage());
     }
 
+    @Test
+    @DisplayName("cancelar: não deve cancelar boleto PAGO")
+    void cancelar_StatusPago_LancaExcecao() {
+        boleto.setStatus(StatusBoleto.PAGO);
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> boleto.cancelar()
+        );
+        assertEquals("Boleto já foi pago", ex.getMessage());
+    }
+
     // =========================================================
-    // TESTES: estaAtrasado() — cobre os 3 branches da comparação
+    // TESTES: estaAtrasado()
     // =========================================================
 
     @Test
@@ -182,7 +196,6 @@ class BoletoBusinessRulesTests {
     @Test
     @DisplayName("estaAtrasado: deve retornar false quando vencimento é hoje")
     void estaAtrasado_VencimentoHoje_RetornaFalse() {
-        // isBefore(hoje) == false quando dataVencimento == hoje
         boleto.setDataVencimento(LocalDate.now());
         assertFalse(boleto.estaAtrasado());
     }
@@ -195,8 +208,7 @@ class BoletoBusinessRulesTests {
     }
 
     // =========================================================
-    // TESTES ESTRUTURAIS: Lombok (Getters, Setters, Builder,
-    //                     NoArgsConstructor, AllArgsConstructor)
+    // TESTES ESTRUTURAIS: Lombok
     // =========================================================
 
     @Test
@@ -204,24 +216,35 @@ class BoletoBusinessRulesTests {
     void noArgsConstructor_DeveCriarInstanciaVazia() {
         Boleto boletoVazio = new Boleto();
         assertNotNull(boletoVazio);
+        assertNull(boletoVazio.getId());
+        assertNull(boletoVazio.getCodigoBarras());
+        assertNull(boletoVazio.getValor());
+        assertNull(boletoVazio.getDataVencimento());
+        assertNull(boletoVazio.getPagamento());
     }
 
     @Test
     @DisplayName("Deve instanciar Boleto com AllArgsConstructor")
     void allArgsConstructor_DeveCriarInstanciaCompleta() {
+        // Ordem: id, codigoBarras, valor, dataVencimento, status, pagamento
+        LocalDate vencimento = LocalDate.now().plusDays(7);
         Boleto b = new Boleto(
                 10L,
                 "00000000000000000000000000000000000000000001",
                 new BigDecimal("500.00"),
-                LocalDate.now().plusDays(7),
+                vencimento,
                 StatusBoleto.PENDENTE,
-                pedido
+                pagamento
         );
-        assertEquals(10L, b.getId());
-        assertEquals("00000000000000000000000000000000000000000001", b.getCodigoBarras());
-        assertEquals(new BigDecimal("500.00"), b.getValor());
-        assertEquals(StatusBoleto.PENDENTE, b.getStatus());
-        assertEquals(pedido, b.getPedido());
+
+        assertAll("AllArgsConstructor",
+                () -> assertEquals(10L,                                                   b.getId()),
+                () -> assertEquals("00000000000000000000000000000000000000000001", b.getCodigoBarras()),
+                () -> assertEquals(new BigDecimal("500.00"),                              b.getValor()),
+                () -> assertEquals(vencimento,                                            b.getDataVencimento()),
+                () -> assertEquals(StatusBoleto.PENDENTE,                                 b.getStatus()),
+                () -> assertEquals(pagamento,                                             b.getPagamento())
+        );
     }
 
     @Test
@@ -235,14 +258,36 @@ class BoletoBusinessRulesTests {
         b.setValor(new BigDecimal("250.75"));
         b.setDataVencimento(vencimento);
         b.setStatus(StatusBoleto.PAGO);
-        b.setPedido(pedido);
+        b.setPagamento(pagamento);
 
-        assertEquals(99L, b.getId());
-        assertEquals("CODIGO123", b.getCodigoBarras());
-        assertEquals(new BigDecimal("250.75"), b.getValor());
-        assertEquals(vencimento, b.getDataVencimento());
-        assertEquals(StatusBoleto.PAGO, b.getStatus());
-        assertEquals(pedido, b.getPedido());
+        assertAll("setters e getters",
+                () -> assertEquals(99L,                     b.getId()),
+                () -> assertEquals("CODIGO123",             b.getCodigoBarras()),
+                () -> assertEquals(new BigDecimal("250.75"), b.getValor()),
+                () -> assertEquals(vencimento,              b.getDataVencimento()),
+                () -> assertEquals(StatusBoleto.PAGO,       b.getStatus()),
+                () -> assertEquals(pagamento,               b.getPagamento())
+        );
+    }
+
+    @Test
+    @DisplayName("Deve aceitar null em todos os setters sem exceção")
+    void deveAceitarNullEmTodosOsSetters() {
+        assertThatCode(() -> {
+            boleto.setId(null);
+            boleto.setCodigoBarras(null);
+            boleto.setValor(null);
+            boleto.setDataVencimento(null);
+            boleto.setStatus(null);
+            boleto.setPagamento(null);
+        }).doesNotThrowAnyException();
+
+        assertNull(boleto.getId());
+        assertNull(boleto.getCodigoBarras());
+        assertNull(boleto.getValor());
+        assertNull(boleto.getDataVencimento());
+        assertNull(boleto.getStatus());
+        assertNull(boleto.getPagamento());
     }
 
     @Test
@@ -255,20 +300,22 @@ class BoletoBusinessRulesTests {
                 .valor(new BigDecimal("99.99"))
                 .dataVencimento(vencimento)
                 .status(StatusBoleto.CANCELADO)
-                .pedido(pedido)
+                .pagamento(pagamento)
                 .build();
 
-        assertEquals(5L, b.getId());
-        assertEquals("BUILDER_CODE", b.getCodigoBarras());
-        assertEquals(new BigDecimal("99.99"), b.getValor());
-        assertEquals(vencimento, b.getDataVencimento());
-        assertEquals(StatusBoleto.CANCELADO, b.getStatus());
-        assertEquals(pedido, b.getPedido());
+        assertAll("builder campos",
+                () -> assertEquals(5L,                      b.getId()),
+                () -> assertEquals("BUILDER_CODE",          b.getCodigoBarras()),
+                () -> assertEquals(new BigDecimal("99.99"), b.getValor()),
+                () -> assertEquals(vencimento,              b.getDataVencimento()),
+                () -> assertEquals(StatusBoleto.CANCELADO,  b.getStatus()),
+                () -> assertEquals(pagamento,               b.getPagamento())
+        );
     }
 
     @Test
     @DisplayName("Builder.Default: status deve ser PENDENTE quando não informado")
-    void builder_Default_StatusDeveSePendente() {
+    void builder_Default_StatusDeveSerPendente() {
         Boleto b = Boleto.builder()
                 .codigoBarras("DEFAULT_STATUS")
                 .build();
@@ -276,23 +323,13 @@ class BoletoBusinessRulesTests {
     }
 
     // =========================================================
-    // TESTES: equals(), hashCode() e toString()
-    //
-    // O @Data do Lombok gera equals() com branches para CADA campo:
-    //   if (this.campo == null ? other.campo != null : !this.campo.equals(other.campo)) return false
-    // Para cobrir 100% dos branches precisamos exercitar:
-    //   1. Objetos idênticos (todos os == passam → return true)
-    //   2. Mesma instância (this == other → return true imediato)
-    //   3. null / tipo errado
-    //   4. Cada campo diferente individualmente (força o branch "não-igual" de cada campo)
-    //   5. this.campo == null comparado a other.campo != null (branch null de cada campo)
+    // TESTES: equals()
     // =========================================================
 
-    /** Cria um Boleto com exatamente os mesmos valores do setUp(). */
     private Boleto criarBoletoIdentico() {
         return Boleto.builder()
                 .id(1L)
-                .pedido(pedido)
+                .pagamento(pagamento)
                 .codigoBarras("12345678901234567890123456789012345678901234")
                 .valor(new BigDecimal("1000.00"))
                 .dataVencimento(boleto.getDataVencimento())
@@ -300,10 +337,8 @@ class BoletoBusinessRulesTests {
                 .build();
     }
 
-    // --- equals: fluxos de curto-circuito ---
-
     @Test
-    @DisplayName("equals: mesma instância deve ser igual (branch this==other)")
+    @DisplayName("equals: mesma instância deve ser igual (reflexividade)")
     void equals_MesmaInstancia_DeveSerIgual() {
         assertEquals(boleto, boleto);
     }
@@ -315,20 +350,16 @@ class BoletoBusinessRulesTests {
     }
 
     @Test
-    @DisplayName("equals: comparação com tipo diferente deve retornar false (branch canEqual)")
+    @DisplayName("equals: comparação com tipo diferente deve retornar false")
     void equals_TipoDiferente_DeveRetornarFalse() {
         assertNotEquals(boleto, new Object());
     }
-
-    // --- equals: todos os campos iguais ---
 
     @Test
     @DisplayName("equals: objetos com todos os campos iguais devem ser iguais")
     void equals_TodosCamposIguais_DeveRetornarTrue() {
         assertEquals(boleto, criarBoletoIdentico());
     }
-
-    // --- equals: cada campo diferente individualmente (branch "!equal" de cada campo) ---
 
     @Test
     @DisplayName("equals: id diferente deve retornar false")
@@ -371,26 +402,26 @@ class BoletoBusinessRulesTests {
     }
 
     @Test
-    @DisplayName("equals: pedido diferente deve retornar false")
-    void equals_PedidoDiferente_DeveRetornarFalse() {
+    @DisplayName("equals: pagamento diferente deve retornar false")
+    void equals_PagamentoDiferente_DeveRetornarFalse() {
         Boleto b2 = criarBoletoIdentico();
-        Pedido outroPedido = Pedido.builder().id(999L).build();
-        b2.setPedido(outroPedido);
+        Pagamento outroPagamento = Pagamento.builder().id(999L).build();
+        b2.setPagamento(outroPagamento);
         assertNotEquals(boleto, b2);
     }
 
-    // --- equals: branches null em this (this.campo == null → other.campo != null → false) ---
+    // --- branches null ---
 
     @Test
     @DisplayName("equals: this.id==null e other.id!=null deve retornar false")
     void equals_ThisIdNull_OutroIdNaoNull_DeveRetornarFalse() {
-        Boleto semId = criarBoletoIdentico();
-        semId.setId(null);
-        assertNotEquals(semId, boleto);
+        Boleto b1 = criarBoletoIdentico();
+        b1.setId(null);
+        assertNotEquals(b1, boleto);
     }
 
     @Test
-    @DisplayName("equals: this.id==null e other.id==null deve continuar comparando demais campos")
+    @DisplayName("equals: ambos id==null deve continuar comparando demais campos")
     void equals_AmbosIdNull_DeveCompararDemaisCampos() {
         Boleto b1 = criarBoletoIdentico();
         Boleto b2 = criarBoletoIdentico();
@@ -424,10 +455,10 @@ class BoletoBusinessRulesTests {
     }
 
     @Test
-    @DisplayName("equals: this.pedido==null e other!=null deve retornar false")
-    void equals_ThisPedidoNull_DeveRetornarFalse() {
+    @DisplayName("equals: this.pagamento==null e other!=null deve retornar false")
+    void equals_ThisPagamentoNull_DeveRetornarFalse() {
         Boleto b1 = criarBoletoIdentico();
-        b1.setPedido(null);
+        b1.setPagamento(null);
         assertNotEquals(b1, boleto);
     }
 
@@ -439,7 +470,9 @@ class BoletoBusinessRulesTests {
         assertEquals(b1, b2);
     }
 
-    // --- hashCode ---
+    // =========================================================
+    // TESTES: hashCode()
+    // =========================================================
 
     @Test
     @DisplayName("hashCode: objetos iguais devem ter mesmo hashCode")
@@ -458,29 +491,53 @@ class BoletoBusinessRulesTests {
     @Test
     @DisplayName("hashCode: boleto com campos null não deve lançar exceção")
     void hashCode_CamposNull_NaoDeveLancarExcecao() {
-        Boleto vazio = new Boleto();
-        assertDoesNotThrow(vazio::hashCode);
+        assertDoesNotThrow(() -> new Boleto().hashCode());
     }
 
-    // --- toString ---
+    @Test
+    @DisplayName("hashCode: consistente em múltiplas chamadas")
+    void hashCode_Consistente() {
+        assertEquals(boleto.hashCode(), boleto.hashCode());
+    }
+
+    // =========================================================
+    // TESTES: toString()
+    // =========================================================
 
     @Test
     @DisplayName("toString: deve conter todos os campos principais")
     void toString_DeveConterCamposPrincipais() {
         String result = boleto.toString();
-        assertAll("toString deve conter campos relevantes",
+        assertAll("toString campos",
+                () -> assertTrue(result.contains("id")),
                 () -> assertTrue(result.contains("codigoBarras")),
                 () -> assertTrue(result.contains("valor")),
                 () -> assertTrue(result.contains("status")),
-                () -> assertTrue(result.contains("dataVencimento")),
-                () -> assertTrue(result.contains("id"))
+                () -> assertTrue(result.contains("dataVencimento"))
         );
     }
 
     @Test
     @DisplayName("toString: boleto com campos null não deve lançar exceção")
     void toString_CamposNull_NaoDeveLancarExcecao() {
-        Boleto vazio = new Boleto();
-        assertDoesNotThrow(vazio::toString);
+        assertDoesNotThrow(() -> new Boleto().toString());
+    }
+
+    // =========================================================
+    // TESTES: canEqual()
+    // =========================================================
+
+    @Test
+    @DisplayName("canEqual: deve retornar true para instância do mesmo tipo")
+    void canEqual_MesmoTipo_DeveRetornarTrue() {
+        assertTrue(boleto.canEqual(criarBoletoIdentico()));
+    }
+
+    @Test
+    @DisplayName("canEqual: deve retornar false para tipo diferente")
+    void canEqual_TipoDiferente_DeveRetornarFalse() {
+        assertFalse(boleto.canEqual("string"));
+        assertFalse(boleto.canEqual(null));
+        assertFalse(boleto.canEqual(42));
     }
 }

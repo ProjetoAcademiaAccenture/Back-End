@@ -5,11 +5,12 @@ import acc.br.projetoFinal.Accenture.dto.response.PedidoResponseDTO;
 import acc.br.projetoFinal.Accenture.service.PedidoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import java.net.URI;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -30,7 +31,8 @@ public class PedidoController {
     }
 
     @GetMapping("/cliente/{clienteId}")
-    public ResponseEntity<List<PedidoResponseDTO>> listarPorCliente(@PathVariable Long clienteId) {
+    public ResponseEntity<List<PedidoResponseDTO>> listarPorCliente(@PathVariable Long clienteId)
+    throws AccessDeniedException {
         return ResponseEntity.ok(pedidoService.listarPorCliente(clienteId));
     }
 
@@ -38,18 +40,10 @@ public class PedidoController {
     public ResponseEntity<PedidoResponseDTO> criar(@RequestBody @Valid PedidoRequestDTO dto) {
         PedidoResponseDTO criado = pedidoService.criar(dto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}").buildAndExpand(criado.getId()).toUri();
+            .path("/{id}")
+            .buildAndExpand(criado.getId())
+            .toUri();
         return ResponseEntity.created(location).body(criado);
-    }
-
-    @PatchMapping("/{id}/reservar")
-    public ResponseEntity<PedidoResponseDTO> reservar(@PathVariable Long id) {
-        return ResponseEntity.ok(pedidoService.reservarPedido(id));
-    }
-
-    @PatchMapping("/{id}/pagar")
-    public ResponseEntity<PedidoResponseDTO> pagar(@PathVariable Long id) {
-        return ResponseEntity.ok(pedidoService.pagarPedido(id));
     }
 
     @PatchMapping("/{id}/cancelar")

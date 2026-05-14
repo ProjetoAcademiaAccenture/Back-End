@@ -63,7 +63,7 @@ class ClienteControllerTests {
                 .email("joao@email.com")
                 .senha("senha123")
                 .telefone("11999999999")
-                .dtNascimento(LocalDate.of(1990, 1, 1))
+                .dataNascimento(LocalDate.of(1990, 1, 1))
                 .endereco(endereco)
                 .build();
 

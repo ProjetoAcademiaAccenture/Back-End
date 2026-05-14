@@ -38,6 +38,7 @@ class ExtratoBusinessRulesTests {
                 .saldoDepois(new BigDecimal("1500.00"))
                 .descricao("Crédito inicial")
                 .pedido(pedido)
+                .dataHora(LocalDateTime.of(2026, 1, 15, 10, 30))
                 .build();
     }
 
@@ -55,6 +56,8 @@ class ExtratoBusinessRulesTests {
     @Test
     @DisplayName("AllArgsConstructor: deve criar instância com todos os campos")
     void allArgsConstructor_DeveCriarInstanciaCompleta() {
+        // A ordem dos args segue a declaração dos campos em Extrato.java:
+        // id, conta, tipo, valor, saldoAntes, saldoDepois, descricao, pedido, dataHora, pagamento
         LocalDateTime agora = LocalDateTime.now();
         Extrato e = new Extrato(
                 2L,
@@ -65,19 +68,21 @@ class ExtratoBusinessRulesTests {
                 new BigDecimal("600.00"),
                 "Débito em conta",
                 pedido,
-                agora
+                agora,
+                null   // pagamento — campo opcional
         );
 
         assertAll("AllArgsConstructor",
-                () -> assertEquals(2L,                        e.getId()),
-                () -> assertEquals(conta,                     e.getConta()),
-                () -> assertEquals(TipoExtrato.DEBITO,         e.getTipo()),
-                () -> assertEquals(new BigDecimal("200.00"),  e.getValor()),
-                () -> assertEquals(new BigDecimal("800.00"),  e.getSaldoAntes()),
-                () -> assertEquals(new BigDecimal("600.00"),  e.getSaldoDepois()),
-                () -> assertEquals("Débito em conta",               e.getDescricao()),
-                () -> assertEquals(pedido,                    e.getPedido()),
-                () -> assertEquals(agora,                     e.getDataHora())
+                () -> assertEquals(2L,                             e.getId()),
+                () -> assertEquals(conta,                          e.getConta()),
+                () -> assertEquals(TipoExtrato.DEBITO,             e.getTipo()),
+                () -> assertEquals(new BigDecimal("200.00"),       e.getValor()),
+                () -> assertEquals(new BigDecimal("800.00"),       e.getSaldoAntes()),
+                () -> assertEquals(new BigDecimal("600.00"),       e.getSaldoDepois()),
+                () -> assertEquals("Débito em conta",              e.getDescricao()),
+                () -> assertEquals(pedido,                         e.getPedido()),
+                () -> assertEquals(agora,                          e.getDataHora()),
+                () -> assertNull(e.getPagamento())
         );
     }
 
@@ -102,15 +107,15 @@ class ExtratoBusinessRulesTests {
                 .build();
 
         assertAll("Builder campos",
-                () -> assertEquals(5L,                               e.getId()),
-                () -> assertEquals(conta,                            e.getConta()),
-                () -> assertEquals(TipoExtrato.ESTORNO, e.getTipo()),
-                () -> assertEquals(new BigDecimal("300.00"),         e.getValor()),
-                () -> assertEquals(new BigDecimal("1000.00"),        e.getSaldoAntes()),
-                () -> assertEquals(new BigDecimal("700.00"),         e.getSaldoDepois()),
-                () -> assertEquals("Estorno de pagamento",          e.getDescricao()),
-                () -> assertEquals(pedido,                           e.getPedido()),
-                () -> assertEquals(dataHora,                         e.getDataHora())
+                () -> assertEquals(5L,                             e.getId()),
+                () -> assertEquals(conta,                          e.getConta()),
+                () -> assertEquals(TipoExtrato.ESTORNO,            e.getTipo()),
+                () -> assertEquals(new BigDecimal("300.00"),       e.getValor()),
+                () -> assertEquals(new BigDecimal("1000.00"),      e.getSaldoAntes()),
+                () -> assertEquals(new BigDecimal("700.00"),       e.getSaldoDepois()),
+                () -> assertEquals("Estorno de pagamento",         e.getDescricao()),
+                () -> assertEquals(pedido,                         e.getPedido()),
+                () -> assertEquals(dataHora,                       e.getDataHora())
         );
     }
 
@@ -128,8 +133,10 @@ class ExtratoBusinessRulesTests {
         LocalDateTime depois = LocalDateTime.now().plusSeconds(1);
 
         assertNotNull(e.getDataHora());
-        assertTrue(e.getDataHora().isAfter(antes) && e.getDataHora().isBefore(depois),
-                "dataHora deve estar entre 'antes' e 'depois'");
+        assertTrue(
+                e.getDataHora().isAfter(antes) && e.getDataHora().isBefore(depois),
+                "dataHora deve estar entre 'antes' e 'depois'"
+        );
     }
 
     @Test
@@ -160,6 +167,14 @@ class ExtratoBusinessRulesTests {
         assertNull(e.getDescricao());
     }
 
+    @Test
+    @DisplayName("Builder: deve atribuir e recuperar pagamento via setter/getter")
+    void builder_Pagamento_DeveSerAtribuidoERecuperado() {
+        Pagamento pagamento = new Pagamento();
+        extrato.setPagamento(pagamento);
+        assertEquals(pagamento, extrato.getPagamento());
+    }
+
     // =========================================================
     // TESTES: Getters e Setters — cada campo individualmente
     // =========================================================
@@ -172,30 +187,29 @@ class ExtratoBusinessRulesTests {
 
         e.setId(10L);
         e.setConta(conta);
-        e.setTipo(TipoExtrato.MULTA);
+        e.setTipo(TipoExtrato.ESTORNO);
         e.setValor(new BigDecimal("750.50"));
         e.setSaldoAntes(new BigDecimal("2000.00"));
         e.setSaldoDepois(new BigDecimal("1249.50"));
-        e.setDescricao("Multa de cancelamento");
+        e.setDescricao("Estorno de cancelamento");
         e.setPedido(pedido);
         e.setDataHora(dataHora);
 
         assertAll("setters e getters",
-                () -> assertEquals(10L,                          e.getId()),
-                () -> assertEquals(conta,                        e.getConta()),
-                () -> assertEquals(TipoExtrato.MULTA, e.getTipo()),
-                () -> assertEquals(new BigDecimal("750.50"),     e.getValor()),
-                () -> assertEquals(new BigDecimal("2000.00"),    e.getSaldoAntes()),
-                () -> assertEquals(new BigDecimal("1249.50"),    e.getSaldoDepois()),
-                () -> assertEquals("Multa de cancelamento",        e.getDescricao()),
-                () -> assertEquals(pedido,                       e.getPedido()),
-                () -> assertEquals(dataHora,                     e.getDataHora())
+                () -> assertEquals(10L,                            e.getId()),
+                () -> assertEquals(conta,                          e.getConta()),
+                () -> assertEquals(TipoExtrato.ESTORNO,            e.getTipo()),
+                () -> assertEquals(new BigDecimal("750.50"),       e.getValor()),
+                () -> assertEquals(new BigDecimal("2000.00"),      e.getSaldoAntes()),
+                () -> assertEquals(new BigDecimal("1249.50"),      e.getSaldoDepois()),
+                () -> assertEquals("Estorno de cancelamento",       e.getDescricao()),
+                () -> assertEquals(pedido,                         e.getPedido()),
+                () -> assertEquals(dataHora,                       e.getDataHora())
         );
     }
 
     // =========================================================
     // TESTES: Todos os valores de TipoExtrato
-    // Cobre cada branch do enum no modelo
     // =========================================================
 
     @Test
@@ -219,15 +233,10 @@ class ExtratoBusinessRulesTests {
         assertEquals(TipoExtrato.ESTORNO, extrato.getTipo());
     }
 
-    @Test
-    @DisplayName("TipoExtrato: deve aceitar MULTA")
-    void tipoExtrato_Multa_DeveSerAtribuido() {
-        extrato.setTipo(TipoExtrato.MULTA);
-        assertEquals(TipoExtrato.MULTA, extrato.getTipo());
-    }
+    // TipoExtrato só possui DEBITO, CREDITO e ESTORNO — todos cobertos nos testes acima.
 
     // =========================================================
-    // TESTES: equals() — todos os branches do @Data
+    // TESTES: equals() — todos os branches do @EqualsAndHashCode
     // =========================================================
 
     /** Cria Extrato idêntico ao setUp() para comparação. */
@@ -270,13 +279,12 @@ class ExtratoBusinessRulesTests {
     }
 
     @Test
-    @DisplayName("equals: dois extratos com todos os campos nulos exceto dataHora igual devem ser iguais")
+    @DisplayName("equals: dois extratos com campos nulos iguais devem ser iguais")
     void equals_AmbosVazios_DeveSerIgual() {
-        // dataHora está no equals gerado pelo @Data, por isso usamos
-        // AllArgsConstructor fixando o mesmo LocalDateTime nos dois objetos.
+        // Usa AllArgsConstructor com dataHora fixa para garantir igualdade determinística
         LocalDateTime dataFixa = LocalDateTime.of(2026, 1, 1, 0, 0, 0);
-        Extrato e1 = new Extrato(null, null, null, null, null, null, null, null, dataFixa);
-        Extrato e2 = new Extrato(null, null, null, null, null, null, null, null, dataFixa);
+        Extrato e1 = new Extrato(null, null, null, null, null, null, null, null, dataFixa, null);
+        Extrato e2 = new Extrato(null, null, null, null, null, null, null, null, dataFixa, null);
         assertEquals(e1, e2);
     }
 

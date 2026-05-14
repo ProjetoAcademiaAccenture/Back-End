@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -62,70 +63,86 @@ class PedidoControllerTests {
                 .build();
     }
 
+    // -------------------------------------------------------------------------
+    // GET /api/pedidos — listarTodos()
+    // -------------------------------------------------------------------------
+
     @Test
     void deveListarTodosPedidos() throws Exception {
         when(pedidoService.listarTodos()).thenReturn(List.of(pedidoResponse));
 
         mockMvc.perform(get("/api/pedidos")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON))
+                        .with(user("admin").roles("USER", "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id", is(1)));
     }
+
+    // -------------------------------------------------------------------------
+    // GET /api/pedidos/{id} — buscarPorId()
+    // -------------------------------------------------------------------------
 
     @Test
     void deveBuscarPedidoPorId() throws Exception {
         when(pedidoService.buscarPorId(1L)).thenReturn(pedidoResponse);
 
         mockMvc.perform(get("/api/pedidos/1")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON))
+                        .with(user("admin").roles("USER", "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)));
     }
+
+    // -------------------------------------------------------------------------
+    // GET /api/pedidos/cliente/{clienteId} — listarPorCliente()
+    // -------------------------------------------------------------------------
 
     @Test
     void deveListarPedidosPorCliente() throws Exception {
         when(pedidoService.listarPorCliente(1L)).thenReturn(List.of(pedidoResponse));
 
         mockMvc.perform(get("/api/pedidos/cliente/1")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .contentType(MediaType.APPLICATION_JSON))
+                        .with(user("admin").roles("USER", "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id", is(1)));
     }
+
+    // -------------------------------------------------------------------------
+    // POST /api/pedidos — criar()
+    // Espera 201 Created com header Location apontando para o novo recurso
+    // -------------------------------------------------------------------------
 
     @Test
-    void deveReservarPedido() throws Exception {
-        when(pedidoService.reservarPedido(1L)).thenReturn(pedidoResponse);
+    void deveCriarPedidoERetornar201() throws Exception {
+        when(pedidoService.criar(any(PedidoRequestDTO.class))).thenReturn(pedidoResponse);
 
-        mockMvc.perform(patch("/api/pedidos/1/reservar")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/pedidos")
+                        .with(user("admin").roles("USER", "ADMIN"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(pedidoRequest)))
+                .andExpect(status().isCreated())
+                // Header Location deve terminar com /api/pedidos/1
+                .andExpect(header().string("Location", containsString("/api/pedidos/1")))
+                .andExpect(jsonPath("$.id", is(1)));
     }
 
-    @Test
-    void deveRealizarPagamentoPedido() throws Exception {
-        when(pedidoService.pagarPedido(1L)).thenReturn(pedidoResponse);
-
-        mockMvc.perform(patch("/api/pedidos/1/pagar")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-    }
+    // -------------------------------------------------------------------------
+    // PATCH /api/pedidos/{id}/cancelar — cancelar()
+    // -------------------------------------------------------------------------
 
     @Test
     void deveCancelarPedido() throws Exception {
         when(pedidoService.cancelarPedido(1L)).thenReturn(pedidoResponse);
 
         mockMvc.perform(patch("/api/pedidos/1/cancelar")
-                .with(user("admin").roles("USER", "ADMIN"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                        .with(user("admin").roles("USER", "ADMIN"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(1)));
     }
 }

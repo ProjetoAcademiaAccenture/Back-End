@@ -3,10 +3,10 @@ package acc.br.projetoFinal.Accenture.controller;
 import acc.br.projetoFinal.Accenture.dto.response.BoletoResponseDTO;
 import acc.br.projetoFinal.Accenture.service.BoletoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import java.net.URI;
 
 @RestController
@@ -21,22 +21,26 @@ public class BoletoController {
         return ResponseEntity.ok(boletoService.buscarPorId(id));
     }
 
-    @GetMapping("/pedido/{pedidoId}")
-    public ResponseEntity<BoletoResponseDTO> buscarPorPedidoId(@PathVariable Long pedidoId) {
-        return ResponseEntity.ok(boletoService.buscarPorPedidoId(pedidoId));
+    @GetMapping("/pagamento/{pagamentoId}")
+    public ResponseEntity<BoletoResponseDTO> buscarPorPagamentoId(@PathVariable Long pagamentoId) {
+        return ResponseEntity.ok(boletoService.buscarPorPagamentoId(pagamentoId));
     }
 
-    @PostMapping("/gerar/{pedidoId}")
-    public ResponseEntity<BoletoResponseDTO> gerar(@PathVariable Long pedidoId) {
-        BoletoResponseDTO gerado = boletoService.gerar(pedidoId);
+    @PostMapping("/gerar/{pagamentoId}")
+    public ResponseEntity<BoletoResponseDTO> gerar(@PathVariable Long pagamentoId) {
+        BoletoResponseDTO gerado = boletoService.gerar(pagamentoId);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .replacePath("/api/boletos/{id}").buildAndExpand(gerado.getId()).toUri();
+            .replacePath("/api/boletos/{id}")
+            .buildAndExpand(gerado.getId())
+            .toUri();
         return ResponseEntity.created(location).body(gerado);
     }
 
     @PatchMapping("/{id}/pagar")
-    public ResponseEntity<BoletoResponseDTO> pagar(@PathVariable Long id) {
-        return ResponseEntity.ok(boletoService.pagarBoleto(id));
+    public ResponseEntity<BoletoResponseDTO> pagar(
+        @PathVariable Long id,
+        @RequestParam String senhaTransacao) {
+        return ResponseEntity.ok(boletoService.pagarBoleto(id, senhaTransacao));
     }
 
     @PatchMapping("/{id}/cancelar")

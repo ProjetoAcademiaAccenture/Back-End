@@ -18,11 +18,11 @@ public class ClienteRequestDTO {
     private String nome;
 
     @NotBlank(message = "CPF é obrigatório")
-    @Size(min = 11, max = 11)
+    @Pattern(regexp = "\\d{11}", message = "CPF deve conter exatamente 11 dígitos")
     private String cpf;
 
     @NotBlank(message = "Email é obrigatório")
-    @Email
+    @Email(message = "Email deve ser válido")
     private String email;
 
     @NotBlank(message = "Senha é obrigatória")
@@ -32,10 +32,11 @@ public class ClienteRequestDTO {
     @Size(max = 15)
     private String telefone;
 
-    @JsonFormat(pattern = "dd/MM/yyyy")
-    private LocalDate dtNascimento;
+    @NotNull(message = "Data de nascimento é obrigatória")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate dataNascimento;
 
     @Valid
-    @NotNull
+    @NotNull(message = "Endereço é obrigatório")
     private EnderecoRequestDTO endereco;
 }

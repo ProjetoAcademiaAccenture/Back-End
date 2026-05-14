@@ -32,8 +32,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome(null)
                 .preco(new BigDecimal("100.00"))
-                .quantidade(1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -47,8 +46,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("")
                 .preco(new BigDecimal("100.00"))
-                .quantidade(1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -62,8 +60,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("   ")
                 .preco(new BigDecimal("100.00"))
-                .quantidade(1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -77,8 +74,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("AB")
                 .preco(new BigDecimal("100.00"))
-                .quantidade(1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -92,8 +88,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("A".repeat(101))
                 .preco(new BigDecimal("100.00"))
-                .quantidade(1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -112,8 +107,7 @@ class ProdutoRequestDTONegativeTests {
                 .nome("Produto")
                 .descricao("a".repeat(501))
                 .preco(new BigDecimal("100.00"))
-                .quantidade(1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -131,8 +125,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(null)
-                .quantidade(1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -146,8 +139,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(new BigDecimal("0.00"))
-                .quantidade(1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -161,8 +153,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(new BigDecimal("-0.01"))
-                .quantidade(1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -180,13 +171,12 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(new BigDecimal("100.00"))
-                .quantidade(null)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(null)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty(), "Deve haver violação para quantidade null");
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("quantidade")));
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("quantidadeEstoque")));
     }
 
     @Test
@@ -195,13 +185,12 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(new BigDecimal("100.00"))
-                .quantidade(-1)
-                .metodoPgto(MetodoPagamento.CREDITO)
+                .quantidadeEstoque(-1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty(), "Deve haver violação para quantidade negativa");
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("quantidade")));
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("quantidadeEstoque")));
     }
 
     // ─────────────────────────────────────────────
@@ -214,8 +203,7 @@ class ProdutoRequestDTONegativeTests {
         dto = ProdutoRequestDTO.builder()
                 .nome("Produto")
                 .preco(new BigDecimal("100.00"))
-                .quantidade(1)
-                .metodoPgto(null)
+                .quantidadeEstoque(1)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
@@ -234,8 +222,7 @@ class ProdutoRequestDTONegativeTests {
                 .nome(null)
                 .descricao("a".repeat(501))
                 .preco(null)
-                .quantidade(null)
-                .metodoPgto(null)
+                .quantidadeEstoque(null)
                 .build();
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);

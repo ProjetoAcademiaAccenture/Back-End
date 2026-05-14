@@ -30,6 +30,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
+
 @Slf4j
 @RestController
 @RequestMapping("/auth")
@@ -80,7 +82,8 @@ public class AuthController {
             throw new SenhaInvalidaException("Senha de transação inválida");
         }
 
-        String token = jwtService.gerarToken(conta.getCliente());
+        // Alterado para gerar token baseado na conta (ROLE_CLIENTE conforme JwtService)
+        String token = jwtService.gerarToken(conta); 
         log.info("Login bancário realizado com sucesso para a conta: {}", conta.getId());
 
         return ResponseEntity.ok(AuthBankResponseDTO.builder()
@@ -89,6 +92,7 @@ public class AuthController {
                 .contaId(conta.getId())
                 .numeroConta(conta.getNumeroConta())
                 .saldo(conta.getSaldo().toString())
+                .limiteCeditoDisponivel(conta.getLimiteCreditoDisponivel().toString())
                 .tipoConta(conta.getTipo().name())
                 .build());
     }
@@ -111,7 +115,22 @@ public class AuthController {
     @PostMapping("/register-bank")
     public ResponseEntity<AuthBankResponseDTO> registerBank(@RequestBody @Valid ContaRequestDTO dto) {
         Conta conta = contaService.criarEntidade(dto);
+        
+        // O token aqui é gerado para o cliente recém-associado à conta
         String token = jwtService.gerarToken(conta.getCliente());
+        
+        // Depósito inicial (Funciona pois o método no Service aceita (Long, BigDecimal))
+        BigDecimal valorDeposito = new BigDecimal("1000.00"); 
+        conta = contaService.depositar(conta.getId(), valorDeposito);
+
+        /* 
+         * COMENTADO PARA EVITAR ERRO DE COMPILAÇÃO:
+         * O método creditarLimiteCredito agora exige (Conta, BigDecimal, Pedido, Pagamento, String)
+         * para suportar o sistema de cartões/compras.
+         */
+        // BigDecimal limiteCreditoDisponivel = new BigDecimal("2000.00");
+        // conta = contaService.creditarLimiteCredito(conta.getId(), limiteCreditoDisponivel);
+
         log.info("Nova conta bancária registrada com sucesso: {}", conta.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(AuthBankResponseDTO.builder()
@@ -120,6 +139,7 @@ public class AuthController {
                 .contaId(conta.getId())
                 .numeroConta(conta.getNumeroConta())
                 .saldo(conta.getSaldo().toString())
+                .limiteCeditoDisponivel(conta.getLimiteCreditoDisponivel().toString())
                 .tipoConta(conta.getTipo().name())
                 .build());
     }

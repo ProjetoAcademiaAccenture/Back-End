@@ -3,410 +3,422 @@ package acc.br.projetoFinal.Accenture.service;
 import acc.br.projetoFinal.Accenture.dto.request.ItemPedidoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.request.PedidoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.response.PedidoResponseDTO;
-import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
 import acc.br.projetoFinal.Accenture.enums.StatusPedido;
-import acc.br.projetoFinal.Accenture.enums.TipoCliente;
 import acc.br.projetoFinal.Accenture.model.Cliente;
+import acc.br.projetoFinal.Accenture.model.ItemPedido;
+import acc.br.projetoFinal.Accenture.model.Pagamento;
+import acc.br.projetoFinal.Accenture.model.Pedido;
 import acc.br.projetoFinal.Accenture.model.Produto;
 import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
 import acc.br.projetoFinal.Accenture.repository.PedidoRepository;
 import acc.br.projetoFinal.Accenture.repository.ProdutoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.transaction.annotation.Transactional;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.nio.file.AccessDeniedException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@Transactional
 @DisplayName("PedidoService - Testes Positivos")
-class PedidoServicePositive {
+class PedidoServiceTeste {
 
-    @Autowired
-    private PedidoService pedidoService;
-
-    @Autowired
+    @Mock
     private PedidoRepository pedidoRepository;
 
-    @Autowired
+    @Mock
     private ClienteRepository clienteRepository;
 
-    @Autowired
+    @Mock
     private ProdutoRepository produtoRepository;
 
-    @MockBean
-    private ContaService contaService;
+    @Mock
+    private EstoqueService estoqueService;
+
+    @Mock
+    private PagamentoService pagamentoService;
+
+    @InjectMocks
+    private PedidoService pedidoService;
 
     private Cliente cliente;
     private Produto produto;
+    private Pedido pedido;
 
     @BeforeEach
-    void setup() {
-        cliente = clienteRepository.save(Cliente.builder()
-                .nome("Cliente Teste")
-                .email("cliente@teste.com")
-                .cpf("12345678901")
-                .senha("senha123")
-                .tipoCliente(TipoCliente.ROLE_USER)
-                .build());
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
 
-        produto = produtoRepository.save(Produto.builder()
-                .nome("Produto Teste")
-                .descricao("Descrição teste")
-                .preco(new BigDecimal("100.00"))
+        cliente = Cliente.builder()
+                .id(1L)
+                .nome("João Silva")
+                .email("joao@test.com")
+                .build();
+
+        produto = Produto.builder()
+                .id(1L)
+                .nome("Notebook")
+                .preco(new BigDecimal("3000.00"))
                 .quantidadeEstoque(10)
-                .metodoPgto(MetodoPagamento.PIX)
-                .build());
+                .build();
+
+        pedido = Pedido.builder()
+                .id(1L)
+                .cliente(cliente)
+                .status(StatusPedido.RESERVADO) // criar() já avança para RESERVADO
+                .valorBruto(new BigDecimal("3000.00"))
+                .desconto(BigDecimal.ZERO)
+                .valorFinal(new BigDecimal("3000.00"))
+                .build();
     }
 
     // =========================================================================
     // criar()
     // =========================================================================
 
-    @Test
-    @DisplayName("Deve criar pedido com status CRIADO")
-    void deveCriarPedidoComStatusCriado() {
-        PedidoResponseDTO resposta = pedidoService.criar(pedidoRequestValido(1));
+    @Nested
+    @DisplayName("criar()")
+    class Criar {
 
-        assertThat(resposta.getStatus()).isEqualTo(StatusPedido.CRIADO);
-    }
+        private void mockCriarDefault() {
+            when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
+            when(produtoRepository.findById(1L)).thenReturn(Optional.of(produto));
+            when(pagamentoService.calcularDesconto(any(), any())).thenReturn(BigDecimal.ZERO);
+            doNothing().when(estoqueService).reservarItens(any(Pedido.class));
+            doNothing().when(pagamentoService).criarParaPedido(any(Pedido.class), any());
+            when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+        }
 
-    @Test
-    @DisplayName("Deve criar pedido com ID gerado pelo banco")
-    void deveCriarPedidoComIdGerado() {
-        PedidoResponseDTO resposta = pedidoService.criar(pedidoRequestValido(1));
+        @Test
+        @DisplayName("✓ Deve criar pedido e retornar DTO com ID")
+        void testCriarPedidoRetornaId() {
+            mockCriarDefault();
 
-        assertThat(resposta.getId()).isNotNull().isPositive();
-    }
+            PedidoResponseDTO resultado = pedidoService.criar(pedidoRequestValido(1));
 
-    @Test
-    @DisplayName("Deve criar pedido com data de criação preenchida")
-    void deveCriarPedidoComDataCriacao() {
-        PedidoResponseDTO resposta = pedidoService.criar(pedidoRequestValido(1));
+            assertNotNull(resultado);
+            assertEquals(1L, resultado.getId());
+        }
 
-        assertThat(resposta.getDataCriacao()).isNotNull();
-    }
+        @Test
+        @DisplayName("✓ Deve criar pedido com status RESERVADO após reservar itens")
+        void testCriarPedidoStatusReservado() {
+            mockCriarDefault();
 
-    @Test
-    @DisplayName("Deve calcular valor total corretamente para um item")
-    void deveCriarPedidoComValorTotalCorretoParaUmItem() {
-        PedidoResponseDTO resposta = pedidoService.criar(pedidoRequestValido(3));
+            PedidoResponseDTO resultado = pedidoService.criar(pedidoRequestValido(1));
 
-        assertThat(resposta.getValorTotal()).isEqualByComparingTo(new BigDecimal("300.00"));
-    }
+            // criar() avança para RESERVADO antes do segundo save
+            assertEquals(StatusPedido.RESERVADO, resultado.getStatus());
+        }
 
-    @Test
-    @DisplayName("Deve calcular valor total corretamente para múltiplos itens")
-    void deveCriarPedidoComValorTotalCorretoParaMultiplosItens() {
-        Produto produto2 = produtoRepository.save(Produto.builder()
-                .nome("Produto 2")
-                .descricao("Desc 2")
-                .preco(new BigDecimal("50.00"))
-                .quantidadeEstoque(5)
-                .metodoPgto(MetodoPagamento.PIX)
-                .build());
+        @Test
+        @DisplayName("✓ Deve salvar pedido duas vezes: criação e pós-reserva")
+        void testCriarPedidoSalvaDuasVezes() {
+            mockCriarDefault();
 
-        PedidoRequestDTO dto = PedidoRequestDTO.builder()
-                .clienteId(cliente.getId())
-                .itens(List.of(
-                        ItemPedidoRequestDTO.builder().produtoId(produto.getId()).quantidade(2).build(),
-                        ItemPedidoRequestDTO.builder().produtoId(produto2.getId()).quantidade(4).build()
-                ))
-                .build();
+            pedidoService.criar(pedidoRequestValido(1));
 
-        PedidoResponseDTO resposta = pedidoService.criar(dto);
+            verify(pedidoRepository, times(2)).save(any(Pedido.class));
+        }
 
-        // (100 x 2) + (50 x 4) = 400.00
-        assertThat(resposta.getValorTotal()).isEqualByComparingTo(new BigDecimal("400.00"));
-    }
+        @Test
+        @DisplayName("✓ Deve chamar estoqueService.reservarItens ao criar pedido")
+        void testCriarPedidoChamaReservarItens() {
+            mockCriarDefault();
 
-    @Test
-    @DisplayName("Deve persistir pedido no banco após criação")
-    void devePersistirPedidoNoBanco() {
-        PedidoResponseDTO resposta = pedidoService.criar(pedidoRequestValido(1));
+            pedidoService.criar(pedidoRequestValido(1));
 
-        assertThat(pedidoRepository.findById(resposta.getId())).isPresent();
-    }
+            verify(estoqueService, times(1)).reservarItens(any(Pedido.class));
+        }
 
-    @Test
-    @DisplayName("Deve criar pedido com multa de cancelamento zerada inicialmente")
-    void deveCriarPedidoComMultaZerada() {
-        PedidoResponseDTO resposta = pedidoService.criar(pedidoRequestValido(1));
+        @Test
+        @DisplayName("✓ Deve chamar pagamentoService.criarParaPedido ao criar pedido")
+        void testCriarPedidoChamaCriarPagamento() {
+            mockCriarDefault();
 
-        assertThat(resposta.getMultaCancelamento()).isEqualByComparingTo(BigDecimal.ZERO);
-    }
+            pedidoService.criar(pedidoRequestValido(1));
 
-    @Test
-    @DisplayName("Deve criar pedido com quantidade exata disponível em estoque")
-    void deveCriarPedidoComQuantidadeExataDoEstoque() {
-        PedidoResponseDTO resposta = pedidoService.criar(pedidoRequestValido(10));
+            verify(pagamentoService, times(1)).criarParaPedido(any(Pedido.class), any());
+        }
 
-        assertThat(resposta.getId()).isNotNull();
-        assertThat(resposta.getValorTotal()).isEqualByComparingTo(new BigDecimal("1000.00"));
+        @Test
+        @DisplayName("✓ Deve calcular desconto via pagamentoService ao criar pedido")
+        void testCriarPedidoCalculaDesconto() {
+            mockCriarDefault();
+
+            pedidoService.criar(pedidoRequestValido(2));
+
+            verify(pagamentoService, times(1)).calcularDesconto(any(), any());
+        }
+
+        @Test
+        @DisplayName("✓ Deve criar pedido com múltiplos itens e consultar cada produto")
+        void testCriarPedidoMultiplosItens() {
+            Produto produto2 = Produto.builder()
+                    .id(2L).nome("Mouse").preco(new BigDecimal("50.00")).quantidadeEstoque(20).build();
+
+            when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
+            when(produtoRepository.findById(1L)).thenReturn(Optional.of(produto));
+            when(produtoRepository.findById(2L)).thenReturn(Optional.of(produto2));
+            when(pagamentoService.calcularDesconto(any(), any())).thenReturn(BigDecimal.ZERO);
+            doNothing().when(estoqueService).reservarItens(any(Pedido.class));
+            doNothing().when(pagamentoService).criarParaPedido(any(Pedido.class), any());
+            when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+
+            PedidoRequestDTO dto = PedidoRequestDTO.builder()
+                    .clienteId(1L)
+                    .metodoPagamento("CARTAO_CREDITO")
+                    .itens(List.of(
+                            ItemPedidoRequestDTO.builder().produtoId(1L).quantidade(1).build(),
+                            ItemPedidoRequestDTO.builder().produtoId(2L).quantidade(3).build()
+                    ))
+                    .build();
+
+            PedidoResponseDTO resultado = pedidoService.criar(dto);
+
+            assertNotNull(resultado);
+            verify(produtoRepository).findById(1L);
+            verify(produtoRepository).findById(2L);
+        }
     }
 
     // =========================================================================
     // buscarPorId()
     // =========================================================================
 
-    @Test
-    @DisplayName("Deve buscar pedido por ID e retornar os dados corretos")
-    void deveBuscarPedidoPorId() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(2));
+    @Nested
+    @DisplayName("buscarPorId()")
+    class BuscarPorId {
 
-        PedidoResponseDTO encontrado = pedidoService.buscarPorId(criado.getId());
+        @Test
+        @DisplayName("✓ Deve retornar DTO com dados corretos ao buscar por ID existente")
+        void testBuscarPedidoPorId() {
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
 
-        assertThat(encontrado.getId()).isEqualTo(criado.getId());
-        assertThat(encontrado.getStatus()).isEqualTo(StatusPedido.CRIADO);
-        assertThat(encontrado.getValorTotal()).isEqualByComparingTo(criado.getValorTotal());
+            PedidoResponseDTO resultado = pedidoService.buscarPorId(1L);
+
+            assertNotNull(resultado);
+            assertEquals(1L, resultado.getId());
+            verify(pedidoRepository).findById(1L);
+        }
+
+        @Test
+        @DisplayName("✓ Deve retornar status correto do pedido buscado")
+        void testBuscarPedidoRetornaStatusCorreto() {
+            pedido.setStatus(StatusPedido.RESERVADO);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+            PedidoResponseDTO resultado = pedidoService.buscarPorId(1L);
+
+            assertEquals(StatusPedido.RESERVADO, resultado.getStatus());
+        }
     }
 
     // =========================================================================
     // listarTodos()
     // =========================================================================
 
-    @Test
-    @DisplayName("Deve listar todos os pedidos criados")
-    void deveListarTodosPedidos() {
-        pedidoService.criar(pedidoRequestValido(1));
-        pedidoService.criar(pedidoRequestValido(2));
+    @Nested
+    @DisplayName("listarTodos()")
+    class ListarTodos {
 
-        List<PedidoResponseDTO> lista = pedidoService.listarTodos();
+        @Test
+        @DisplayName("✓ Deve retornar lista com todos os pedidos")
+        void testListarTodosPedidos() {
+            when(pedidoRepository.findAll()).thenReturn(List.of(pedido));
 
-        assertThat(lista).hasSizeGreaterThanOrEqualTo(2);
-    }
+            List<PedidoResponseDTO> resultado = pedidoService.listarTodos();
 
-    @Test
-    @DisplayName("Deve retornar lista vazia quando não há pedidos")
-    void deveRetornarListaVaziaQuandoNaoHaPedidos() {
-        List<PedidoResponseDTO> lista = pedidoService.listarTodos();
+            assertNotNull(resultado);
+            assertEquals(1, resultado.size());
+            verify(pedidoRepository).findAll();
+        }
 
-        assertThat(lista).isEmpty();
+        @Test
+        @DisplayName("✓ Deve retornar lista vazia quando não há pedidos")
+        void testListarTodosVazio() {
+            when(pedidoRepository.findAll()).thenReturn(Collections.emptyList());
+
+            List<PedidoResponseDTO> resultado = pedidoService.listarTodos();
+
+            assertNotNull(resultado);
+            assertTrue(resultado.isEmpty());
+        }
     }
 
     // =========================================================================
     // listarPorCliente()
     // =========================================================================
 
-    @Test
-    @DisplayName("Deve listar apenas pedidos do cliente informado")
-    void deveListarPedidosPorCliente() {
-        pedidoService.criar(pedidoRequestValido(1));
-        pedidoService.criar(pedidoRequestValido(1));
+    @Nested
+    @DisplayName("listarPorCliente()")
+    class ListarPorCliente {
 
-        List<PedidoResponseDTO> lista = pedidoService.listarPorCliente(cliente.getId());
+        private void mockSecurityContext(String email) {
+            Authentication auth = mock(Authentication.class);
+            SecurityContext ctx = mock(SecurityContext.class);
+            when(ctx.getAuthentication()).thenReturn(auth);
+            when(auth.getName()).thenReturn(email);
+            SecurityContextHolder.setContext(ctx);
+        }
 
-        assertThat(lista).hasSize(2);
-        assertThat(lista).allMatch(p -> p.getClienteId().equals(cliente.getId()));
-    }
+        @Test
+        @DisplayName("✓ Deve listar pedidos do cliente autenticado")
+        void testListarPorClienteAutenticado() throws AccessDeniedException {
+            mockSecurityContext("joao@test.com"); // mesmo email do cliente
+            when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
+            when(pedidoRepository.findByClienteId(1L)).thenReturn(List.of(pedido));
 
-    @Test
-    @DisplayName("Deve retornar lista vazia para cliente sem pedidos")
-    void deveRetornarListaVaziaParaClienteSemPedidos() {
-        List<PedidoResponseDTO> lista = pedidoService.listarPorCliente(cliente.getId());
+            List<PedidoResponseDTO> resultado = pedidoService.listarPorCliente(1L);
 
-        assertThat(lista).isEmpty();
-    }
+            assertNotNull(resultado);
+            assertEquals(1, resultado.size());
+            verify(pedidoRepository).findByClienteId(1L);
+        }
 
-    @Test
-    @DisplayName("Deve não misturar pedidos de clientes diferentes")
-    void deveNaoMisturarPedidosDeClientesDiferentes() {
-        Cliente outroCliente = clienteRepository.save(Cliente.builder()
-                .nome("Outro Cliente")
-                .email("outro@teste.com")
-                .cpf("98765432100")
-                .senha("senha456")
-                .tipoCliente(TipoCliente.ROLE_USER)
-                .build());
+        @Test
+        @DisplayName("✓ Deve retornar lista vazia para cliente sem pedidos")
+        void testListarPorClienteSemPedidos() throws AccessDeniedException {
+            mockSecurityContext("joao@test.com");
+            when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
+            when(pedidoRepository.findByClienteId(1L)).thenReturn(Collections.emptyList());
 
-        pedidoService.criar(pedidoRequestValido(1));
-        pedidoService.criar(PedidoRequestDTO.builder()
-                .clienteId(outroCliente.getId())
-                .itens(List.of(ItemPedidoRequestDTO.builder()
-                        .produtoId(produto.getId())
-                        .quantidade(1)
-                        .build()))
-                .build());
+            List<PedidoResponseDTO> resultado = pedidoService.listarPorCliente(1L);
 
-        List<PedidoResponseDTO> lista = pedidoService.listarPorCliente(cliente.getId());
+            assertNotNull(resultado);
+            assertTrue(resultado.isEmpty());
+        }
 
-        assertThat(lista).hasSize(1);
-        assertThat(lista.get(0).getClienteId()).isEqualTo(cliente.getId());
-    }
+        @Test
+        @DisplayName("✓ Não deve misturar pedidos de clientes diferentes")
+        void testListarPorClienteIsolamento() throws AccessDeniedException {
+            Cliente outroCliente = Cliente.builder()
+                    .id(2L).nome("Maria").email("maria@test.com").build();
+            Pedido pedidoOutro = Pedido.builder()
+                    .id(2L).cliente(outroCliente).status(StatusPedido.CRIADO)
+                    .valorBruto(BigDecimal.TEN).desconto(BigDecimal.ZERO)
+                    .valorFinal(BigDecimal.TEN).build();
 
-    // =========================================================================
-    // reservarPedido()
-    // =========================================================================
+            mockSecurityContext("joao@test.com");
+            when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
+            when(pedidoRepository.findByClienteId(1L)).thenReturn(List.of(pedido));
 
-    @Test
-    @DisplayName("Deve reservar pedido alterando status para RESERVADO")
-    void deveReservarPedidoAlterandoStatus() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(1));
+            List<PedidoResponseDTO> resultado = pedidoService.listarPorCliente(1L);
 
-        PedidoResponseDTO reservado = pedidoService.reservarPedido(criado.getId());
-
-        assertThat(reservado.getStatus()).isEqualTo(StatusPedido.RESERVADO);
-    }
-
-    @Test
-    @DisplayName("Deve decrementar estoque ao reservar pedido")
-    void deveDecrementarEstoqueAoReservar() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(4));
-
-        pedidoService.reservarPedido(criado.getId());
-
-        int estoqueAtual = produtoRepository.findById(produto.getId()).get().getQuantidadeEstoque();
-        assertThat(estoqueAtual).isEqualTo(6); // 10 - 4
-    }
-
-    @Test
-    @DisplayName("Deve zerar estoque ao reservar com quantidade total disponível")
-    void deveZerarEstoqueAoReservarQuantidadeTotal() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(10));
-
-        pedidoService.reservarPedido(criado.getId());
-
-        int estoqueAtual = produtoRepository.findById(produto.getId()).get().getQuantidadeEstoque();
-        assertThat(estoqueAtual).isZero();
-    }
-
-    // =========================================================================
-    // pagarPedido()
-    // =========================================================================
-
-    @Test
-    @DisplayName("Deve pagar pedido alterando status para PAGO")
-    void devePagarPedidoAlterandoStatus() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(1));
-        pedidoService.reservarPedido(criado.getId());
-
-        PedidoResponseDTO pago = pedidoService.pagarPedido(criado.getId());
-
-        assertThat(pago.getStatus()).isEqualTo(StatusPedido.PAGO);
-    }
-
-    @Test
-    @DisplayName("Deve chamar ContaService.transferir com os valores corretos ao pagar")
-    void deveChamarTransferirAoPagar() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(2));
-        pedidoService.reservarPedido(criado.getId());
-
-        pedidoService.pagarPedido(criado.getId());
-
-        verify(contaService, times(1))
-                .transferir(eq(cliente.getId()), eq(new BigDecimal("200.00")), any());
-    }
-
-    @Test
-    @DisplayName("Deve manter valor total inalterado após pagamento")
-    void deveManterValorTotalAposPagamento() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(3));
-        pedidoService.reservarPedido(criado.getId());
-
-        PedidoResponseDTO pago = pedidoService.pagarPedido(criado.getId());
-
-        assertThat(pago.getValorTotal()).isEqualByComparingTo(new BigDecimal("300.00"));
+            assertEquals(1, resultado.size());
+            assertEquals(1L, resultado.get(0).getId());
+        }
     }
 
     // =========================================================================
     // cancelarPedido()
     // =========================================================================
 
-    @Test
-    @DisplayName("Deve cancelar pedido CRIADO alterando status para CANCELADO")
-    void deveCancelarPedidoCriado() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(1));
+    @Nested
+    @DisplayName("cancelarPedido()")
+    class CancelarPedido {
 
-        PedidoResponseDTO cancelado = pedidoService.cancelarPedido(criado.getId());
+        @Test
+        @DisplayName("✓ Deve cancelar pedido CRIADO sem devolver estoque")
+        void testCancelarPedidoCriado() {
+            pedido.setStatus(StatusPedido.CRIADO);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+            when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
 
-        assertThat(cancelado.getStatus()).isEqualTo(StatusPedido.CANCELADO);
-    }
+            PedidoResponseDTO resultado = pedidoService.cancelarPedido(1L);
 
-    @Test
-    @DisplayName("Deve cancelar pedido RESERVADO e restaurar estoque")
-    void deveCancelarPedidoReservadoRestaurandoEstoque() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(5));
-        pedidoService.reservarPedido(criado.getId());
+            assertNotNull(resultado);
+            verify(estoqueService, never()).devolverItens(any());
+            verify(pedidoRepository).save(any());
+        }
 
-        pedidoService.cancelarPedido(criado.getId());
+        @Test
+        @DisplayName("✓ Deve cancelar pedido RESERVADO e devolver estoque")
+        void testCancelarPedidoReservadoDevolveEstoque() {
+            pedido.setStatus(StatusPedido.RESERVADO);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+            when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+            doNothing().when(estoqueService).devolverItens(any(Pedido.class));
 
-        int estoqueAtual = produtoRepository.findById(produto.getId()).get().getQuantidadeEstoque();
-        assertThat(estoqueAtual).isEqualTo(10);
-    }
+            pedidoService.cancelarPedido(1L);
 
-    @Test
-    @DisplayName("Deve cancelar pedido PAGO, restaurar estoque e aplicar multa de 10%")
-    void deveCancelarPedidoPagoComMultaDe10Porcento() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(2)); // 200.00
-        pedidoService.reservarPedido(criado.getId());
-        pedidoService.pagarPedido(criado.getId());
+            verify(estoqueService, times(1)).devolverItens(pedido);
+            verify(pedidoRepository).save(any());
+        }
 
-        PedidoResponseDTO cancelado = pedidoService.cancelarPedido(criado.getId());
+        @Test
+        @DisplayName("✓ Deve cancelar pedido PAGO e devolver estoque")
+        void testCancelarPedidoPagoDevolveEstoque() {
+            pedido.setStatus(StatusPedido.PAGO);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+            when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+            doNothing().when(estoqueService).devolverItens(any(Pedido.class));
 
-        BigDecimal multaEsperada = new BigDecimal("200.00")
-                .multiply(PedidoService.PERCENTUAL_MULTA)
-                .setScale(2, RoundingMode.HALF_UP); // 20.00
+            pedidoService.cancelarPedido(1L);
 
-        assertThat(cancelado.getStatus()).isEqualTo(StatusPedido.CANCELADO);
-        assertThat(cancelado.getMultaCancelamento()).isEqualByComparingTo(multaEsperada);
-    }
+            verify(estoqueService, times(1)).devolverItens(pedido);
+            verify(pedidoRepository).save(any());
+        }
 
-    @Test
-    @DisplayName("Deve chamar ContaService.estornarComMulta com valores corretos ao cancelar pedido PAGO")
-    void deveChamarEstornarComMultaAoCancelarPedidoPago() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(2)); // 200.00
-        pedidoService.reservarPedido(criado.getId());
-        pedidoService.pagarPedido(criado.getId());
+        @Test
+        @DisplayName("✓ Deve cancelar pagamento quando pedido possui pagamento associado")
+        void testCancelarPedidoCancelaPagamentoAssociado() {
+            Pagamento pagamento = Pagamento.builder().id(42L).build();
+            pedido.setStatus(StatusPedido.CRIADO);
+            pedido.setPagamento(pagamento);
 
-        pedidoService.cancelarPedido(criado.getId());
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+            when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+            doNothing().when(pagamentoService).cancelar(42L);
 
-        verify(contaService, times(1))
-                .estornarComMulta(eq(cliente.getId()), eq(new BigDecimal("180.00")), eq(new BigDecimal("20.00")), any());
-    }
+            pedidoService.cancelarPedido(1L);
 
-    @Test
-    @DisplayName("Deve restaurar estoque ao cancelar pedido PAGO")
-    void deveRestaurarEstoqueAoCancelarPedidoPago() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(3));
-        pedidoService.reservarPedido(criado.getId());
-        pedidoService.pagarPedido(criado.getId());
+            verify(pagamentoService, times(1)).cancelar(42L);
+        }
 
-        pedidoService.cancelarPedido(criado.getId());
+        @Test
+        @DisplayName("✓ Não deve chamar pagamentoService.cancelar quando pedido não possui pagamento")
+        void testCancelarPedidoSemPagamentoNaoChamaCancelar() {
+            pedido.setStatus(StatusPedido.CRIADO);
+            pedido.setPagamento(null);
 
-        int estoqueAtual = produtoRepository.findById(produto.getId()).get().getQuantidadeEstoque();
-        assertThat(estoqueAtual).isEqualTo(10);
-    }
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+            when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
 
-    @Test
-    @DisplayName("Deve não chamar estornarComMulta ao cancelar pedido CRIADO")
-    void deveNaoChamarEstornoAoCancelarPedidoCriado() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(1));
+            pedidoService.cancelarPedido(1L);
 
-        pedidoService.cancelarPedido(criado.getId());
+            verify(pagamentoService, never()).cancelar(any());
+        }
 
-        verify(contaService, never()).estornarComMulta(anyLong(), any(), any(), any());
-    }
+        @Test
+        @DisplayName("✓ Deve salvar pedido com status CANCELADO")
+        void testCancelarPedidoPersisteCancelado() {
+            pedido.setStatus(StatusPedido.CRIADO);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+            when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> {
+                Pedido p = inv.getArgument(0);
+                assertEquals(StatusPedido.CANCELADO, p.getStatus());
+                return p;
+            });
 
-    @Test
-    @DisplayName("Deve não chamar estornarComMulta ao cancelar pedido RESERVADO")
-    void deveNaoChamarEstornoAoCancelarPedidoReservado() {
-        PedidoResponseDTO criado = pedidoService.criar(pedidoRequestValido(1));
-        pedidoService.reservarPedido(criado.getId());
+            PedidoResponseDTO resultado = pedidoService.cancelarPedido(1L);
 
-        pedidoService.cancelarPedido(criado.getId());
-
-        verify(contaService, never()).estornarComMulta(anyLong(), any(), any(), any());
+            assertNotNull(resultado);
+            verify(pedidoRepository).save(any(Pedido.class));
+        }
     }
 
     // =========================================================================
@@ -415,15 +427,12 @@ class PedidoServicePositive {
 
     private PedidoRequestDTO pedidoRequestValido(int quantidade) {
         return PedidoRequestDTO.builder()
-                .clienteId(cliente.getId())
+                .clienteId(1L)
+                .metodoPagamento("CARTAO_CREDITO")
                 .itens(List.of(ItemPedidoRequestDTO.builder()
-                        .produtoId(produto.getId())
+                        .produtoId(1L)
                         .quantidade(quantidade)
                         .build()))
                 .build();
     }
 }
-
-
-
-

@@ -11,5 +11,6 @@ public class AuthBankResponseDTO {
 	private Long contaId;
 	private String numeroConta;
 	private String saldo;
+	private String limiteCeditoDisponivel;
 	private String tipoConta;
 }

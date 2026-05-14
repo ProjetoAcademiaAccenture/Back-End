@@ -9,7 +9,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "conta")
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,34 +20,30 @@ public class Conta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "numero_conta", unique = true, nullable = false)
+    @Column(nullable = false, unique = true)
     private String numeroConta;
 
-    @Column(name = "senha_transacao", nullable = false)
+    @Column(nullable = false)
     private String senhaTransacao;
 
     @Column(nullable = false, precision = 15, scale = 2)
     @Builder.Default
     private BigDecimal saldo = BigDecimal.ZERO;
 
-    @Column(name = "limite_credito", nullable = false, precision = 15, scale = 2)
-    private BigDecimal limiteCredito = BigDecimal.ZERO;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoConta tipo;
 
-    // Obrigatório — toda conta pertence a um cliente (ou empresa)
-    @ManyToOne(fetch = FetchType.LAZY)
+    // representa crédito disponível
+    @Column(nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal limiteCreditoDisponivel = BigDecimal.ZERO;
+
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @Column(nullable = false)
     @Builder.Default
-    private boolean ativo = true;
-
-    // 1:N com extratos
-    @OneToMany(mappedBy = "conta", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
+    @OneToMany(mappedBy = "conta", cascade = CascadeType.ALL)
     private List<Extrato> extratos = new ArrayList<>();
 }

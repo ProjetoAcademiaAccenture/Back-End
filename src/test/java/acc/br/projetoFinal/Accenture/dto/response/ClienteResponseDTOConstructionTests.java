@@ -2,6 +2,7 @@ package acc.br.projetoFinal.Accenture.dto.response;
 
 import acc.br.projetoFinal.Accenture.enums.TipoEndereco;
 import acc.br.projetoFinal.Accenture.model.Cliente;
+import acc.br.projetoFinal.Accenture.model.Conta;
 import acc.br.projetoFinal.Accenture.model.Endereco;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,7 @@ class ClienteResponseDTOConstructionTests {
     private ClienteResponseDTO dto;
     private List<EnderecoResponseDTO> enderecosResponse;
     private Cliente clientePadrao;
+    private ContaResponseDTO contaResponse;
 
     @BeforeEach
     void setUp() {
@@ -34,6 +36,11 @@ class ClienteResponseDTOConstructionTests {
                 .complemento("Apto 1")
                 .build();
 
+        // Ajuste o builder/construtor de Conta conforme seu modelo real
+        Conta conta = Conta.builder()
+                .id(1L)
+                .build();
+
         clientePadrao = Cliente.builder()
                 .id(1L)
                 .nome("Maria Silva")
@@ -41,10 +48,12 @@ class ClienteResponseDTOConstructionTests {
                 .email("maria@email.com")
                 .telefone("83999990000")
                 .dataNascimento(LocalDate.of(1990, 5, 20))
+                .conta(conta)
                 .enderecos(List.of(endereco))
                 .build();
 
         enderecosResponse = List.of(EnderecoResponseDTO.fromEntity(endereco));
+        contaResponse = ContaResponseDTO.fromEntity(conta);
     }
 
     // ------------------------------------------------------------------ helper
@@ -57,6 +66,7 @@ class ClienteResponseDTOConstructionTests {
                 .email("maria@email.com")
                 .telefone("83999990000")
                 .dataNascimento(LocalDate.of(1990, 5, 20))
+                .conta(contaResponse)
                 .enderecos(enderecosResponse)
                 .build();
     }
@@ -74,15 +84,24 @@ class ClienteResponseDTOConstructionTests {
         assertThat(dto.getEmail()).isNull();
         assertThat(dto.getTelefone()).isNull();
         assertThat(dto.getDataNascimento()).isNull();
+        assertThat(dto.getConta()).isNull();
         assertThat(dto.getEnderecos()).isNull();
     }
 
     @Test
     @DisplayName("Deve construir DTO com construtor all-args")
     void deveConstruirComConstrutorAllArgs() {
+        // O construtor all-args inclui todos os campos na ordem da classe:
+        // id, nome, cpf, email, telefone, dataNascimento, conta, enderecos
         dto = new ClienteResponseDTO(
-                2L, "Pedro Costa", "55566677788", "pedro@email.com",
-                "83986660000", LocalDate.of(1992, 11, 22), enderecosResponse
+                2L,
+                "Pedro Costa",
+                "55566677788",
+                "pedro@email.com",
+                "83986660000",
+                LocalDate.of(1992, 11, 22),
+                contaResponse,
+                enderecosResponse
         );
 
         assertThat(dto.getId()).isEqualTo(2L);
@@ -91,6 +110,7 @@ class ClienteResponseDTOConstructionTests {
         assertThat(dto.getEmail()).isEqualTo("pedro@email.com");
         assertThat(dto.getTelefone()).isEqualTo("83986660000");
         assertThat(dto.getDataNascimento()).isEqualTo(LocalDate.of(1992, 11, 22));
+        assertThat(dto.getConta()).isEqualTo(contaResponse);
         assertThat(dto.getEnderecos()).isEqualTo(enderecosResponse);
     }
 
@@ -105,6 +125,7 @@ class ClienteResponseDTOConstructionTests {
         assertThat(dto.getEmail()).isEqualTo("maria@email.com");
         assertThat(dto.getTelefone()).isEqualTo("83999990000");
         assertThat(dto.getDataNascimento()).isEqualTo(LocalDate.of(1990, 5, 20));
+        assertThat(dto.getConta()).isEqualTo(contaResponse);
         assertThat(dto.getEnderecos()).isEqualTo(enderecosResponse);
     }
 
@@ -120,6 +141,7 @@ class ClienteResponseDTOConstructionTests {
         assertThat(dto.getEmail()).isEqualTo("ana@email.com");
         assertThat(dto.getId()).isNull();
         assertThat(dto.getCpf()).isNull();
+        assertThat(dto.getConta()).isNull();
     }
 
     // ------------------------------------------------------------------ fromEntity
@@ -135,7 +157,17 @@ class ClienteResponseDTOConstructionTests {
         assertThat(dto.getEmail()).isEqualTo(clientePadrao.getEmail());
         assertThat(dto.getTelefone()).isEqualTo(clientePadrao.getTelefone());
         assertThat(dto.getDataNascimento()).isEqualTo(clientePadrao.getDataNascimento());
+        assertThat(dto.getConta()).isNotNull();
         assertThat(dto.getEnderecos()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Deve mapear conta como null quando cliente não tem conta")
+    void deveMapearContaNull_quandoClienteSemConta() {
+        clientePadrao.setConta(null);
+        dto = ClienteResponseDTO.fromEntity(clientePadrao);
+
+        assertThat(dto.getConta()).isNull();
     }
 
     @Test
@@ -214,6 +246,15 @@ class ClienteResponseDTOConstructionTests {
     }
 
     @Test
+    @DisplayName("Deve settar e gettar conta")
+    void deveSettarEGettarConta() {
+        dto = new ClienteResponseDTO();
+        dto.setConta(contaResponse);
+
+        assertThat(dto.getConta()).isEqualTo(contaResponse);
+    }
+
+    @Test
     @DisplayName("Deve settar e gettar enderecos")
     void deveSettarEGettarEnderecos() {
         dto = new ClienteResponseDTO();
@@ -234,11 +275,13 @@ class ClienteResponseDTOConstructionTests {
             dto.setEmail(null);
             dto.setTelefone(null);
             dto.setDataNascimento(null);
+            dto.setConta(null);
             dto.setEnderecos(null);
         }).doesNotThrowAnyException();
 
         assertThat(dto.getId()).isNull();
         assertThat(dto.getNome()).isNull();
+        assertThat(dto.getConta()).isNull();
         assertThat(dto.getEnderecos()).isNull();
     }
 
@@ -354,6 +397,16 @@ class ClienteResponseDTOConstructionTests {
         ClienteResponseDTO dto1 = dtoPadraoValido();
         ClienteResponseDTO dto2 = dtoPadraoValido();
         dto2.setDataNascimento(LocalDate.of(2000, 1, 1));
+
+        assertThat(dto1).isNotEqualTo(dto2);
+    }
+
+    @Test
+    @DisplayName("equals deve retornar false quando conta difere")
+    void equals_deveRetornarFalse_quandoContaDifere() {
+        ClienteResponseDTO dto1 = dtoPadraoValido();
+        ClienteResponseDTO dto2 = dtoPadraoValido();
+        dto2.setConta(null);
 
         assertThat(dto1).isNotEqualTo(dto2);
     }

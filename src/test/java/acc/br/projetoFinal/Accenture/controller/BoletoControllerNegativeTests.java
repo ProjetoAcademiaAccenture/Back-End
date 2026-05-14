@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -38,7 +39,8 @@ class BoletoControllerNegativeTests {
     @Test
     @DisplayName("✗ Deve retornar 404 ao buscar boleto com id inexistente")
     void deveRetornarNotFoundAoBuscarBoletoInexistente() throws Exception {
-        when(boletoService.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Boleto não encontrado"));
+        when(boletoService.buscarPorId(99L))
+                .thenThrow(new RecursoNaoEncontradoException("Boleto não encontrado"));
 
         mockMvc.perform(get("/api/boletos/99")
                 .with(user("admin").roles("USER", "ADMIN"))
@@ -49,7 +51,7 @@ class BoletoControllerNegativeTests {
 
     @Test
     @DisplayName("✗ Deve retornar 403 ao buscar boleto sem autenticação")
-    void deveRetornarUnauthorizedAoBuscarSemAutenticacao() throws Exception {
+    void deveRetornarForbiddenAoBuscarSemAutenticacao() throws Exception {
         mockMvc.perform(get("/api/boletos/1")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
@@ -62,7 +64,8 @@ class BoletoControllerNegativeTests {
     @Test
     @DisplayName("✗ Deve retornar 404 ao buscar boleto com pedidoId inexistente")
     void deveRetornarNotFoundAoBuscarPorPedidoIdInexistente() throws Exception {
-        when(boletoService.buscarPorPedidoId(99L)).thenThrow(new RecursoNaoEncontradoException("Pedido não encontrado"));
+        when(boletoService.buscarPorPedidoId(99L))
+                .thenThrow(new RecursoNaoEncontradoException("Pedido não encontrado"));
 
         mockMvc.perform(get("/api/boletos/pedido/99")
                 .with(user("admin").roles("USER", "ADMIN"))
@@ -73,45 +76,47 @@ class BoletoControllerNegativeTests {
 
     @Test
     @DisplayName("✗ Deve retornar 403 ao buscar boleto por pedidoId sem autenticação")
-    void deveRetornarUnauthorizedAoBuscarPorPedidoIdSemAutenticacao() throws Exception {
+    void deveRetornarForbiddenAoBuscarPorPedidoIdSemAutenticacao() throws Exception {
         mockMvc.perform(get("/api/boletos/pedido/1")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
     }
 
     // -------------------------------------------------------
-    // POST /api/boletos/gerar/{pedidoId}
+    // POST /api/boletos/gerar/{pagamentoId}
     // -------------------------------------------------------
 
     @Test
-    @DisplayName("✗ Deve retornar 404 ao gerar boleto para pedido inexistente")
-    void deveRetornarNotFoundAoGerarBoletoParaPedidoInexistente() throws Exception {
-        when(boletoService.gerar(99L)).thenThrow(new RecursoNaoEncontradoException("Pedido não encontrado"));
+    @DisplayName("✗ Deve retornar 404 ao gerar boleto para pagamento inexistente")
+    void deveRetornarNotFoundAoGerarBoletoParaPagamentoInexistente() throws Exception {
+        when(boletoService.gerar(99L))
+                .thenThrow(new RecursoNaoEncontradoException("Pagamento não encontrado"));
 
         mockMvc.perform(post("/api/boletos/gerar/99")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is("Pedido não encontrado")));
+                .andExpect(jsonPath("$.message", is("Pagamento não encontrado")));
     }
 
     @Test
     @DisplayName("✗ Deve retornar 400 ao gerar boleto com regra de negócio inválida")
     void deveRetornarBadRequestAoGerarBoletoComRegraInvalida() throws Exception {
-        when(boletoService.gerar(1L)).thenThrow(new IllegalArgumentException("Pedido já possui boleto ativo"));
+        when(boletoService.gerar(1L))
+                .thenThrow(new IllegalArgumentException("Já existe boleto para este pagamento"));
 
         mockMvc.perform(post("/api/boletos/gerar/1")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Pedido já possui boleto ativo")));
+                .andExpect(jsonPath("$.message", is("Já existe boleto para este pagamento")));
     }
 
     @Test
     @DisplayName("✗ Deve retornar 403 ao gerar boleto sem autenticação")
-    void deveRetornarUnauthorizedAoGerarSemAutenticacao() throws Exception {
+    void deveRetornarForbiddenAoGerarSemAutenticacao() throws Exception {
         mockMvc.perform(post("/api/boletos/gerar/1")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
@@ -125,7 +130,8 @@ class BoletoControllerNegativeTests {
     @Test
     @DisplayName("✗ Deve retornar 400 ao pagar boleto com regra inválida")
     void deveRetornarBadRequestAoPagarBoletoComRegraInvalida() throws Exception {
-        when(boletoService.pagarBoleto(99L)).thenThrow(new IllegalArgumentException("Boleto está cancelado"));
+        when(boletoService.pagarBoleto(eq(99L), anyString()))
+                .thenThrow(new IllegalArgumentException("Boleto está cancelado"));
 
         mockMvc.perform(patch("/api/boletos/99/pagar")
                 .with(user("admin").roles("USER", "ADMIN"))
@@ -138,7 +144,8 @@ class BoletoControllerNegativeTests {
     @Test
     @DisplayName("✗ Deve retornar 404 ao pagar boleto com id inexistente")
     void deveRetornarNotFoundAoPagarBoletoInexistente() throws Exception {
-        when(boletoService.pagarBoleto(99L)).thenThrow(new RecursoNaoEncontradoException("Boleto não encontrado"));
+        when(boletoService.pagarBoleto(eq(99L), anyString()))
+                .thenThrow(new RecursoNaoEncontradoException("Boleto não encontrado"));
 
         mockMvc.perform(patch("/api/boletos/99/pagar")
                 .with(user("admin").roles("USER", "ADMIN"))
@@ -150,7 +157,7 @@ class BoletoControllerNegativeTests {
 
     @Test
     @DisplayName("✗ Deve retornar 403 ao pagar boleto sem autenticação")
-    void deveRetornarUnauthorizedAoPagarSemAutenticacao() throws Exception {
+    void deveRetornarForbiddenAoPagarSemAutenticacao() throws Exception {
         mockMvc.perform(patch("/api/boletos/1/pagar")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
@@ -191,7 +198,7 @@ class BoletoControllerNegativeTests {
 
     @Test
     @DisplayName("✗ Deve retornar 403 ao cancelar boleto sem autenticação")
-    void deveRetornarUnauthorizedAoCancelarSemAutenticacao() throws Exception {
+    void deveRetornarForbiddenAoCancelarSemAutenticacao() throws Exception {
         mockMvc.perform(patch("/api/boletos/1/cancelar")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))

@@ -115,19 +115,19 @@ class ExtratoServiceNegativeTests {
     }
 
     @Test
-    @DisplayName("Deve retornar lista vazia quando filtrar MULTA sem resultados")
-    void deveRetornarListaVaziaQuandoNaoHaMultas() {
-        when(extratoRepository.findByContaIdAndTipoOrderByDataHoraDesc(1L, TipoExtrato.MULTA))
+    @DisplayName("Deve retornar lista vazia quando filtrar CREDITO sem resultados")
+    void deveRetornarListaVaziaQuandoNaoHaCreditos() {
+        when(extratoRepository.findByContaIdAndTipoOrderByDataHoraDesc(1L, TipoExtrato.CREDITO))
                 .thenReturn(List.of());
 
-        List<ExtratoResponseDTO> resultado = extratoService.listarPorTipo(1L, TipoExtrato.MULTA);
+        List<ExtratoResponseDTO> resultado = extratoService.listarPorTipo(1L, TipoExtrato.CREDITO);
 
         assertThat(resultado)
                 .isNotNull()
                 .isEmpty();
 
         verify(extratoRepository, times(1))
-                .findByContaIdAndTipoOrderByDataHoraDesc(1L, TipoExtrato.MULTA);
+                .findByContaIdAndTipoOrderByDataHoraDesc(1L, TipoExtrato.CREDITO);
     }
 
     @Test
