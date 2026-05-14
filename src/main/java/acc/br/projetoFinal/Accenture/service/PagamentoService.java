@@ -17,7 +17,9 @@ import acc.br.projetoFinal.Accenture.repository.BoletoRepository;
 import acc.br.projetoFinal.Accenture.repository.PagamentoRepository;
 import acc.br.projetoFinal.Accenture.repository.PedidoRepository;
 import acc.br.projetoFinal.Accenture.repository.TentativaPagamentoRepository;
+import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static acc.br.projetoFinal.Accenture.service.PedidoService.DESCONTO_PIX_BOLETO;
 
@@ -75,7 +78,11 @@ public class PagamentoService {
 		MetodoPagamento metodo = dto.getMetodoPagamento();
 
 		if (metodo == MetodoPagamento.BOLETO) {
-			return gerarBoleto(pagamento, pedido);
+			Optional<Boleto> boletoExistente = boletoRepository.findByPagamentoId(pagamento.getId());
+
+			if (boletoExistente.isPresent()) {
+				return pagarBoleto (boletoExistente.get().getId(), dto.getSenhaTransacao());
+			}
 		}
 
 		Conta contaCliente = contaService.buscarContaDoCliente(
@@ -162,11 +169,7 @@ public class PagamentoService {
 		return PagamentoResponseDTO.fromEntity(pagamento);
 	}
 
-	private PagamentoResponseDTO gerarBoleto(
-			Pagamento pagamento,
-			Pedido pedido
-	) {
-
+	private PagamentoResponseDTO gerarBoleto(Pagamento pagamento, Pedido pedido) {
 		BigDecimal valorBruto = pedido.getValorBruto();
 
 		BigDecimal desconto = calcularDesconto(
@@ -209,6 +212,7 @@ public class PagamentoService {
 		return PagamentoResponseDTO.fromEntity(pagamento);
 	}
 
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Transactional
 	public PagamentoResponseDTO pagarBoleto(Long boletoId, String senhaTransacao) {
 
@@ -256,48 +260,37 @@ public class PagamentoService {
 			);
 		}
 
-		String descricao = "Pagamento boleto pedido #" + pedido.getId();
+		try {
+			String descricao = "Liquidação Boleto #" + boleto.getId() + " - Pedido #" + pedido.getId();
 
-		contaService.debitarSaldo(
-				contaCliente,
-				valorCobrado,
-				pedido,
-				pagamento,
-				descricao
-		);
+			// 1. Executa a transferência financeira
+			contaService.debitarSaldo(contaCliente, valorCobrado, pedido, pagamento, descricao);
+			contaService.creditarSaldo(contaEmpresa, valorCobrado, pedido, pagamento, descricao);
 
-		contaService.creditarSaldo(
-				contaEmpresa,
-				valorCobrado,
-				pedido,
-				pagamento,
-				descricao
-		);
+			// 2. Atualiza o Boleto
+			boleto.setStatus(StatusBoleto.PAGO);
+			// Se houve multa, é bom atualizar o valor final no boleto para registro
+			boleto.setValor(valorCobrado);
 
-		boleto.setStatus(StatusBoleto.PAGO);
+			// 3. Atualiza o Pagamento
+			pagamento.setStatus(StatusPagamento.APROVADO);
+			pagamento.setDataConclusao(LocalDateTime.now());
+			pagamento.setValorFinal(valorCobrado); // Importante se houver multa
 
-		pagamento.setStatus(StatusPagamento.APROVADO);
-		pagamento.setDataConclusao(LocalDateTime.now());
+			// 4. Atualiza o Pedido
+			pedido.setStatus(StatusPedido.PAGO);
 
-		pedido.setStatus(StatusPedido.PAGO);
-		pedido.setValorFinal(valorCobrado);
+			// Salva as alterações
+			boletoRepository.save(boleto);
+			pagamentoRepository.save(pagamento);
+			pedidoRepository.save(pedido);
 
-		boletoRepository.save(boleto);
-		pagamentoRepository.save(pagamento);
-		pedidoRepository.save(pedido);
+			return PagamentoResponseDTO.fromEntity(pagamento);
 
-		TentativaPagamento tentativa = TentativaPagamento.builder()
-				.pagamento(pagamento)
-				.metodo(MetodoPagamento.BOLETO)
-				.status(StatusPagamento.APROVADO)
-				.valorTentado(valorCobrado)
-				.mensagem("Boleto pago com sucesso")
-				.dataTentativa(LocalDateTime.now())
-				.build();
-
-		tentativaPagamentoRepository.save(tentativa);
-
-		return PagamentoResponseDTO.fromEntity(pagamento);
+		} catch (Exception e) {
+			// Caso algo dê errado na transação bancária
+			throw new RuntimeException("Erro ao processar liquidação: " + e.getMessage());
+		}
 	}
 
 	@Transactional

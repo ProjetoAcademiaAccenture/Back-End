@@ -2,6 +2,7 @@ package acc.br.projetoFinal.Accenture.service;
 
 import acc.br.projetoFinal.Accenture.dto.request.ItemPedidoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.request.PedidoRequestDTO;
+import acc.br.projetoFinal.Accenture.dto.response.PagamentoResponseDTO;
 import acc.br.projetoFinal.Accenture.dto.response.PedidoResponseDTO;
 import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
 import acc.br.projetoFinal.Accenture.enums.StatusPedido;
@@ -35,6 +36,7 @@ public class PedidoService {
     private final ProdutoRepository produtoRepository;
     private final EstoqueService estoqueService;
     private final PagamentoService pagamentoService;
+    private final BoletoService boletoService;
 
     public static final BigDecimal DESCONTO_PIX_BOLETO = new BigDecimal("0.05");
 
@@ -90,7 +92,8 @@ public class PedidoService {
         estoqueService.reservarItens(salvo);
         salvo.setStatus(StatusPedido.RESERVADO);
 
-        pagamentoService.criarParaPedido(salvo, dto.getMetodoPagamento());
+        PagamentoResponseDTO pagamento = pagamentoService.criarParaPedido(salvo, dto.getMetodoPagamento());
+        boletoService.gerar(pagamento.getId());
         salvo = pedidoRepository.save(salvo);
 
         return PedidoResponseDTO.fromEntity(salvo, metodo);
