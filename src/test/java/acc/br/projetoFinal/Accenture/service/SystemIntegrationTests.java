@@ -72,9 +72,8 @@ class SystemIntegrationTests {
                                     .toUpperCase())
                             .saldo(BigDecimal.ZERO)
                             .senhaTransacao("senha123")
-                            .limiteCredito(BigDecimal.ZERO)
+                            //.limiteCredito(BigDecimal.ZERO)
                             .tipo(TipoConta.CORRENTE)
-                            .ativo(true)
                             .cliente(clienteRepository.findById(cliente.getId())
                                     .orElseThrow(() ->
                                             new RuntimeException("Cliente não encontrado")))
@@ -89,8 +88,7 @@ class SystemIntegrationTests {
         produtoRequest.setNome("Mouse");
         produtoRequest.setDescricao("Mouse Óptico");
         produtoRequest.setPreco(new BigDecimal("100.00"));
-        produtoRequest.setQuantidade(5);
-        produtoRequest.setMetodoPgto(MetodoPagamento.PIX);
+        produtoRequest.setQuantidadeEstoque(5);
 
         produto = produtoService.criar(produtoRequest);
     }
@@ -139,8 +137,7 @@ class SystemIntegrationTests {
         update.setNome("Mouse Atualizado");
         update.setDescricao("Mouse Gamer");
         update.setPreco(new BigDecimal("150.00"));
-        update.setQuantidade(5);
-        update.setMetodoPgto(MetodoPagamento.PIX);
+        update.setQuantidadeEstoque(5);
 
         produtoService.atualizar(produto.getId(), update);
 

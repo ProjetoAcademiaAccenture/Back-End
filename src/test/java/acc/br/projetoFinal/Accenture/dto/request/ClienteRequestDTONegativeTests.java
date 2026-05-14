@@ -35,7 +35,7 @@ class ClienteRequestDTONegativeTests {
                 .email("maria@email.com")
                 .senha("Senha@123")
                 .telefone("83999990000")
-                .dtNascimento(LocalDate.of(1990, 5, 20))
+                .dataNascimento(LocalDate.of(1990, 5, 20))
                 .endereco(enderecoPadraoValido())
                 .build();
     }

@@ -11,6 +11,10 @@ class ClienteBusinessRulesTests {
 
     private Cliente cliente;
 
+    // =========================================================
+    // Setup
+    // =========================================================
+
     @BeforeEach
     void setUp() {
         cliente = Cliente.builder()
@@ -21,6 +25,10 @@ class ClienteBusinessRulesTests {
                 .telefone("11999999999")
                 .build();
     }
+
+    // =========================================================
+    // Testes de validarCpf()
+    // =========================================================
 
     @Test
     @DisplayName("Deve validar CPF válido com sucesso")
@@ -65,6 +73,17 @@ class ClienteBusinessRulesTests {
     }
 
     @Test
+    @DisplayName("Não deve validar CPF composto apenas por espaços")
+    void naoDeveValidarCpfComApenasEspacos() {
+        cliente.setCpf("           "); // 11 espaços — isBlank() = true
+        assertThrows(IllegalArgumentException.class, cliente::validarCpf);
+    }
+
+    // =========================================================
+    // Testes de validarEmail()
+    // =========================================================
+
+    @Test
     @DisplayName("Deve validar email válido com sucesso")
     void deveValidarEmailValidoComSucesso() {
         cliente.setEmail("joao@email.com");
@@ -100,11 +119,30 @@ class ClienteBusinessRulesTests {
     }
 
     @Test
-    @DisplayName("Não deve validar email sem domínio")
+    @DisplayName("Não deve validar email sem domínio após @")
     void naoDeveValidarEmailSemDominio() {
         cliente.setEmail("joao@");
         assertThrows(IllegalArgumentException.class, cliente::validarEmail);
     }
+
+    @Test
+    @DisplayName("Não deve validar email composto apenas por espaços")
+    void naoDeveValidarEmailComApenasEspacos() {
+        cliente.setEmail("   ");
+        assertThrows(IllegalArgumentException.class, cliente::validarEmail);
+    }
+
+    @Test
+    @DisplayName("Não deve validar email sem ponto no domínio")
+    void naoDeveValidarEmailSemPontoNoDominio() {
+        // Cobre o ramo do regex onde domínio não possui '.<extensão>'
+        cliente.setEmail("joao@emailcom");
+        assertThrows(IllegalArgumentException.class, cliente::validarEmail);
+    }
+
+    // =========================================================
+    // Testes de validarNome()
+    // =========================================================
 
     @Test
     @DisplayName("Deve validar nome válido com sucesso")
@@ -117,6 +155,14 @@ class ClienteBusinessRulesTests {
     @DisplayName("Deve validar nome com 3 caracteres (mínimo)")
     void deveValidarNomeComTresCaracteres() {
         cliente.setNome("Joã");
+        assertDoesNotThrow(cliente::validarNome);
+    }
+
+    @Test
+    @DisplayName("Deve validar nome com exatamente 100 caracteres (máximo)")
+    void deveValidarNomeComExatamente100Caracteres() {
+        String nome100 = "J".repeat(100);
+        cliente.setNome(nome100);
         assertDoesNotThrow(cliente::validarNome);
     }
 
@@ -154,13 +200,5 @@ class ClienteBusinessRulesTests {
         String nomeLongo = "J".repeat(101);
         cliente.setNome(nomeLongo);
         assertThrows(IllegalArgumentException.class, cliente::validarNome);
-    }
-
-    @Test
-    @DisplayName("Deve validar nome com exatamente 100 caracteres")
-    void deveValidarNomeComExatamente100Caracteres() {
-        String nome100 = "J".repeat(100);
-        cliente.setNome(nome100);
-        assertDoesNotThrow(cliente::validarNome);
     }
 }

@@ -35,7 +35,7 @@ class ClienteRequestDTOTests {
                 .email("maria@email.com")
                 .senha("Senha@123")
                 .telefone("83999990000")
-                .dtNascimento(LocalDate.of(1990, 5, 20))
+                .dataNascimento(LocalDate.of(1990, 5, 20))
                 .endereco(enderecoPadraoValido())
                 .build();
     }
@@ -178,7 +178,7 @@ class ClienteRequestDTOTests {
     @DisplayName("deve aceitar dtNascimento nulo (campo opcional)")
     void deveAceitar_dtNascimentoNulo() {
         ClienteRequestDTO dto = dtoPadraoValido();
-        dto.setDtNascimento(null);
+        dto.setDataNascimento(null);
 
         assertThat(validator.validate(dto)).isEmpty();
     }
@@ -187,7 +187,7 @@ class ClienteRequestDTOTests {
     @DisplayName("deve aceitar dtNascimento com data passada")
     void deveAceitar_dtNascimentoComDataPassada() {
         ClienteRequestDTO dto = dtoPadraoValido();
-        dto.setDtNascimento(LocalDate.of(2000, 1, 1));
+        dto.setDataNascimento(LocalDate.of(2000, 1, 1));
 
         assertThat(validator.validate(dto)).isEmpty();
     }

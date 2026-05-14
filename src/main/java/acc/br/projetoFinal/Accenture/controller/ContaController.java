@@ -3,13 +3,14 @@ package acc.br.projetoFinal.Accenture.controller;
 import acc.br.projetoFinal.Accenture.dto.request.ContaRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.response.ContaResponseDTO;
 import acc.br.projetoFinal.Accenture.dto.response.ExtratoResponseDTO;
+import acc.br.projetoFinal.Accenture.enums.TipoExtrato;
 import acc.br.projetoFinal.Accenture.model.Conta;
+import acc.br.projetoFinal.Accenture.repository.ContaRepository;
 import acc.br.projetoFinal.Accenture.service.ContaService;
 import acc.br.projetoFinal.Accenture.service.ExtratoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -24,6 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ContaController {
 
+    private final ContaRepository contaRepository;
     private final ContaService contaService;
     private final ExtratoService extratoService;
 
@@ -57,16 +59,25 @@ public class ContaController {
 
     @GetMapping("/{id}/extrato")
     public ResponseEntity<List<ExtratoResponseDTO>> listarExtrato(
-        @PathVariable Long id,
-        @RequestParam(required = false)
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
-        @RequestParam(required = false)
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
+            @PathVariable Long id,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim,
+            @RequestParam(required = false) TipoExtrato tipo) {
 
-        if (inicio != null && fim != null) {
-            return ResponseEntity.ok(extratoService.listarPorPeriodo(id, inicio, fim));
+        List<ExtratoResponseDTO> extrato;
+
+        if (inicio != null && fim != null && tipo != null) {
+            extrato = extratoService.listarPorPeriodoETipo(id, inicio, fim, tipo);
+        } else if (inicio != null && fim != null) {
+            extrato = extratoService.listarPorPeriodo(id, inicio, fim);
+        } else if (tipo != null) {
+            extrato = extratoService.listarPorTipo(id, tipo);
+        } else {
+            extrato = extratoService.listarPorConta(id);
         }
 
-        return ResponseEntity.ok(extratoService.listarPorConta(id));
+        return ResponseEntity.ok(extrato);
     }
 }

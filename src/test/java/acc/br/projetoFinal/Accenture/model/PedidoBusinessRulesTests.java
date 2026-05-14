@@ -49,10 +49,15 @@ class PedidoBusinessRulesTests {
                 .cliente(cliente)
                 .status(StatusPedido.CRIADO)
                 .dataCriacao(LocalDateTime.now())
-                .valorTotal(BigDecimal.ZERO)
-                .multaCancelamento(BigDecimal.ZERO)
+                // valorTotal e multaCancelamento ficam nulos/default via builder;
+                // usamos setters nos testes que precisam de valores específicos.
                 .itens(new ArrayList<>())
                 .build();
+
+        // Garante multaCancelamento = ZERO (campo tem @Builder.Default mas
+        // builder explícito com .itens(...) pode resetar o default do Lombok)
+        pedido.setMultaCancelamento(BigDecimal.ZERO);
+        pedido.setValorTotal(BigDecimal.ZERO);
 
         item1 = ItemPedido.builder()
                 .id(1L)
@@ -74,23 +79,29 @@ class PedidoBusinessRulesTests {
         pedido.getItens().add(item2);
     }
 
+    // =========================================================
+    // calcularValorTotal()
+    // =========================================================
+
     @Test
     @DisplayName("Deve calcular valor total do pedido corretamente")
     void deveCalcularValorTotal() {
         // (100 * 2) + (50 * 3) = 200 + 150 = 350
         pedido.calcularValorTotal();
-
         assertEquals(new BigDecimal("350.00"), pedido.getValorTotal());
     }
 
     @Test
-    @DisplayName("Deve calcular valor total de pedido vazio")
+    @DisplayName("Deve calcular valor total de pedido vazio como ZERO")
     void deveCalcularValorTotalPedidoVazio() {
         pedido.getItens().clear();
         pedido.calcularValorTotal();
-
         assertEquals(BigDecimal.ZERO, pedido.getValorTotal());
     }
+
+    // =========================================================
+    // reservar()
+    // =========================================================
 
     @Test
     @DisplayName("Deve permitir reserva de pedido em CRIADO")
@@ -104,26 +115,30 @@ class PedidoBusinessRulesTests {
     @DisplayName("Não deve reservar pedido que já está RESERVADO")
     void naoDeveReservarPedidoReservado() {
         pedido.setStatus(StatusPedido.RESERVADO);
-        assertThrows(IllegalArgumentException.class, pedido::reservar);
+        assertThrows(IllegalArgumentException.class, () -> pedido.reservar());
     }
 
     @Test
     @DisplayName("Não deve reservar pedido PAGO")
     void naoDeveReservarPedidoPago() {
         pedido.setStatus(StatusPedido.PAGO);
-        assertThrows(IllegalArgumentException.class, pedido::reservar);
+        assertThrows(IllegalArgumentException.class, () -> pedido.reservar());
     }
 
     @Test
     @DisplayName("Não deve reservar pedido CANCELADO")
     void naoDeveReservarPedidoCancelado() {
         pedido.setStatus(StatusPedido.CANCELADO);
-        assertThrows(IllegalArgumentException.class, pedido::reservar);
+        assertThrows(IllegalArgumentException.class, () -> pedido.reservar());
     }
+
+    // =========================================================
+    // pagar()
+    // =========================================================
 
     @Test
     @DisplayName("Deve permitir pagamento de pedido RESERVADO")
-    void devepagarPedidoReservado() {
+    void devePagarPedidoReservado() {
         pedido.setStatus(StatusPedido.RESERVADO);
         assertDoesNotThrow(() -> pedido.pagar());
         assertEquals(StatusPedido.PAGO, pedido.getStatus());
@@ -133,25 +148,29 @@ class PedidoBusinessRulesTests {
     @DisplayName("Não deve pagar pedido em CRIADO")
     void naoDevePagarPedidoCriado() {
         pedido.setStatus(StatusPedido.CRIADO);
-        assertThrows(IllegalArgumentException.class, pedido::pagar);
+        assertThrows(IllegalArgumentException.class, () -> pedido.pagar());
     }
 
     @Test
     @DisplayName("Não deve pagar pedido PAGO")
     void naoDevePagarPedidoPago() {
         pedido.setStatus(StatusPedido.PAGO);
-        assertThrows(IllegalArgumentException.class, pedido::pagar);
+        assertThrows(IllegalArgumentException.class, () -> pedido.pagar());
     }
 
     @Test
     @DisplayName("Não deve pagar pedido CANCELADO")
     void naoDevePagarPedidoCancelado() {
         pedido.setStatus(StatusPedido.CANCELADO);
-        assertThrows(IllegalArgumentException.class, pedido::pagar);
+        assertThrows(IllegalArgumentException.class, () -> pedido.pagar());
     }
 
+    // =========================================================
+    // cancelar()
+    // =========================================================
+
     @Test
-    @DisplayName("Deve permitir cancelamento de pedido em qualquer estado")
+    @DisplayName("Deve permitir cancelamento de pedido CRIADO")
     void deveCancelarPedidoCriado() {
         pedido.setStatus(StatusPedido.CRIADO);
         assertDoesNotThrow(() -> pedido.cancelar());
@@ -170,23 +189,27 @@ class PedidoBusinessRulesTests {
     @DisplayName("Deve permitir cancelamento de pedido PAGO")
     void deveCancelarPedidoPago() {
         pedido.setStatus(StatusPedido.PAGO);
+        pedido.setValorTotal(new BigDecimal("500.00"));
         assertDoesNotThrow(() -> pedido.cancelar());
         assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
     }
 
     @Test
-    @DisplayName("Não deve cancelar pedido já cancelado")
+    @DisplayName("Não deve cancelar pedido já CANCELADO")
     void naoDeveCancelarPedidoCancelado() {
         pedido.setStatus(StatusPedido.CANCELADO);
-        assertThrows(IllegalArgumentException.class, pedido::cancelar);
+        assertThrows(IllegalArgumentException.class, () -> pedido.cancelar());
     }
+
+    // =========================================================
+    // calcularMultaCancelamento()
+    // =========================================================
 
     @Test
     @DisplayName("Deve calcular multa de cancelamento em 10% do valor total")
     void deveCalcularMultaCancelamento() {
         pedido.setValorTotal(new BigDecimal("1000.00"));
         BigDecimal multa = pedido.calcularMultaCancelamento();
-
         assertEquals(new BigDecimal("100.00"), multa);
     }
 
@@ -213,6 +236,22 @@ class PedidoBusinessRulesTests {
         assertEquals(BigDecimal.ZERO, pedido.getMultaCancelamento());
         assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
     }
+
+    @Test
+    @DisplayName("Não deve aplicar multa ao cancelar pedido RESERVADO")
+    void naoDeveAplicarMultaAoCancelarReservado() {
+        pedido.setStatus(StatusPedido.RESERVADO);
+        pedido.setValorTotal(new BigDecimal("500.00"));
+
+        pedido.cancelar();
+
+        assertEquals(BigDecimal.ZERO, pedido.getMultaCancelamento());
+        assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
+    }
+
+    // =========================================================
+    // deveDevolverEstoque()
+    // =========================================================
 
     @Test
     @DisplayName("Deve devolver estoque para pedido RESERVADO")

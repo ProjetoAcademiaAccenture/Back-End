@@ -139,19 +139,19 @@ class ExtratoControllerNegativeTests {
                 .andExpect(jsonPath("$", hasSize(0)));
     }
 
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("Deve retornar lista vazia para tipo MULTA sem resultados")
-    void deveRetornarListaVaziaParaTipoMultaSemResultados() throws Exception {
-        when(extratoService.listarPorTipo(1L, TipoExtrato.MULTA)).thenReturn(List.of());
+   @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Deve retornar lista vazia para tipo ESTORNO sem resultados (período sem movimentação)")
+        void deveRetornarListaVaziaParaTipoEstornoComPeriodoSemMovimentacao() throws Exception {
+        when(extratoService.listarPorTipo(1L, TipoExtrato.ESTORNO)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/contas/1/extrato")
-                .param("tipo", "MULTA")
+                .param("tipo", "ESTORNO")
                 .with(user("user").roles("USER"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
-    }
+        }
 
     @Test
     @WithMockUser(roles = "USER")

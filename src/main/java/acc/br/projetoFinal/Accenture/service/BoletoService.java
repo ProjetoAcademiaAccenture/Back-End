@@ -171,4 +171,10 @@ public class BoletoService {
         }
         return codigo.toString();
     }
+
+    public BoletoResponseDTO buscarPorPedidoId(Long pedidoId) {
+    Boleto boleto = boletoRepository.findByPagamentoPedidoId(pedidoId)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado para este pedido"));
+    return BoletoResponseDTO.fromEntity(boleto);
+    }
 }

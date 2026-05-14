@@ -50,8 +50,7 @@ class ProdutoControllerTests {
                 .nome("Mouse Gamer")
                 .descricao("Mouse com sensor de alta precisão")
                 .preco(new BigDecimal("150.00"))
-                .quantidade(10)
-                .metodoPgto(MetodoPagamento.PIX)
+                .quantidadeEstoque(10)
                 .build();
 
         produtoResponse = ProdutoResponseDTO.builder()

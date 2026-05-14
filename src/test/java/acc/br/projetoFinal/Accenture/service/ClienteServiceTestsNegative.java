@@ -60,7 +60,7 @@ class ClienteServiceTestsNegative {
                 .email("maria@email.com")
                 .telefone("83999990000")
                 .senha("Senha@123")
-                .dtNascimento(LocalDate.of(1990, 5, 20))
+                .dataNascimento(LocalDate.of(1990, 5, 20))
                 .endereco(enderecoDTO)
                 .build();
 

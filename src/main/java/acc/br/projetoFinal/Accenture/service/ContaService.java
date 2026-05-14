@@ -2,24 +2,25 @@ package acc.br.projetoFinal.Accenture.service;
 
 import acc.br.projetoFinal.Accenture.dto.request.ContaRequestDTO;
 import acc.br.projetoFinal.Accenture.enums.TipoExtrato;
-import acc.br.projetoFinal.Accenture.enums.TipoConta;
 import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
 import acc.br.projetoFinal.Accenture.exception.SaldoInsuficienteException;
 import acc.br.projetoFinal.Accenture.model.Conta;
-import acc.br.projetoFinal.Accenture.model.Extrato;
 import acc.br.projetoFinal.Accenture.model.Pagamento;
 import acc.br.projetoFinal.Accenture.model.Pedido;
 import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
 import acc.br.projetoFinal.Accenture.repository.ContaRepository;
+import acc.br.projetoFinal.Accenture.repository.ExtratoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDateTime;
+import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ContaService {
@@ -28,9 +29,11 @@ public class ContaService {
     private static final BigDecimal LIMITE_INICIAL = new BigDecimal("1000.00");
 
     private final ContaRepository contaRepository;
+    private final ExtratoRepository extratoRepository;
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
     private final ExtratoService extratoService;
+    private final EmailService emailService;
 
     @Transactional
     public Conta criarEntidade(ContaRequestDTO dto) {
@@ -40,6 +43,9 @@ public class ContaService {
         if (contaRepository.findByClienteId(dto.getClienteId()).isPresent()) {
             throw new IllegalArgumentException("Cliente já possui uma conta");
         }
+
+      BigDecimal saldoInicial = gerarValorAleatorio(100.00, 500.00);
+      BigDecimal limiteInicial = gerarValorAleatorio(1000.00, 5000.00);
 
         Conta conta = Conta.builder()
             .numeroConta(gerarNumeroConta())
@@ -59,6 +65,19 @@ public class ContaService {
             null,
             "Limite inicial da conta"
         );
+      log.info("Conta criada com sucesso. ID: {}", conta.getId());
+
+      // Registro inicial no extrato
+      extratoService.registrar(conta, TipoExtrato.CREDITO, saldoInicial, BigDecimal.ZERO,
+          saldoInicial, "Saldo inicial de abertura", null, null);
+
+      // Integração do EmailService do HEAD
+      emailService.enviarDadosConta(
+          cliente.getEmail(),
+          cliente.getNome(),
+          conta.getNumeroConta(),
+          conta.getTipo().name()
+          );
 
         return conta;
     }
@@ -177,26 +196,6 @@ public class ContaService {
     }
 
     @Transactional
-    public void creditarLimiteCredito(Conta conta, BigDecimal valor, Pedido pedido, Pagamento pagamento, String descricao) {
-        BigDecimal antes = conta.getLimiteCreditoDisponivel();
-        BigDecimal depois = antes.add(valor);
-
-        conta.setLimiteCreditoDisponivel(depois);
-        contaRepository.save(conta);
-
-        extratoService.registrar(
-            conta,
-            TipoExtrato.CREDITO,
-            valor,
-            antes,
-            depois,
-            descricao,
-            pedido,
-            pagamento
-        );
-    }
-
-    @Transactional
     public Conta creditarLimiteCredito(Long contaId, BigDecimal valor) {
         Conta conta = buscarPorId(contaId);
         BigDecimal limiteAntes = conta.getLimiteCreditoDisponivel();
@@ -217,12 +216,25 @@ public class ContaService {
         return conta;
     }
 
-    private String gerarNumeroConta() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 6; i++) {
-            sb.append((int) (Math.random() * 10));
-        }
-        sb.append("-").append((int) (Math.random() * 10));
-        return sb.toString();
+    private BigDecimal gerarValorAleatorio(double min, double max) {
+        double randomDouble = ThreadLocalRandom.current().nextDouble(min, max);
+        return BigDecimal.valueOf(randomDouble).setScale(2, RoundingMode.HALF_UP);
     }
+
+  @Transactional
+  public void creditarLimiteCredito(Conta conta, BigDecimal valor, Pedido pedido, Pagamento pagamento, String descricao) {
+    BigDecimal antes = conta.getLimiteCreditoDisponivel();
+    BigDecimal depois = antes.add(valor);
+
+    conta.setLimiteCreditoDisponivel(depois);
+    contaRepository.save(conta);
+
+    extratoService.registrar(conta, TipoExtrato.CREDITO, valor, antes, depois, descricao, pedido, pagamento);
+  }
+
+  private String gerarNumeroConta() {
+    return String.format("%07d-%d",
+        ThreadLocalRandom.current().nextInt(1000000, 9999999),
+        ThreadLocalRandom.current().nextInt(0, 9));
+  }
 }

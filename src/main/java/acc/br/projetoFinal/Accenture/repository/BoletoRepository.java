@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface BoletoRepository extends JpaRepository<Boleto, Long> {
     Optional<Boleto> findByCodigoBarras(String codigoBarras);
     Optional<Boleto> findByPagamentoId(Long pagamentoId);
+    Optional<Boleto> findByPagamentoPedidoId(Long pedidoId);
 }

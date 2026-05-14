@@ -1,12 +1,9 @@
 package acc.br.projetoFinal.Accenture.model;
 
 import acc.br.projetoFinal.Accenture.enums.Categoria;
-import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "produto")

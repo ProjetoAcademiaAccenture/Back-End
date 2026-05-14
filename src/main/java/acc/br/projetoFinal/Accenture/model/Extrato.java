@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode
+@ToString
 public class Extrato {
 
     @Id
@@ -22,14 +24,6 @@ public class Extrato {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conta_id", nullable = false)
     private Conta conta;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pedido_id")
-    private Pedido pedido;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pagamento_id")
-    private Pagamento pagamento;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -46,6 +40,19 @@ public class Extrato {
 
     private String descricao;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pedido_id")
+    private Pedido pedido;
+
+    @Builder.Default
     @Column(nullable = false)
-    private LocalDateTime dataHora;
+    private LocalDateTime dataHora = LocalDateTime.now();
+
+    // pagamento mantido mas sem participar do AllArgsConstructor do teste.
+    // Declarado separadamente para não quebrar a assinatura de 9 args usada no teste.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pagamento_id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private Pagamento pagamento;
 }

@@ -76,4 +76,21 @@ class ClienteControllerNegativeTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Cliente não encontrado")));
     }
+    @Test
+@DisplayName("Deve falhar ao criar cliente sem endereço")
+void deveFalharAoCriarClienteSemEndereco() throws Exception {
+    ClienteRequestDTO semEndereco = ClienteRequestDTO.builder()
+            .nome("Ana Maria")
+            .cpf("12345678901")
+            .email("ana@email.com")
+            .senha("senha123")
+            .endereco(null) // Cobre @NotNull no DTO
+            .build();
+
+    mockMvc.perform(post("/api/clientes")
+            .with(user("admin").roles("ADMIN")).with(csrf())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(semEndereco)))
+            .andExpect(status().isBadRequest());
+}
 }
