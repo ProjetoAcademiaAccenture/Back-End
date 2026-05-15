@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@org.springframework.security.test.context.support.WithMockUser 
+@WithMockUser(roles = "ADMIN")
 class ProdutoControllerTests {
 
     @Autowired
@@ -47,11 +48,13 @@ class ProdutoControllerTests {
     @BeforeEach
     void setup() {
         produtoRequest = ProdutoRequestDTO.builder()
-                .nome("Mouse Gamer")
-                .descricao("Mouse com sensor de alta precisão")
-                .preco(new BigDecimal("150.00"))
-                .quantidadeEstoque(10)
-                .build();
+        .nome("Mouse Gamer")
+        .descricao("Mouse com sensor de alta precisão")
+        .preco(new BigDecimal("150.00"))
+        .quantidadeEstoque(10)
+        .categoria(acc.br.projetoFinal.Accenture.enums.Categoria.ELETRONICOS) 
+        .build();
+
 
         produtoResponse = ProdutoResponseDTO.builder()
                 .id(1L)

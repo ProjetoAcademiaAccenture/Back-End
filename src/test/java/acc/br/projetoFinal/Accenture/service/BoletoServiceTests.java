@@ -385,27 +385,27 @@ class BoletoServiceTest {
     @DisplayName("cancelarBoleto()")
     class CancelarBoletoTests {
 
-        @Test
-        @DisplayName("deve cancelar boleto PENDENTE e marcar pagamento como CANCELADO")
-        void deveCancelarBoletoPendente() {
-            pagamento.setStatus(StatusPagamento.PENDENTE);
-            boleto.setStatus(StatusBoleto.PENDENTE);
-            boleto.setPagamento(pagamento);
+       @Test
+@DisplayName("deve cancelar boleto PENDENTE e marcar pagamento como CANCELADO")
+void deveCancelarBoletoPendente() {
+    pagamento.setStatus(StatusPagamento.PENDENTE);
+    boleto.setStatus(StatusBoleto.PENDENTE);
+    boleto.setPagamento(pagamento);
 
-            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
-            doNothing().when(boletoRepository).save(any()); // void-like via save
-            when(boletoRepository.save(any())).thenReturn(boleto);
-            when(pagamentoRepository.save(any())).thenReturn(pagamento);
+    when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
+    // ← remova a linha doNothing().when(boletoRepository).save(any());
+    when(boletoRepository.save(any())).thenReturn(boleto);
+    when(pagamentoRepository.save(any())).thenReturn(pagamento);
 
-            boletoService.cancelarBoleto(1000L);
+    boletoService.cancelarBoleto(1000L);
 
-            verify(boletoRepository).save(boleto);
+    verify(boletoRepository).save(boleto);
 
-            ArgumentCaptor<Pagamento> pagCaptor = ArgumentCaptor.forClass(Pagamento.class);
-            verify(pagamentoRepository).save(pagCaptor.capture());
-            assertThat(pagCaptor.getValue().getStatus()).isEqualTo(StatusPagamento.CANCELADO);
-            assertThat(pagCaptor.getValue().getDataConclusao()).isNotNull();
-        }
+    ArgumentCaptor<Pagamento> pagCaptor = ArgumentCaptor.forClass(Pagamento.class);
+    verify(pagamentoRepository).save(pagCaptor.capture());
+    assertThat(pagCaptor.getValue().getStatus()).isEqualTo(StatusPagamento.CANCELADO);
+    assertThat(pagCaptor.getValue().getDataConclusao()).isNotNull();
+}
 
         @Test
         @DisplayName("não deve alterar pagamento já aprovado ao cancelar boleto")
