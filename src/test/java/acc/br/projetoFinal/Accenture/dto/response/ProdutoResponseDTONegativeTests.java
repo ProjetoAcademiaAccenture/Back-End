@@ -20,7 +20,7 @@ class ProdutoResponseDTONegativeTests {
     private static final String     URL       = "https://img.com/nb.jpg";
     private static final BigDecimal PRECO     = new BigDecimal("3500.00");
     private static final Integer    ESTOQUE   = 10;
-    private static final String     CATEGORIA = "ELETRONICO";
+    private static final String     CATEGORIA = "ELETRONICOS";
 
     // ------------------------------------------------------------------ helper
 
@@ -292,7 +292,7 @@ class ProdutoResponseDTONegativeTests {
     @Test
     @DisplayName("Objetos com categoria diferentes não devem ser iguais")
     void objetosComCategoriaDiferentesNaoDevemSerIguais() {
-        ProdutoResponseDTO dto1 = new ProdutoResponseDTO(ID, NOME, DESCRICAO, URL, PRECO, ESTOQUE, "ELETRONICO");
+        ProdutoResponseDTO dto1 = new ProdutoResponseDTO(ID, NOME, DESCRICAO, URL, PRECO, ESTOQUE, "ELETRONICOS");
         ProdutoResponseDTO dto2 = new ProdutoResponseDTO(ID, NOME, DESCRICAO, URL, PRECO, ESTOQUE, "ALIMENTO");
         assertNotEquals(dto1, dto2);
     }

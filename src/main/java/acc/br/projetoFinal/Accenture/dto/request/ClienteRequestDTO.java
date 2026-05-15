@@ -32,7 +32,6 @@ public class ClienteRequestDTO {
     @Size(max = 15)
     private String telefone;
 
-    @NotNull(message = "Data de nascimento é obrigatória")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dataNascimento;
 

@@ -13,7 +13,7 @@ public class ContaRequestDTO {
 	@NotNull(message = "ID do cliente é obrigatório")
 	private Long clienteId;
 
-	@NotBlank(message = "Senha de transação é obrigatória")
+	@NotBlank(message = "Senha de trasação é obrigatória")
 	@Size(min = 4, max = 4, message = "Senha de transação deve ter 4 dígitos")
 	private String senhaTransacao;
 
