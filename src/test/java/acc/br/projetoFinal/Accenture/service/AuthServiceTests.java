@@ -9,9 +9,10 @@ import acc.br.projetoFinal.Accenture.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -21,12 +22,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 @DisplayName("AuthService - Testes Positivos")
 class AuthServiceTests {
 
     @Mock private ClienteRepository clienteRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
+    @Mock private EmailService emailService; // <- estava faltando
 
     @InjectMocks
     private AuthService authService;
@@ -36,8 +39,6 @@ class AuthServiceTests {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
         dto = ClienteRequestDTO.builder()
                 .nome("João Silva")
                 .email("joao@test.com")
@@ -65,6 +66,7 @@ class AuthServiceTests {
         when(passwordEncoder.encode(dto.getSenha())).thenReturn("encoded_senha123");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(cliente);
         when(jwtService.gerarToken(any(Cliente.class))).thenReturn("jwt_token_123");
+        doNothing().when(emailService).enviarBoasVindas(anyString(), anyString());
 
         AuthResponseDTO resultado = authService.register(dto);
 
@@ -73,8 +75,9 @@ class AuthServiceTests {
         assertEquals("João Silva", resultado.getNome());
         assertEquals("jwt_token_123", resultado.getToken());
         assertEquals("ROLE_USER", resultado.getTipoCliente());
-        verify(clienteRepository, times(1)).save(any(Cliente.class));
-        verify(jwtService, times(1)).gerarToken(any(Cliente.class));
+        verify(clienteRepository).save(any(Cliente.class));
+        verify(jwtService).gerarToken(any(Cliente.class));
+        verify(emailService).enviarBoasVindas("joao@test.com", "João Silva");
     }
 
     @Test
@@ -85,11 +88,12 @@ class AuthServiceTests {
         when(passwordEncoder.encode("senha123")).thenReturn("hashed_password_xyz");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(cliente);
         when(jwtService.gerarToken(any(Cliente.class))).thenReturn("jwt_token_456");
+        doNothing().when(emailService).enviarBoasVindas(anyString(), anyString());
 
         AuthResponseDTO resultado = authService.register(dto);
 
         assertNotNull(resultado);
-        verify(passwordEncoder, times(1)).encode("senha123");
+        verify(passwordEncoder).encode("senha123");
     }
 
     @Test
@@ -100,6 +104,7 @@ class AuthServiceTests {
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(cliente);
         when(jwtService.gerarToken(any(Cliente.class))).thenReturn("jwt_token_final");
+        doNothing().when(emailService).enviarBoasVindas(anyString(), anyString());
 
         AuthResponseDTO resultado = authService.register(dto);
 
@@ -115,11 +120,27 @@ class AuthServiceTests {
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(cliente);
         when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+        doNothing().when(emailService).enviarBoasVindas(anyString(), anyString());
 
         AuthResponseDTO resultado = authService.register(dto);
 
         assertEquals("João Silva", resultado.getNome());
         assertEquals(1L, resultado.getClienteId());
         assertNotNull(resultado.getTipoCliente());
+    }
+
+    @Test
+    @DisplayName("✓ Deve enviar e-mail de boas-vindas após registro")
+    void testRegistrarEnviaEmailBoasVindas() {
+        when(clienteRepository.findByCpf(anyString())).thenReturn(Optional.empty());
+        when(clienteRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        when(clienteRepository.save(any(Cliente.class))).thenReturn(cliente);
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+        doNothing().when(emailService).enviarBoasVindas(anyString(), anyString());
+
+        authService.register(dto);
+
+        verify(emailService).enviarBoasVindas("joao@test.com", "João Silva");
     }
 }
