@@ -1,347 +1,448 @@
 package acc.br.projetoFinal.Accenture.service;
 
-import acc.br.projetoFinal.Accenture.dto.request.ItemPedidoRequestDTO;
-import acc.br.projetoFinal.Accenture.dto.request.PedidoRequestDTO;
-import acc.br.projetoFinal.Accenture.dto.response.PedidoResponseDTO;
+import acc.br.projetoFinal.Accenture.dto.response.BoletoResponseDTO;
+import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
+import acc.br.projetoFinal.Accenture.enums.StatusBoleto;
+import acc.br.projetoFinal.Accenture.enums.StatusPagamento;
 import acc.br.projetoFinal.Accenture.enums.StatusPedido;
-import acc.br.projetoFinal.Accenture.exception.CancelamentoException;
 import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
-import acc.br.projetoFinal.Accenture.model.*;
-import acc.br.projetoFinal.Accenture.repository.ClienteRepository;
+import acc.br.projetoFinal.Accenture.exception.SaldoInsuficienteException;
+import acc.br.projetoFinal.Accenture.model.Boleto;
+import acc.br.projetoFinal.Accenture.model.Conta;
+import acc.br.projetoFinal.Accenture.model.Pagamento;
+import acc.br.projetoFinal.Accenture.model.Pedido;
+import acc.br.projetoFinal.Accenture.model.Cliente;
+import acc.br.projetoFinal.Accenture.repository.BoletoRepository;
+import acc.br.projetoFinal.Accenture.repository.PagamentoRepository;
 import acc.br.projetoFinal.Accenture.repository.PedidoRepository;
-import acc.br.projetoFinal.Accenture.repository.ProdutoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
-import java.nio.file.AccessDeniedException;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Testes - PedidoService")
-class PedidoServiceTests {
+@DisplayName("BoletoService - Testes Unitários")
+class BoletoServiceTest {
 
-    @Mock private PedidoRepository pedidoRepository;
-    @Mock private ClienteRepository clienteRepository;
-    @Mock private ProdutoRepository produtoRepository;
-    @Mock private EstoqueService estoqueService;
-    @Mock private PagamentoService pagamentoService;
+    @Mock
+    private BoletoRepository boletoRepository;
+
+    @Mock
+    private PagamentoRepository pagamentoRepository;
+
+    @Mock
+    private PedidoRepository pedidoRepository;
+
+    @Mock
+    private ContaService contaService;
 
     @InjectMocks
-    private PedidoService pedidoService;
+    private BoletoService boletoService;
+
+    // ─── fixtures ────────────────────────────────────────────────────────────
 
     private Cliente cliente;
-    private Produto produto;
     private Pedido pedido;
     private Pagamento pagamento;
+    private Boleto boleto;
+    private Conta contaCliente;
+    private Conta contaEmpresa;
 
     @BeforeEach
     void setUp() {
-        cliente = Cliente.builder()
-                .id(1L)
-                .nome("João Silva")
-                .email("joao@email.com")
-                .build();
+        cliente = new Cliente();
+        cliente.setId(1L);
 
-        produto = Produto.builder()
-                .id(1L)
-                .nome("Produto A")
-                .preco(new BigDecimal("100.00"))
-                .quantidadeEstoque(10)
-                .build();
-
-        pagamento = Pagamento.builder()
-                .id(1L)
-                .build();
-
-        pedido = Pedido.builder()
-                .id(1L)
-                .cliente(cliente)
-                .status(StatusPedido.RESERVADO)
-                .valorBruto(new BigDecimal("100.00"))
-                .desconto(BigDecimal.ZERO)
-                .valorFinal(new BigDecimal("100.00"))
-                .pagamento(pagamento)
-                .build();
-    }
-
-    // =========================================================
-    // criar()
-    // =========================================================
-
-    @Test
-    @DisplayName("criar: deve criar pedido com sucesso")
-    void criar_deveCriarPedidoComSucesso() {
-        ItemPedidoRequestDTO itemDto = new ItemPedidoRequestDTO();
-        itemDto.setProdutoId(1L);
-        itemDto.setQuantidade(2);
-
-        PedidoRequestDTO dto = new PedidoRequestDTO();
-        dto.setClienteId(1L);
-        dto.setItens(List.of(itemDto));
-        dto.setMetodoPagamento("PIX");
-
-        when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
-        when(produtoRepository.findById(1L)).thenReturn(Optional.of(produto));
-        when(pagamentoService.calcularDesconto(any(), any(BigDecimal.class)))
-                .thenReturn(new BigDecimal("10.00"));
-        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
-        doNothing().when(estoqueService).reservarItens(any(Pedido.class));
-        doNothing().when(pagamentoService).criarParaPedido(any(Pedido.class), anyString());
-
-        PedidoResponseDTO resultado = pedidoService.criar(dto);
-
-        assertThat(resultado).isNotNull();
-        verify(pedidoRepository, times(2)).save(any(Pedido.class));
-        verify(estoqueService, times(1)).reservarItens(any(Pedido.class));
-        verify(pagamentoService, times(1)).criarParaPedido(any(Pedido.class), eq("PIX"));
-    }
-
-    @Test
-    @DisplayName("criar: deve lançar exception quando cliente não encontrado")
-    void criar_deveLancarException_quandoClienteNaoEncontrado() {
-        PedidoRequestDTO dto = new PedidoRequestDTO();
-        dto.setClienteId(99L);
-        dto.setItens(List.of());
-        dto.setMetodoPagamento("PIX");
-
-        when(clienteRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> pedidoService.criar(dto))
-                .isInstanceOf(RecursoNaoEncontradoException.class)
-                .hasMessageContaining("Cliente não encontrado");
-    }
-
-    @Test
-    @DisplayName("criar: deve lançar exception quando produto não encontrado")
-    void criar_deveLancarException_quandoProdutoNaoEncontrado() {
-        ItemPedidoRequestDTO itemDto = new ItemPedidoRequestDTO();
-        itemDto.setProdutoId(99L);
-        itemDto.setQuantidade(1);
-
-        PedidoRequestDTO dto = new PedidoRequestDTO();
-        dto.setClienteId(1L);
-        dto.setItens(List.of(itemDto));
-        dto.setMetodoPagamento("PIX");
-
-        when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
-        when(produtoRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> pedidoService.criar(dto))
-                .isInstanceOf(RecursoNaoEncontradoException.class)
-                .hasMessageContaining("Produto não encontrado");
-    }
-
-    @Test
-    @DisplayName("criar: deve lançar exception quando estoque insuficiente")
-    void criar_deveLancarException_quandoEstoqueInsuficiente() {
-        produto.setQuantidadeEstoque(1);
-
-        ItemPedidoRequestDTO itemDto = new ItemPedidoRequestDTO();
-        itemDto.setProdutoId(1L);
-        itemDto.setQuantidade(5); // mais do que o estoque
-
-        PedidoRequestDTO dto = new PedidoRequestDTO();
-        dto.setClienteId(1L);
-        dto.setItens(List.of(itemDto));
-        dto.setMetodoPagamento("PIX");
-
-        when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
-        when(produtoRepository.findById(1L)).thenReturn(Optional.of(produto));
-
-        assertThatThrownBy(() -> pedidoService.criar(dto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Estoque insuficiente");
-    }
-
-    // =========================================================
-    // buscarPorId()
-    // =========================================================
-
-    @Test
-    @DisplayName("buscarPorId: deve retornar pedido quando existir")
-    void buscarPorId_deveRetornarPedido_quandoExistir() {
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
-
-        PedidoResponseDTO resultado = pedidoService.buscarPorId(1L);
-
-        assertThat(resultado).isNotNull();
-        assertThat(resultado.getId()).isEqualTo(1L);
-    }
-
-    @Test
-    @DisplayName("buscarPorId: deve lançar exception quando pedido não encontrado")
-    void buscarPorId_deveLancarException_quandoNaoEncontrado() {
-        when(pedidoRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> pedidoService.buscarPorId(99L))
-                .isInstanceOf(RecursoNaoEncontradoException.class)
-                .hasMessageContaining("Pedido não encontrado");
-    }
-
-    // =========================================================
-    // listarPorCliente()
-    // =========================================================
-
-    @Test
-    @DisplayName("listarPorCliente: deve retornar lista quando email confere")
-    void listarPorCliente_deveRetornarLista_quandoEmailConfere() throws AccessDeniedException {
-        Authentication auth = mock(Authentication.class);
-        SecurityContext ctx = mock(SecurityContext.class);
-        when(ctx.getAuthentication()).thenReturn(auth);
-        when(auth.getName()).thenReturn("joao@email.com");
-        SecurityContextHolder.setContext(ctx);
-
-        when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
-        when(pedidoRepository.findByClienteId(1L)).thenReturn(List.of(pedido));
-
-        List<PedidoResponseDTO> resultado = pedidoService.listarPorCliente(1L);
-
-        assertThat(resultado).hasSize(1);
-        SecurityContextHolder.clearContext();
-    }
-
-    @Test
-    @DisplayName("listarPorCliente: deve lançar AccessDeniedException quando email não confere")
-    void listarPorCliente_deveLancarException_quandoEmailNaoConfere() {
-        Authentication auth = mock(Authentication.class);
-        SecurityContext ctx = mock(SecurityContext.class);
-        when(ctx.getAuthentication()).thenReturn(auth);
-        when(auth.getName()).thenReturn("outro@email.com");
-        SecurityContextHolder.setContext(ctx);
-
-        when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
-
-        assertThatThrownBy(() -> pedidoService.listarPorCliente(1L))
-                .isInstanceOf(AccessDeniedException.class);
-
-        SecurityContextHolder.clearContext();
-    }
-
-    @Test
-    @DisplayName("listarPorCliente: deve lançar exception quando cliente não encontrado")
-    void listarPorCliente_deveLancarException_quandoClienteNaoEncontrado() {
-        Authentication auth = mock(Authentication.class);
-        SecurityContext ctx = mock(SecurityContext.class);
-        when(ctx.getAuthentication()).thenReturn(auth);
-        when(auth.getName()).thenReturn("joao@email.com");
-        SecurityContextHolder.setContext(ctx);
-
-        when(clienteRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> pedidoService.listarPorCliente(99L))
-                .isInstanceOf(RecursoNaoEncontradoException.class)
-                .hasMessageContaining("Cliente não encontrado");
-
-        SecurityContextHolder.clearContext();
-    }
-
-    // =========================================================
-    // listarTodos()
-    // =========================================================
-
-    @Test
-    @DisplayName("listarTodos: deve retornar todos os pedidos")
-    void listarTodos_deveRetornarTodosOsPedidos() {
-        when(pedidoRepository.findAll()).thenReturn(List.of(pedido));
-
-        List<PedidoResponseDTO> resultado = pedidoService.listarTodos();
-
-        assertThat(resultado).hasSize(1);
-        verify(pedidoRepository, times(1)).findAll();
-    }
-
-    // =========================================================
-    // cancelarPedido()
-    // =========================================================
-
-    @Test
-    @DisplayName("cancelarPedido: deve cancelar pedido RESERVADO e devolver estoque")
-    void cancelarPedido_deveCancelar_quandoReservado() {
+        pedido = new Pedido();
+        pedido.setId(10L);
+        pedido.setCliente(cliente);
         pedido.setStatus(StatusPedido.RESERVADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
-        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
 
-        PedidoResponseDTO resultado = pedidoService.cancelarPedido(1L);
+        pagamento = new Pagamento();
+        pagamento.setId(100L);
+        pagamento.setPedido(pedido);
+        pagamento.setValorBruto(new BigDecimal("200.00"));
+        pagamento.setStatus(StatusPagamento.PENDENTE);
 
-        assertThat(resultado).isNotNull();
-        assertThat(pedido.getStatus()).isEqualTo(StatusPedido.CANCELADO);
-        verify(estoqueService, times(1)).devolverItens(pedido);
-        verify(pagamentoService, times(1)).cancelar(1L);
+        boleto = Boleto.builder()
+                .id(1000L)
+                .pagamento(pagamento)
+                .codigoBarras("12345678901234567890123456789012345678901234")
+                .valor(new BigDecimal("190.00"))
+                .dataVencimento(LocalDate.now().plusDays(3))
+                .status(StatusBoleto.PENDENTE)
+                .build();
+
+        contaCliente = new Conta();
+        contaCliente.setId(1L);
+        contaCliente.setSaldo(new BigDecimal("1000.00"));
+
+        contaEmpresa = new Conta();
+        contaEmpresa.setId(2L);
+        contaEmpresa.setSaldo(BigDecimal.ZERO);
     }
 
-    @Test
-    @DisplayName("cancelarPedido: deve cancelar pedido PAGO e devolver estoque")
-    void cancelarPedido_deveCancelar_quandoPago() {
-        pedido.setStatus(StatusPedido.PAGO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
-        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+    // =========================================================================
+    // gerar()
+    // =========================================================================
+    @Nested
+    @DisplayName("gerar()")
+    class GerarTests {
 
-        pedidoService.cancelarPedido(1L);
+        @Test
+        @DisplayName("deve gerar boleto com desconto de 5% quando pedido está RESERVADO")
+        void deveGerarBoletoComSucesso() {
+            when(pagamentoRepository.findById(100L)).thenReturn(Optional.of(pagamento));
+            when(boletoRepository.findByPagamentoId(100L)).thenReturn(Optional.empty());
+            when(boletoRepository.save(any(Boleto.class))).thenAnswer(inv -> {
+                Boleto b = inv.getArgument(0);
+                b.setId(1000L);
+                return b;
+            });
+            when(pagamentoRepository.save(any(Pagamento.class))).thenReturn(pagamento);
 
-        assertThat(pedido.getStatus()).isEqualTo(StatusPedido.CANCELADO);
-        verify(estoqueService, times(1)).devolverItens(pedido);
+            BoletoResponseDTO dto = boletoService.gerar(100L);
+
+            // desconto = 200 * 0.05 = 10.00 → valor = 190.00
+            assertThat(dto).isNotNull();
+            assertThat(dto.getValor()).isEqualByComparingTo("190.00");
+
+            ArgumentCaptor<Pagamento> pagCaptor = ArgumentCaptor.forClass(Pagamento.class);
+            verify(pagamentoRepository, times(2)).save(pagCaptor.capture());
+            Pagamento pagSalvo = pagCaptor.getAllValues().get(0);
+            assertThat(pagSalvo.getMetodo()).isEqualTo(MetodoPagamento.BOLETO);
+            assertThat(pagSalvo.getDesconto()).isEqualByComparingTo("10.00");
+            assertThat(pagSalvo.getValorFinal()).isEqualByComparingTo("190.00");
+            assertThat(pagSalvo.getStatus()).isEqualTo(StatusPagamento.PENDENTE);
+
+            ArgumentCaptor<Boleto> boletoCaptor = ArgumentCaptor.forClass(Boleto.class);
+            verify(boletoRepository).save(boletoCaptor.capture());
+            Boleto bSalvo = boletoCaptor.getValue();
+            assertThat(bSalvo.getStatus()).isEqualTo(StatusBoleto.PENDENTE);
+            assertThat(bSalvo.getDataVencimento()).isEqualTo(LocalDate.now().plusDays(3));
+            assertThat(bSalvo.getCodigoBarras()).hasSize(44);
+        }
+
+        @Test
+        @DisplayName("deve lançar RecursoNaoEncontradoException quando pagamento não existe")
+        void deveLancarExcecaoQuandoPagamentoNaoEncontrado() {
+            when(pagamentoRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> boletoService.gerar(999L))
+                    .isInstanceOf(RecursoNaoEncontradoException.class)
+                    .hasMessageContaining("Pagamento não encontrado");
+
+            verify(boletoRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("deve lançar IllegalArgumentException quando pedido não está RESERVADO")
+        void deveLancarExcecaoQuandoPedidoNaoReservado() {
+            pedido.setStatus(StatusPedido.PAGO);
+            when(pagamentoRepository.findById(100L)).thenReturn(Optional.of(pagamento));
+
+            assertThatThrownBy(() -> boletoService.gerar(100L))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("RESERVADO");
+
+            verify(boletoRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("deve lançar IllegalArgumentException quando já existe boleto para o pagamento")
+        void deveLancarExcecaoQuandoBoletoJaExiste() {
+            when(pagamentoRepository.findById(100L)).thenReturn(Optional.of(pagamento));
+            when(boletoRepository.findByPagamentoId(100L)).thenReturn(Optional.of(boleto));
+
+            assertThatThrownBy(() -> boletoService.gerar(100L))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Já existe boleto");
+
+            verify(boletoRepository, never()).save(any());
+        }
     }
 
-    @Test
-    @DisplayName("cancelarPedido: deve cancelar pedido CRIADO sem devolver estoque")
-    void cancelarPedido_deveCancelar_quandoCriado_semDevolverEstoque() {
-        pedido.setStatus(StatusPedido.CRIADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
-        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+    // =========================================================================
+    // buscarPorId()
+    // =========================================================================
+    @Nested
+    @DisplayName("buscarPorId()")
+    class BuscarPorIdTests {
 
-        pedidoService.cancelarPedido(1L);
+        @Test
+        @DisplayName("deve retornar DTO quando boleto existe")
+        void deveRetornarDTOQuandoBoletoExiste() {
+            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
 
-        assertThat(pedido.getStatus()).isEqualTo(StatusPedido.CANCELADO);
-        verify(estoqueService, never()).devolverItens(any());
+            BoletoResponseDTO dto = boletoService.buscarPorId(1000L);
+
+            assertThat(dto).isNotNull();
+        }
+
+        @Test
+        @DisplayName("deve lançar RecursoNaoEncontradoException quando boleto não existe")
+        void deveLancarExcecaoQuandoBoletoNaoExiste() {
+            when(boletoRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> boletoService.buscarPorId(999L))
+                    .isInstanceOf(RecursoNaoEncontradoException.class)
+                    .hasMessageContaining("Boleto não encontrado");
+        }
     }
 
-    @Test
-    @DisplayName("cancelarPedido: deve cancelar sem chamar pagamentoService quando pagamento é nulo")
-    void cancelarPedido_naoDeveCancelarPagamento_quandoPagamentoNulo() {
-        pedido.setStatus(StatusPedido.CRIADO);
-        pedido.setPagamento(null);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
-        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+    // =========================================================================
+    // buscarPorPagamentoId()
+    // =========================================================================
+    @Nested
+    @DisplayName("buscarPorPagamentoId()")
+    class BuscarPorPagamentoIdTests {
 
-        pedidoService.cancelarPedido(1L);
+        @Test
+        @DisplayName("deve retornar DTO quando boleto existe para o pagamento")
+        void deveRetornarDTOQuandoBoletoExiste() {
+            when(boletoRepository.findByPagamentoId(100L)).thenReturn(Optional.of(boleto));
 
-        verify(pagamentoService, never()).cancelar(anyLong());
+            BoletoResponseDTO dto = boletoService.buscarPorPagamentoId(100L);
+
+            assertThat(dto).isNotNull();
+        }
+
+        @Test
+        @DisplayName("deve lançar RecursoNaoEncontradoException quando boleto não existe para o pagamento")
+        void deveLancarExcecaoQuandoBoletoNaoExiste() {
+            when(boletoRepository.findByPagamentoId(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> boletoService.buscarPorPagamentoId(999L))
+                    .isInstanceOf(RecursoNaoEncontradoException.class)
+                    .hasMessageContaining("Boleto não encontrado para este pagamento");
+        }
     }
 
-    @Test
-    @DisplayName("cancelarPedido: deve lançar CancelamentoException quando já cancelado")
-    void cancelarPedido_deveLancarException_quandoJaCancelado() {
-        pedido.setStatus(StatusPedido.CANCELADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+    // =========================================================================
+    // buscarPorPedidoId()
+    // =========================================================================
+    @Nested
+    @DisplayName("buscarPorPedidoId()")
+    class BuscarPorPedidoIdTests {
 
-        assertThatThrownBy(() -> pedidoService.cancelarPedido(1L))
-                .isInstanceOf(CancelamentoException.class)
-                .hasMessageContaining("já está cancelado");
+        @Test
+        @DisplayName("deve retornar DTO quando boleto existe para o pedido")
+        void deveRetornarDTOQuandoBoletoExiste() {
+            when(boletoRepository.findByPagamentoPedidoId(10L)).thenReturn(Optional.of(boleto));
+
+            BoletoResponseDTO dto = boletoService.buscarPorPedidoId(10L);
+
+            assertThat(dto).isNotNull();
+        }
+
+        @Test
+        @DisplayName("deve lançar RecursoNaoEncontradoException quando boleto não existe para o pedido")
+        void deveLancarExcecaoQuandoBoletoNaoExiste() {
+            when(boletoRepository.findByPagamentoPedidoId(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> boletoService.buscarPorPedidoId(999L))
+                    .isInstanceOf(RecursoNaoEncontradoException.class)
+                    .hasMessageContaining("Boleto não encontrado para este pedido");
+        }
     }
 
-    @Test
-    @DisplayName("cancelarPedido: deve lançar exception quando pedido não encontrado")
-    void cancelarPedido_deveLancarException_quandoNaoEncontrado() {
-        when(pedidoRepository.findById(99L)).thenReturn(Optional.empty());
+    // =========================================================================
+    // pagarBoleto()
+    // =========================================================================
+    @Nested
+    @DisplayName("pagarBoleto()")
+    class PagarBoletoTests {
 
-        assertThatThrownBy(() -> pedidoService.cancelarPedido(99L))
-                .isInstanceOf(RecursoNaoEncontradoException.class)
-                .hasMessageContaining("Pedido não encontrado");
+        @Test
+        @DisplayName("deve pagar boleto em dia sem multa")
+        void devePagarBoletoEmDia() {
+            boleto.setDataVencimento(LocalDate.now().plusDays(1)); // não está atrasado
+
+            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
+            when(contaService.buscarContaDoCliente(1L)).thenReturn(contaCliente);
+            when(contaService.buscarContaEmpresa()).thenReturn(contaEmpresa);
+            doNothing().when(contaService).validarSenhaTransacao(any(), anyString());
+            doNothing().when(contaService).debitarSaldo(any(), any(), any(), any(), anyString());
+            doNothing().when(contaService).creditarSaldo(any(), any(), any(), any(), anyString());
+            when(boletoRepository.save(any())).thenReturn(boleto);
+            when(pagamentoRepository.save(any())).thenReturn(pagamento);
+            when(pedidoRepository.save(any())).thenReturn(pedido);
+
+            BoletoResponseDTO dto = boletoService.pagarBoleto(1000L, "senha123");
+
+            assertThat(dto).isNotNull();
+
+            // verifica debitarSaldo com valor sem multa (190.00)
+            ArgumentCaptor<BigDecimal> valorCaptor = ArgumentCaptor.forClass(BigDecimal.class);
+            verify(contaService).debitarSaldo(eq(contaCliente), valorCaptor.capture(), any(), any(), contains("pedido #10"));
+            assertThat(valorCaptor.getValue()).isEqualByComparingTo("190.00");
+
+            // pedido deve ficar PAGO
+            ArgumentCaptor<Pedido> pedidoCaptor = ArgumentCaptor.forClass(Pedido.class);
+            verify(pedidoRepository).save(pedidoCaptor.capture());
+            assertThat(pedidoCaptor.getValue().getStatus()).isEqualTo(StatusPedido.PAGO);
+
+            // pagamento deve ficar APROVADO
+            ArgumentCaptor<Pagamento> pagCaptor = ArgumentCaptor.forClass(Pagamento.class);
+            verify(pagamentoRepository).save(pagCaptor.capture());
+            assertThat(pagCaptor.getValue().getStatus()).isEqualTo(StatusPagamento.APROVADO);
+            assertThat(pagCaptor.getValue().getMetodo()).isEqualTo(MetodoPagamento.BOLETO);
+        }
+
+        @Test
+        @DisplayName("deve pagar boleto atrasado aplicando multa de 2%")
+        void devePagarBoletoAtrasadoComMulta() {
+            // estaAtrasado() retorna true quando dataVencimento < hoje
+            boleto.setDataVencimento(LocalDate.now().minusDays(1));
+
+            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
+            when(contaService.buscarContaDoCliente(1L)).thenReturn(contaCliente);
+            when(contaService.buscarContaEmpresa()).thenReturn(contaEmpresa);
+            doNothing().when(contaService).validarSenhaTransacao(any(), anyString());
+            doNothing().when(contaService).debitarSaldo(any(), any(), any(), any(), anyString());
+            doNothing().when(contaService).creditarSaldo(any(), any(), any(), any(), anyString());
+            when(boletoRepository.save(any())).thenReturn(boleto);
+            when(pagamentoRepository.save(any())).thenReturn(pagamento);
+            when(pedidoRepository.save(any())).thenReturn(pedido);
+
+            boletoService.pagarBoleto(1000L, "senha123");
+
+            // multa = 190.00 * 0.02 = 3.80 → total = 193.80
+            ArgumentCaptor<BigDecimal> valorCaptor = ArgumentCaptor.forClass(BigDecimal.class);
+            verify(contaService).debitarSaldo(eq(contaCliente), valorCaptor.capture(), any(), any(), contains("atraso"));
+            assertThat(valorCaptor.getValue()).isEqualByComparingTo("193.80");
+        }
+
+        @Test
+        @DisplayName("deve lançar RecursoNaoEncontradoException quando boleto não existe")
+        void deveLancarExcecaoQuandoBoletoNaoExiste() {
+            when(boletoRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> boletoService.pagarBoleto(999L, "senha"))
+                    .isInstanceOf(RecursoNaoEncontradoException.class)
+                    .hasMessageContaining("Boleto não encontrado");
+        }
+
+        @Test
+        @DisplayName("deve lançar IllegalArgumentException quando boleto já foi pago")
+        void deveLancarExcecaoQuandoBoletoJaPago() {
+            boleto.setStatus(StatusBoleto.PAGO);
+            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
+
+            assertThatThrownBy(() -> boletoService.pagarBoleto(1000L, "senha"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("já foi pago");
+        }
+
+        @Test
+        @DisplayName("deve lançar IllegalArgumentException quando boleto está cancelado")
+        void deveLancarExcecaoQuandoBoletoEstaCancel() {
+            boleto.setStatus(StatusBoleto.CANCELADO);
+            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
+
+            assertThatThrownBy(() -> boletoService.pagarBoleto(1000L, "senha"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("cancelado");
+        }
+
+        @Test
+        @DisplayName("deve lançar SaldoInsuficienteException quando saldo é insuficiente")
+        void deveLancarExcecaoQuandoSaldoInsuficiente() {
+            boleto.setDataVencimento(LocalDate.now().plusDays(1));
+            contaCliente.setSaldo(new BigDecimal("10.00")); // saldo menor que 190.00
+
+            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
+            when(contaService.buscarContaDoCliente(1L)).thenReturn(contaCliente);
+            when(contaService.buscarContaEmpresa()).thenReturn(contaEmpresa);
+            doNothing().when(contaService).validarSenhaTransacao(any(), anyString());
+
+            assertThatThrownBy(() -> boletoService.pagarBoleto(1000L, "senha"))
+                    .isInstanceOf(SaldoInsuficienteException.class)
+                    .hasMessageContaining("Saldo insuficiente");
+
+            verify(contaService, never()).debitarSaldo(any(), any(), any(), any(), anyString());
+        }
+    }
+
+    // =========================================================================
+    // cancelarBoleto()
+    // =========================================================================
+    @Nested
+    @DisplayName("cancelarBoleto()")
+    class CancelarBoletoTests {
+
+        @Test
+        @DisplayName("deve cancelar boleto PENDENTE e marcar pagamento como CANCELADO")
+        void deveCancelarBoletoPendente() {
+            pagamento.setStatus(StatusPagamento.PENDENTE);
+            boleto.setStatus(StatusBoleto.PENDENTE);
+            boleto.setPagamento(pagamento);
+
+            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
+            doNothing().when(boletoRepository).save(any()); // void-like via save
+            when(boletoRepository.save(any())).thenReturn(boleto);
+            when(pagamentoRepository.save(any())).thenReturn(pagamento);
+
+            boletoService.cancelarBoleto(1000L);
+
+            verify(boletoRepository).save(boleto);
+
+            ArgumentCaptor<Pagamento> pagCaptor = ArgumentCaptor.forClass(Pagamento.class);
+            verify(pagamentoRepository).save(pagCaptor.capture());
+            assertThat(pagCaptor.getValue().getStatus()).isEqualTo(StatusPagamento.CANCELADO);
+            assertThat(pagCaptor.getValue().getDataConclusao()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("não deve alterar pagamento já aprovado ao cancelar boleto")
+        void naoDeveAlterarPagamentoAprovadoAoCancelar() {
+            pagamento.setStatus(StatusPagamento.APROVADO);
+            boleto.setStatus(StatusBoleto.PENDENTE);
+            boleto.setPagamento(pagamento);
+
+            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
+            when(boletoRepository.save(any())).thenReturn(boleto);
+
+            boletoService.cancelarBoleto(1000L);
+
+            verify(pagamentoRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("deve lançar RecursoNaoEncontradoException quando boleto não existe")
+        void deveLancarExcecaoQuandoBoletoNaoExiste() {
+            when(boletoRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> boletoService.cancelarBoleto(999L))
+                    .isInstanceOf(RecursoNaoEncontradoException.class)
+                    .hasMessageContaining("Boleto não encontrado");
+        }
+
+        @Test
+        @DisplayName("deve lançar exceção quando validarCancelamento falhar")
+        void deveLancarExcecaoQuandoCancelamentoInvalido() {
+            boleto.setStatus(StatusBoleto.PAGO); // não pode cancelar boleto PAGO
+            when(boletoRepository.findById(1000L)).thenReturn(Optional.of(boleto));
+
+            // validarCancelamento() deve lançar exceção para boleto PAGO
+            assertThatThrownBy(() -> boletoService.cancelarBoleto(1000L))
+                    .isInstanceOf(Exception.class);
+
+            verify(boletoRepository, never()).save(any());
+        }
     }
 }
