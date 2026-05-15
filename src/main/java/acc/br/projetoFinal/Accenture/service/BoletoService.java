@@ -1,16 +1,25 @@
 package acc.br.projetoFinal.Accenture.service;
 
 import acc.br.projetoFinal.Accenture.dto.response.BoletoResponseDTO;
+import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
 import acc.br.projetoFinal.Accenture.enums.StatusBoleto;
+import acc.br.projetoFinal.Accenture.enums.StatusPagamento;
 import acc.br.projetoFinal.Accenture.enums.StatusPedido;
 import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
+import acc.br.projetoFinal.Accenture.exception.SaldoInsuficienteException;
 import acc.br.projetoFinal.Accenture.model.Boleto;
+import acc.br.projetoFinal.Accenture.model.Conta;
+import acc.br.projetoFinal.Accenture.model.Pagamento;
 import acc.br.projetoFinal.Accenture.model.Pedido;
 import acc.br.projetoFinal.Accenture.repository.BoletoRepository;
+import acc.br.projetoFinal.Accenture.repository.PagamentoRepository;
 import acc.br.projetoFinal.Accenture.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Random;
 
@@ -18,84 +27,142 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class BoletoService {
 
+    private static final BigDecimal DESCONTO_BOLETO = new BigDecimal("0.05");
+    private static final BigDecimal MULTA_ATRASO = new BigDecimal("0.02");
+
     private final BoletoRepository boletoRepository;
+    private final PagamentoRepository pagamentoRepository;
     private final PedidoRepository pedidoRepository;
     private final ContaService contaService;
 
     @Transactional
-    public BoletoResponseDTO gerar(Long pedidoId) {
-        Pedido pedido = pedidoRepository.findById(pedidoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Pedido não encontrado"));
+    public BoletoResponseDTO gerar(Long pagamentoId) {
+        Pagamento pagamento = pagamentoRepository.findById(pagamentoId)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Pagamento não encontrado"));
 
-        if (pedido.getStatus() != StatusPedido.RESERVADO)
+        Pedido pedido = pagamento.getPedido();
+
+        if (pedido.getStatus() != StatusPedido.RESERVADO) {
             throw new IllegalArgumentException("Pedido deve estar RESERVADO para gerar boleto");
+        }
 
-        // Gera código de barras único (44 dígitos)
-        String codigoBarras = gerarCodigoBarras();
+        if (boletoRepository.findByPagamentoId(pagamentoId).isPresent()) {
+            throw new IllegalArgumentException("Já existe boleto para este pagamento");
+        }
+
+        BigDecimal desconto = pagamento.getValorBruto()
+            .multiply(DESCONTO_BOLETO)
+            .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal valorBoleto = pagamento.getValorBruto()
+            .subtract(desconto)
+            .setScale(2, RoundingMode.HALF_UP);
+
+        pagamento.setMetodo(MetodoPagamento.BOLETO);
+        pagamento.setDesconto(desconto);
+        pagamento.setValorFinal(valorBoleto);
+        pagamento.setStatus(StatusPagamento.PENDENTE);
+        pagamentoRepository.save(pagamento);
 
         Boleto boleto = Boleto.builder()
-                .pedido(pedido)
-                .codigoBarras(codigoBarras)
-                .valor(pedido.getValorTotal())
-                .dataVencimento(LocalDate.now().plusDays(3)) // vencimento em 3 dias
-                .status(StatusBoleto.PENDENTE)
-                .build();
+            .pagamento(pagamento)
+            .codigoBarras(gerarCodigoBarras())
+            .valor(valorBoleto)
+            .dataVencimento(LocalDate.now().plusDays(3))
+            .status(StatusBoleto.PENDENTE)
+            .build();
 
-        Boleto boletoSalvo = boletoRepository.save(boleto);
-        return BoletoResponseDTO.fromEntity(boletoSalvo);
+        Boleto salvo = boletoRepository.save(boleto);
+        pagamento.setBoleto(salvo);
+        pagamentoRepository.save(pagamento);
+
+        return BoletoResponseDTO.fromEntity(salvo);
     }
 
     public BoletoResponseDTO buscarPorId(Long id) {
         Boleto boleto = boletoRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado"));
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado"));
         return BoletoResponseDTO.fromEntity(boleto);
     }
 
-    public BoletoResponseDTO buscarPorPedidoId(Long pedidoId) {
-        Boleto boleto = boletoRepository.findByPedidoId(pedidoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado para este pedido"));
+    public BoletoResponseDTO buscarPorPagamentoId(Long pagamentoId) {
+        Boleto boleto = boletoRepository.findByPagamentoId(pagamentoId)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado para este pagamento"));
         return BoletoResponseDTO.fromEntity(boleto);
     }
 
     @Transactional
-    public BoletoResponseDTO pagarBoleto(Long boletoId) {
+    public BoletoResponseDTO pagarBoleto(Long boletoId, String senhaTransacao) {
         Boleto boleto = boletoRepository.findById(boletoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado"));
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado"));
 
-        if (boleto.getStatus() == StatusBoleto.PAGO)
+        if (boleto.getStatus() == StatusBoleto.PAGO) {
             throw new IllegalArgumentException("Boleto já foi pago");
-
-        if (boleto.getStatus() == StatusBoleto.CANCELADO)
+        }
+        if (boleto.getStatus() == StatusBoleto.CANCELADO) {
             throw new IllegalArgumentException("Boleto está cancelado");
+        }
 
-        // Paga através do ContaService (debita cliente, credita empresa)
-        contaService.transferir(boleto.getPedido().getCliente().getId(), boleto.getValor(), boleto.getPedido());
+        Pagamento pagamento = boleto.getPagamento();
+        Pedido pedido = pagamento.getPedido();
 
-        // Atualiza status do boleto
-        boleto.setStatus(StatusBoleto.PAGO);
-        Boleto boletoPago = boletoRepository.save(boleto);
+        Conta contaCliente = contaService.buscarContaDoCliente(pedido.getCliente().getId());
+        Conta contaEmpresa = contaService.buscarContaEmpresa();
 
-        // Atualiza status do pedido para PAGO
-        Pedido pedido = boleto.getPedido();
+        contaService.validarSenhaTransacao(contaCliente, senhaTransacao);
+
+        BigDecimal multa = BigDecimal.ZERO;
+        if (boleto.estaAtrasado()) {
+            multa = boleto.getValor()
+                .multiply(MULTA_ATRASO)
+                .setScale(2, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal valorTotal = boleto.getValor().add(multa).setScale(2, RoundingMode.HALF_UP);
+
+        if (contaCliente.getSaldo().compareTo(valorTotal) < 0) {
+            throw new SaldoInsuficienteException("Saldo insuficiente para pagar o boleto");
+        }
+
+        String descricao = boleto.estaAtrasado()
+            ? "Pagamento de boleto com atraso - pedido #" + pedido.getId()
+            : "Pagamento de boleto - pedido #" + pedido.getId();
+
+        contaService.debitarSaldo(contaCliente, valorTotal, pedido, pagamento, descricao);
+        contaService.creditarSaldo(contaEmpresa, valorTotal, pedido, pagamento, descricao);
+
+        boleto.pagar();
+        boletoRepository.save(boleto);
+
+        pagamento.setStatus(StatusPagamento.APROVADO);
+        pagamento.setMetodo(MetodoPagamento.BOLETO);
+        pagamento.setValorFinal(valorTotal);
+        pagamento.setDataConclusao(java.time.LocalDateTime.now());
+        pagamentoRepository.save(pagamento);
+
         pedido.setStatus(StatusPedido.PAGO);
         pedidoRepository.save(pedido);
 
-        return BoletoResponseDTO.fromEntity(boletoPago);
+        return BoletoResponseDTO.fromEntity(boleto);
     }
 
     @Transactional
     public void cancelarBoleto(Long boletoId) {
         Boleto boleto = boletoRepository.findById(boletoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado"));
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado"));
 
-        if (boleto.getStatus() == StatusBoleto.CANCELADO)
-            throw new IllegalArgumentException("Boleto já está cancelado");
-
-        boleto.setStatus(StatusBoleto.CANCELADO);
+        boleto.validarCancelamento();
+        boleto.cancelar();
         boletoRepository.save(boleto);
+
+        Pagamento pagamento = boleto.getPagamento();
+        if (pagamento.getStatus() == StatusPagamento.PENDENTE) {
+            pagamento.setStatus(StatusPagamento.CANCELADO);
+            pagamento.setDataConclusao(java.time.LocalDateTime.now());
+            pagamentoRepository.save(pagamento);
+        }
     }
 
-    // Gera código de barras com 44 dígitos (simulado)
     private String gerarCodigoBarras() {
         Random random = new Random();
         StringBuilder codigo = new StringBuilder();
@@ -103,5 +170,11 @@ public class BoletoService {
             codigo.append(random.nextInt(10));
         }
         return codigo.toString();
+    }
+
+    public BoletoResponseDTO buscarPorPedidoId(Long pedidoId) {
+    Boleto boleto = boletoRepository.findByPagamentoPedidoId(pedidoId)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Boleto não encontrado para este pedido"));
+    return BoletoResponseDTO.fromEntity(boleto);
     }
 }

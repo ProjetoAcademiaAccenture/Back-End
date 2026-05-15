@@ -216,7 +216,7 @@ assertEquals(new BigDecimal("6000.00"), contaAtualizada.getSaldo());
 Próximos testes poderiam cobrir:
 - Ordem lifecycle completo (CRIADO → RESERVADO → PAGO)
 - Cálculo de multa 10% em cancelamento de pedidos PAGO
-- Integração com ViaCEP para endereços
+- Endereço recebido do frontend
 - Testes de Boleto (geração de código, vencimento)
 - Testes de Controllers REST (MockMvc)
 - Testes de Exception Handling

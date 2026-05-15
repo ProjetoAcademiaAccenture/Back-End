@@ -1,15 +1,14 @@
 package acc.br.projetoFinal.Accenture.model;
 
-import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
+import acc.br.projetoFinal.Accenture.enums.Categoria;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "produto")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,23 +18,25 @@ public class Produto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String nome;
 
     @Column(length = 500)
     private String descricao;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal preco;
 
-    @Column(name = "quantidade_estoque", nullable = false)
-    private Integer quantidadeEstoque = 0;
+    @Column(name = "url_imagem", length = 500)
+    private String urlImagem;
 
+    @Column(nullable = false)
+    private Integer quantidadeEstoque;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @Column(name = "metodo_pgto", nullable = false)
-    private MetodoPagamento metodoPgto = MetodoPagamento.PIX;
+    private Categoria categoria;
 
-    // 1:N com itens pedido
-    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ItemPedido> itens = new ArrayList<>();
+    @Version
+    private Long version;
 }

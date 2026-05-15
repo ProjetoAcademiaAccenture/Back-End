@@ -44,7 +44,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowedOrigins(List.of("http://localhost:3000"));
-		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));
 		config.setAllowCredentials(true);
 
@@ -56,16 +56,44 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http
-				.csrf(csrf -> csrf.disable())
+				.csrf(csrf -> csrf
+						.ignoringRequestMatchers("/h2-console/**")
+						.disable()
+				)
 				.cors(Customizer.withDefaults())
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authenticationProvider(authenticationProvider())
+				.headers(headers -> headers
+						.frameOptions(frame -> frame.sameOrigin()) // necessário para iframe do H2
+				)
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+						// ✅ H2 Console liberado
+						.requestMatchers("/h2-console/**").permitAll()
+
+						// Auth e Docs
+						.requestMatchers("/auth/*", "/v3/api-docs/", "/swagger-ui/*", "/swagger-ui.html").permitAll()
+
+						// --- Produtos ---
+						.requestMatchers(HttpMethod.GET, "/api/produtos/**").permitAll()
+						.requestMatchers("/api/produtos/**").hasAuthority("ROLE_ADMIN")
+
+						// --- Clientes ---
 						.requestMatchers(HttpMethod.POST, "/api/clientes").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/clientes/**").hasAnyRole("CLIENTE", "ADMIN")
-						.requestMatchers(HttpMethod.PUT, "/api/clientes/**").hasAnyRole("CLIENTE", "ADMIN")
-						.requestMatchers(HttpMethod.DELETE, "/api/clientes/**").hasRole("ADMIN")
+						.requestMatchers("/api/clientes/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+
+						// --- Pedidos ---
+								.requestMatchers(HttpMethod.POST, "/api/pedidos").hasAuthority("ROLE_USER")
+								.requestMatchers(HttpMethod.GET, "/api/pedidos/cliente/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+								.requestMatchers(HttpMethod.GET, "/api/pedidos/*").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+								.requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/cancelar").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+								.requestMatchers("/api/pedidos/**").hasAuthority("ROLE_ADMIN")
+
+						// --- Boletos ---
+						.requestMatchers("/api/boletos/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+
+						// --- Pagamentos ---
+						.requestMatchers("/api/pagamentos/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+
 						.anyRequest().authenticated()
 				)
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

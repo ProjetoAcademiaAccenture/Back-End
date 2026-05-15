@@ -1,7 +1,10 @@
 package acc.br.projetoFinal.Accenture.dto.response;
 
+import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
+import acc.br.projetoFinal.Accenture.enums.StatusPedido;
 import acc.br.projetoFinal.Accenture.model.Pedido;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,25 +18,37 @@ public class PedidoResponseDTO {
 
     private Long id;
     private LocalDateTime dataCriacao;
-    private String status;
-    private BigDecimal valorTotal;
-    private BigDecimal multaCancelamento;
+    private StatusPedido status;
+    private BigDecimal valorBruto;
+    private BigDecimal desconto;
+    private BigDecimal valorFinal;
     private Long clienteId;
     private List<ItemPedidoResponseDTO> itens;
+    private PagamentoResponseDTO pagamento;
 
     public static PedidoResponseDTO fromEntity(Pedido pedido) {
         return PedidoResponseDTO.builder()
-                .id(pedido.getId())
-                .dataCriacao(pedido.getDataCriacao())
-                .status(pedido.getStatus().name())
-                .valorTotal(pedido.getValorTotal())
-                .multaCancelamento(pedido.getMultaCancelamento())
-                .clienteId(pedido.getCliente().getId())
-                .itens(pedido.getItens() != null
-                    ? pedido.getItens().stream()
-                        .map(ItemPedidoResponseDTO::fromEntity)
-                        .collect(Collectors.toList())
-                    : List.of())
-                .build();
+            .id(pedido.getId())
+            .dataCriacao(pedido.getDataCriacao())
+            .status(pedido.getStatus())
+            .valorBruto(pedido.getValorBruto())
+            .desconto(pedido.getDesconto())
+            .valorFinal(pedido.getValorFinal())
+            .clienteId(pedido.getCliente().getId())
+            .itens(pedido.getItens() != null
+                ? pedido.getItens().stream()
+                  .map(ItemPedidoResponseDTO::fromEntity)
+                  .collect(Collectors.toList())
+                : List.of())
+            .pagamento(pedido.getPagamento() != null ? PagamentoResponseDTO.fromEntity(pedido.getPagamento()) : null)
+            .build();
+    }
+
+    public static PedidoResponseDTO fromEntity(Pedido pedido, MetodoPagamento metodoPagamento) {
+        PedidoResponseDTO dto = fromEntity(pedido);
+        dto.setPagamento(PagamentoResponseDTO.builder()
+            .metodoPagamento(metodoPagamento)
+            .build());
+        return dto;
     }
 }

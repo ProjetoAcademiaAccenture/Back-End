@@ -23,6 +23,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -45,13 +47,24 @@ class ClienteControllerTests {
 
     @BeforeEach
     void setup() {
+        EnderecoRequestDTO endereco = EnderecoRequestDTO.builder()
+                .cep("01310100")
+                .numero("100")
+                .logradouro("Avenida Paulista")
+                .bairro("Bela Vista")
+                .cidade("São Paulo")
+                .uf("SP")
+                .tipoEndereco(acc.br.projetoFinal.Accenture.enums.TipoEndereco.RESIDENCIAL)
+                .build();
+
         clienteRequest = ClienteRequestDTO.builder()
                 .nome("João Silva")
                 .cpf("12345678901")
                 .email("joao@email.com")
+                .senha("senha123")
                 .telefone("11999999999")
-                .cep("01310100")
-                .numero("100")
+                .dataNascimento(LocalDate.of(1990, 1, 1))
+                .endereco(endereco)
                 .build();
 
         clienteResponse = ClienteResponseDTO.builder()
@@ -69,6 +82,7 @@ class ClienteControllerTests {
         when(clienteService.listarTodos()).thenReturn(List.of(clienteResponse));
 
         mockMvc.perform(get("/api/clientes")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
@@ -81,6 +95,7 @@ class ClienteControllerTests {
         when(clienteService.buscarPorId(1L)).thenReturn(clienteResponse);
 
         mockMvc.perform(get("/api/clientes/1")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
@@ -93,6 +108,7 @@ class ClienteControllerTests {
         when(clienteService.buscarPorCpf("12345678901")).thenReturn(clienteResponse);
 
         mockMvc.perform(get("/api/clientes/cpf/12345678901")
+                .with(user("admin").roles("USER", "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cpf", is("12345678901")))
@@ -104,6 +120,8 @@ class ClienteControllerTests {
         when(clienteService.criar(any(ClienteRequestDTO.class))).thenReturn(clienteResponse);
 
         mockMvc.perform(post("/api/clientes")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(clienteRequest)))
                 .andExpect(status().isCreated())
@@ -125,6 +143,8 @@ class ClienteControllerTests {
         when(clienteService.atualizar(eq(1L), any(ClienteRequestDTO.class))).thenReturn(clienteAtualizado);
 
         mockMvc.perform(put("/api/clientes/1")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(clienteRequest)))
                 .andExpect(status().isOk())
@@ -137,6 +157,8 @@ class ClienteControllerTests {
         doNothing().when(clienteService).deletar(1L);
 
         mockMvc.perform(delete("/api/clientes/1")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
@@ -146,7 +168,32 @@ class ClienteControllerTests {
         doNothing().when(clienteService).removerEndereco(1L, 1L);
 
         mockMvc.perform(delete("/api/clientes/1/enderecos/1")
+                .with(user("admin").roles("USER", "ADMIN"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+void deveAdicionarEnderecoAoCliente() throws Exception {
+    EnderecoRequestDTO enderecoRequest = EnderecoRequestDTO.builder()
+            .cep("01310100")
+            .tipoEndereco(acc.br.projetoFinal.Accenture.enums.TipoEndereco.RESIDENCIAL)
+            .numero("100")
+            .complemento("Apto 12")
+            .logradouro("Avenida Paulista")   // adicionar
+            .bairro("Bela Vista")             // adicionar
+            .cidade("São Paulo")              // adicionar
+            .uf("SP")                         // adicionar
+            .build();
+
+    doNothing().when(clienteService).adicionarEndereco(eq(1L), any(EnderecoRequestDTO.class));
+
+    mockMvc.perform(post("/api/clientes/1/enderecos")
+            .with(user("admin").roles("USER", "ADMIN"))
+            .with(csrf())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(enderecoRequest)))
+            .andExpect(status().isCreated());
+}
 }
