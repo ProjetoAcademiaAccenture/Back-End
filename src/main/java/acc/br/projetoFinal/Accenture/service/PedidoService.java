@@ -93,7 +93,9 @@ public class PedidoService {
         salvo.setStatus(StatusPedido.RESERVADO);
 
         PagamentoResponseDTO pagamento = pagamentoService.criarParaPedido(salvo, dto.getMetodoPagamento());
-        boletoService.gerar(pagamento.getId());
+
+        if (metodo == MetodoPagamento.BOLETO) boletoService.gerar(pagamento.getId());
+
         salvo = pedidoRepository.save(salvo);
 
         return PedidoResponseDTO.fromEntity(salvo, metodo);
