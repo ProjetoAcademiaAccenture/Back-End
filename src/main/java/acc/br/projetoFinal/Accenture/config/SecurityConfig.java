@@ -1,7 +1,7 @@
 package acc.br.projetoFinal.Accenture.config;
 
-import acc.br.projetoFinal.Accenture.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,9 +16,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.*;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import acc.br.projetoFinal.Accenture.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @RequiredArgsConstructor
@@ -70,9 +73,15 @@ public class SecurityConfig {
 						// ✅ H2 Console liberado
 						.requestMatchers("/h2-console/**").permitAll()
 
-						// Auth e Docs
-						.requestMatchers("/auth/*", "/v3/api-docs/", "/swagger-ui/*", "/swagger-ui.html").permitAll()
+				
 
+						// Auth e Docs
+                    .requestMatchers(
+                        "/auth/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html"
+                    ).permitAll()
 						// --- Produtos ---
 						.requestMatchers(HttpMethod.GET, "/api/produtos/**").permitAll()
 						.requestMatchers("/api/produtos/**").hasAuthority("ROLE_ADMIN")
@@ -104,4 +113,4 @@ public class SecurityConfig {
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
 		return configuration.getAuthenticationManager();
 	}
-}
+}git add src/main/java/acc/br/projetoFinal/Accenture/config/SecurityConfig.java
