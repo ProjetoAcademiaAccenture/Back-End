@@ -171,7 +171,6 @@ public class ContaService {
         );
     }
 
-    @Transactional
     public void debitarLimiteCredito(Conta conta, BigDecimal valor, Pedido pedido, Pagamento pagamento, String descricao) {
         BigDecimal antes = conta.getLimiteCreditoDisponivel();
 
