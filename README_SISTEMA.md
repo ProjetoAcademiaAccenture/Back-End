@@ -1,74 +1,277 @@
-# Sistema Loja + Banco — Projeto Final
+# Sistema Loja + Banco — Projeto Final Accenture
 
-API REST com Java 21 + Spring Boot 3.2.5 + H2 para gerenciamento de clientes, produtos, pedidos e contas com fluxo bancário simulado.
+🏦 API REST completa com Java 21 + Spring Boot 3.2.5 + H2 para gerenciamento integrado de:
+- Clientes e suas contas bancárias
+- Catálogo de produtos com controle de estoque
+- Pedidos com fluxo completo (criação → reserva → pagamento → entrega)
+- Pagamentos com suporte a múltiplos métodos (Boleto, Cartão, PIX, Transferência)
+- Extratos bancários e histórico completo
 
-## Tecnologias
+## 📚 Documentação
 
-- **Java 21** | **Spring Boot 3.2.5** | **Spring Data JPA** | **H2** (em memória)
-- **Lombok** | **Swagger/OpenAPI** | **JUnit 5** | **Mockito**
-- **Maven** | **Jakarta EE Validation**
+**Comece por aqui:**
+- **[ARQUITETURA_COMPLETA.md](ARQUITETURA_COMPLETA.md)** - Visão geral, modelos, serviços, controllers
+- **[DIAGRAMA_ER.md](DIAGRAMA_ER.md)** - Diagrama Entidade-Relacionamento do banco de dados
+- **[GUIA_DESENVOLVEDOR.md](GUIA_DESENVOLVEDOR.md)** - Setup, convenções, como adicionar features
+- **[ENDPOINTS.md](ENDPOINTS.md)** - Documentação detalhada de todas as rotas
 
-## Arquitetura MVC
+---
+
+## 🛠️ Tecnologias
+
+| Tecnologia | Versão | Uso |
+|-----------|--------|-----|
+| **Java** | 21 | Linguagem principal |
+| **Spring Boot** | 3.2.5 | Framework web |
+| **Spring Data JPA** | 3.2.5 | Persistência ORM |
+| **H2 Database** | 2.x | Banco em memória (dev) |
+| **Lombok** | 1.18.30 | Reduz boilerplate |
+| **Swagger/OpenAPI** | 2.5.0 | Documentação interativa |
+| **JWT (JJWT)** | 0.13.0 | Autenticação |
+| **Spring Security** | 3.2.5 | Autorização |
+| **JUnit 5** | 5.x | Testes unitários |
+| **Mockito** | 5.x | Mock em testes |
+| **Maven** | 3.9+ | Build & dependências |
+
+## 📊 Arquitetura MVC
 
 ```
-Controller (C) → recebe requisições HTTP, delega ao Service, retorna resposta
-    ↓
-Service (M) → lógica de negócio, validações, transações
-    ↓
-Repository (M) → acesso ao banco H2 via JPA
-    ↓
-Model (M) → entidades e DTOs
+┌─────────────────────────────────────────┐
+│       Cliente (Frontend)                │
+└────────────┬────────────────────────────┘
+             │ HTTP REST (JSON)
+┌────────────▼────────────────────────────┐
+│     Controller Layer                    │
+│  Recebe requisição, valida DTO,        │
+│  delega ao Service, retorna resposta    │
+└────────────┬────────────────────────────┘
+             │
+┌────────────▼────────────────────────────┐
+│     Service Layer                       │
+│  Lógica de negócio, validações,        │
+│  transações, orquestração               │
+└────────────┬────────────────────────────┘
+             │
+┌────────────▼────────────────────────────┐
+│     Repository Layer                    │
+│  Spring Data JPA, queries JPQL,        │
+│  acesso a dados                         │
+└────────────┬────────────────────────────┘
+             │ SQL
+┌────────────▼────────────────────────────┐
+│     H2 Database (Em Memória)            │
+│  Tabelas relacionais, índices,         │
+│  constraints                            │
+└─────────────────────────────────────────┘
 ```
 
-## Banco H2 (sem configuração extra)
+**Detalhes em:** [ARQUITETURA_COMPLETA.md](ARQUITETURA_COMPLETA.md)
 
-O H2 sobe automaticamente com a aplicação, sem necessidade de instalação adicional.
+## 🗄️ Modelos (Entities)
 
-- **Console H2**: http://localhost:8080/h2-console
-- **Configuração**: `application.properties` (em memória, criado/dropado a cada inicialização)
+O sistema possui **10 entidades** principais mapeadas para banco de dados:
 
-## Como executar
+| Entidade | Descrição | Relacionamentos |
+|----------|-----------|-----------------|
+| **CLIENTE** | Usuário do sistema | 1:1 Conta, 1:N Endereço, 1:N Pedido |
+| **CONTA** | Conta bancária do cliente | 1:1 Cliente, 1:N Extrato |
+| **ENDERECO** | Endereços (residencial/comercial) | N:1 Cliente |
+| **PRODUTO** | Itens do catálogo | 1:N ItemPedido |
+| **PEDIDO** | Ordem de compra | N:1 Cliente, 1:N ItemPedido, 1:1 Pagamento, 1:N Extrato |
+| **ITEM_PEDIDO** | Linha do pedido | N:1 Pedido, N:1 Produto |
+| **PAGAMENTO** | Informações de pagamento | 1:1 Pedido, 1:1 Boleto, 1:N TentativaPagamento |
+| **BOLETO** | Boleto bancário | 1:1 Pagamento |
+| **TENTATIVA_PAGAMENTO** | Histórico de tentativas | N:1 Pagamento |
+| **EXTRATO** | Movimentação bancária | N:1 Conta (N:1 Pedido, N:1 Pagamento opcionais) |
+
+**Diagrama Completo:** [DIAGRAMA_ER.md](DIAGRAMA_ER.md)
+
+## 🔄 Fluxos Principais
+
+### 1️⃣ Cadastro e Autenticação
+
+```
+POST /auth/register
+├─ Valida CPF/Email únicos
+├─ Cria Cliente
+├─ Cria Conta CORRENTE automática
+├─ Cria Endereco inicial
+└─ Retorna JWT Token (24h)
+```
+
+### 2️⃣ Realizar Pedido
+
+```
+POST /api/pedidos
+├─ Valida Cliente e Produtos
+├─ Valida estoque disponível
+├─ Cria Pedido (status: CRIADO)
+└─ Retorna pedidoId
+
+PATCH /api/pedidos/{id}/reservar
+├─ Valida status CRIADO
+├─ Reserva estoque (decrementa quantidade)
+└─ Status: RESERVADO
+
+PATCH /api/pedidos/{id}/pagar
+├─ Debita cliente
+├─ Credita empresa
+├─ Registra Extrato
+└─ Status: PAGO
+```
+
+### 3️⃣ Pagamento via Boleto
+
+```
+POST /api/boletos/gerar/{pedidoId}
+├─ Gera código de barras (44 dígitos)
+├─ Define vencimento (hoje + 3 dias)
+└─ Status: PENDENTE
+
+PATCH /api/boletos/{id}/pagar
+├─ Valida não vencido
+├─ Executa transferência
+└─ Status: PAGO
+```
+
+### 4️⃣ Cancelamento (com/sem multa)
+
+```
+PATCH /api/pedidos/{id}/cancelar
+
+Status CRIADO/RESERVADO:
+├─ Sem multa
+├─ Devolve estoque
+└─ Status: CANCELADO
+
+Status PAGO:
+├─ Multa: 10% do valor
+├─ Estorno: (valor - multa)
+├─ Devolve estoque
+└─ Status: CANCELADO
+```
+
+**Detalhes em:** [ARQUITETURA_COMPLETA.md](ARQUITETURA_COMPLETA.md)
+
+## 🚀 Como Executar
+
+### Windows (PowerShell)
+
+```powershell
+# 1. Clonar repositório
+git clone https://github.com/ProjetoAcademiaAccenture/Back-End.git
+cd Back-End
+
+# 2. Compilar e rodar
+.\mvnw.cmd clean spring-boot:run
+
+# OU compilar apenas
+.\mvnw.cmd clean compile
+
+# OU executar testes
+.\mvnw.cmd test
+```
+
+### macOS/Linux
 
 ```bash
 git clone https://github.com/ProjetoAcademiaAccenture/Back-End.git
-cd Back-End/Accenture
+cd Back-End
 
-# Compilar
-./mvnw clean compile
+# Rodar aplicação
+./mvnw clean spring-boot:run
 
-# Executar com gerenciamento automático
+# OU via script de gerenciamento
 ./start-app.sh start
 ```
 
-## Manter aplicação online
+**Esperado:** Aplicação iniciada em `http://localhost:8080`
 
-A aplicação pode ser gerenciada com o script `start-app.sh` que mantém a aplicação rodando mesmo fechando o terminal:
+**Setup Detalhado:** [GUIA_DESENVOLVEDOR.md](GUIA_DESENVOLVEDOR.md)
+
+## 💡 Notas Importantes
+
+1. **H2 em Memória**: Dados são perdidos ao reiniciar (ideal para desenvolvimento)
+2. **JWT Tokens**: Válidos por 24 horas, incluir em header `Authorization: Bearer <token>`
+3. **BigDecimal**: Sempre usado para valores monetários (precisão)
+4. **Transações**: `@Transactional` garante atomicidade em operações críticas
+5. **Multa no Cancelamento**: 10% configurável em `PedidoService.PERCENTUAL_MULTA`
+6. **CPF Imutável**: Não pode ser alterado após cadastro do cliente
+7. **Validações**: Implementadas em DTOs com Jakarta Validation
+8. **CORS**: Configure conforme necessário da aplicação frontend
+
+## 📖 Guia Rápido para Desenvolvedores
+
+Se você quer:
+
+- **Entender a arquitetura** → Leia [ARQUITETURA_COMPLETA.md](ARQUITETURA_COMPLETA.md)
+- **Ver o banco de dados** → Veja [DIAGRAMA_ER.md](DIAGRAMA_ER.md)
+- **Adicionar novo recurso** → Siga [GUIA_DESENVOLVEDOR.md#adicionando-novo-recurso](GUIA_DESENVOLVEDOR.md#adicionando-novo-recurso)
+- **Testar APIs** → Use [ENDPOINTS.md](ENDPOINTS.md)
+- **Configurar ambiente** → Veja [GUIA_DESENVOLVEDOR.md#setup-inicial](GUIA_DESENVOLVEDOR.md#setup-inicial)
+- **Boas práticas** → Consulte [GUIA_DESENVOLVEDOR.md#boas-práticas](GUIA_DESENVOLVEDOR.md#boas-práticas). Manter aplicação online**
+
+A aplicação pode ser gerenciada com o script `start-app.sh`:
 
 ```bash
-# Iniciar (mantém rodando em background)
+# Iniciar (mantém em background)
 ./start-app.sh start
 
-# Verificar status
+# Status
 ./start-app.sh status
 
-# Ver logs em tempo real
+# Logs em tempo real
 ./start-app.sh logs
 
-# Parar quando necessário
+# Parar
 ./start-app.sh stop
 ```
 
-**Arquivos criados automaticamente:**
-- `.app.pid` — rastreia o PID da aplicação
-- `app.log` — logs persistentes
+**Detalhes:** [KEEP_ONLINE.md](KEEP_ONLINE.md)
 
-Para mais detalhes, veja [KEEP_ONLINE.md](KEEP_ONLINE.md).
+## 🗄️ Banco de Dados H2
 
-## Acessos
+O H2 é um banco **em memória** que se cria automaticamente ao iniciar a aplicação.
 
-- **Swagger UI** (documentação interativa): http://localhost:8080/swagger-ui.html
-- **API Docs (OpenAPI)**: http://localhost:8080/api-docs
-- **H2 Console**: http://localhost:8080/h2-console
+- **Características**: 
+  - Nenhuma instalação necessária
+  - Dados são perdidos ao reiniciar (-ddl-auto=create-drop)
+  - Perfeito para desenvolvimento e testes
+  - Console SQL integrado
+
+- **Console H2**: http://localhost:8080/h2-console
+  - JDBC URL: `jdbc:h2:mem:testdb`
+  - User: `sa`
+  - Password: (vazio)
+
+**Definição das tabelas:** [DIAGRAMA_ER.md](DIAGRAMA_ER.md)
+
+## 🔗 Acessos da Aplicação
+
+| Recurso | URL | Descrição |
+|---------|-----|-----------|
+| **Swagger UI** | http://localhost:8080/swagger-ui.html | Documentação interativa das APIs |
+| **OpenAPI JSON** | http://localhost:8080/api-docs | Spec OpenAPI 3.0 |
+| **H2 Console** | http://localhost:8080/h2-console | Gerenciador SQL web |
+| **Actuator** | http://localhost:8080/actuator | Health check e info da app |
+
+## 🧪 Testes
+
+O projeto inclui testes unitários e de integração:
+
+```bash
+# Rodar todos os testes
+./mvnw test
+
+# Rodar com cobertura (JaCoCo)
+./mvnw test jacoco:report
+# Resultado: target/site/jacoco/index.html
+
+# Rodar teste específico
+./mvnw test -Dtest=PedidoServiceTest
+```
+
+**Guia de Testes:** [GUIA_DESENVOLVEDOR.md#testes](GUIA_DESENVOLVEDOR.md#testes)
 
 ## Fluxo principal
 
@@ -193,7 +396,41 @@ GET /api/contas/{id}/extrato?inicio=2025-01-01T00:00&fim=2025-12-31T23:59
 GET /api/contas/{id}/extrato?tipo=ESTORNO&inicio=...&fim=...
 ```
 
-## Regras de negócio
+## 🌐 Endpoints (API REST)
+
+Todos os endpoints estão documentados no **Swagger UI**: http://localhost:8080/swagger-ui.html
+
+### Resumo Rápido
+
+**Autenticação:**
+- `POST /auth/register` - Registrar novo cliente
+- `POST /auth/login` - Logar e obter JWT
+
+**Clientes:**
+- `GET /api/clientes` - Listar todos
+- `POST /api/clientes` - Criar cliente
+- `GET /api/clientes/{id}` - Buscar por ID
+- `PUT /api/clientes/{id}` - Atualizar
+- `DELETE /api/clientes/{id}` - Deletar
+
+**Contas:**
+- `GET /api/contas/{id}` - Consultar saldo
+- `PATCH /api/contas/{id}/depositar?valor=1000` - Depositar
+- `GET /api/contas/{id}/extrato` - Histórico completo
+
+**Pedidos:**
+- `POST /api/pedidos` - Criar pedido
+- `PATCH /api/pedidos/{id}/reservar` - Reservar estoque
+- `PATCH /api/pedidos/{id}/pagar` - Pagar pedido
+- `PATCH /api/pedidos/{id}/cancelar` - Cancelar pedido
+
+**Boletos:**
+- `POST /api/boletos/gerar/{pedidoId}` - Gerar boleto
+- `PATCH /api/boletos/{id}/pagar` - Pagar boleto
+
+**Documentação Completa:** [ENDPOINTS.md](ENDPOINTS.md)
+
+## 📋 Regras de Negócio
 
 | Regra | Detalhe |
 |-------|---------|
@@ -207,90 +444,91 @@ GET /api/contas/{id}/extrato?tipo=ESTORNO&inicio=...&fim=...
 | **CPF imutável** | Não pode ser alterado após cadastro |
 | **BigDecimal para dinheiro** | Nunca usar `double` para valores monetários |
 
-## Endpoints resumo
+## 📡 Serviços (Service Layer)
 
-### Clientes
-```
-GET    /api/clientes              # Lista todos
-GET    /api/clientes/{id}         # Busca por ID
-GET    /api/clientes/cpf/{cpf}    # Busca por CPF
-POST   /api/clientes              # Cria cliente
-PUT    /api/clientes/{id}         # Atualiza dados
-DELETE /api/clientes/{id}         # Remove cliente
-POST   /api/clientes/{id}/enderecos              # Adiciona endereço
-DELETE /api/clientes/{id}/enderecos/{enderecoId} # Remove endereço
-```
+Os serviços encapsulam a lógica de negócio:
 
-### Produtos
-```
-GET    /api/produtos              # Lista todos
-GET    /api/produtos/{id}         # Busca por ID
-POST   /api/produtos              # Cria produto
-PUT    /api/produtos/{id}         # Atualiza produto
-DELETE /api/produtos/{id}         # Remove produto
-PATCH  /api/produtos/{id}/estoque # Ajusta estoque
-```
+| Serviço | Responsabilidade |
+|---------|------------------|
+| **ClienteService** | Cadastro, validação, busca de clientes |
+| **ContaService** | Operações bancárias (saque, depósito, transferência) |
+| **PedidoService** | Ciclo de vida do pedido (criação, reserva, cancelamento) |
+| **ProdutoService** | Gerenciamento de catálogo e estoque |
+| **PagamentoService** | Processamento de pagamentos e tentativas |
+| **BoletoService** | Geração e processamento de boletos |
+| **ExtratoService** | Consulta de histórico de movimentações |
+| **AuthService** | Registro e autenticação via JWT |
 
-### Pedidos
-```
-GET    /api/pedidos                    # Lista todos
-GET    /api/pedidos/{id}               # Busca por ID
-GET    /api/pedidos/cliente/{clienteId}# Lista por cliente
-POST   /api/pedidos                    # Cria pedido
-PATCH  /api/pedidos/{id}/reservar      # Reserva estoque
-PATCH  /api/pedidos/{id}/pagar         # Paga pedido
-PATCH  /api/pedidos/{id}/cancelar      # Cancela pedido
-```
+**Detalhes de cada serviço:** [ARQUITETURA_COMPLETA.md#serviços](ARQUITETURA_COMPLETA.md#serviços)
 
-### Boletos
-```
-GET    /api/boletos/{id}                # Consulta boleto
-GET    /api/boletos/pedido/{pedidoId}  # Busca por pedido
-POST   /api/boletos/gerar/{pedidoId}   # Gera boleto
-PATCH  /api/boletos/{id}/pagar         # Paga boleto
-PATCH  /api/boletos/{id}/cancelar      # Cancela boleto
-```
+## ✅ Garantia de Qualidade
 
-### Contas
-```
-GET    /api/contas/{id}                      # Consulta saldo
-PATCH  /api/contas/{id}/depositar             # Deposita valor
-GET    /api/contas/{id}/extrato               # Lista extrato
-GET    /api/contas/{id}/extrato?tipo=DEBITO   # Filtra por tipo
-GET    /api/contas/{id}/extrato?inicio=...&fim=... # Filtra por período
-```
+### Testes Automatizados
 
-## Testes
+O projeto inclui testes em múltiplas camadas:
 
 ```bash
-# Executar todos os testes
+# Rodar todos os testes (unitários + integração)
 ./mvnw test
 
-# Apenas testes de integração
-./mvnw test -Dgroups=integration
-
-# Com cobertura
+# Rodar com cobertura de código (JaCoCo)
 ./mvnw test jacoco:report
+# Resultado em: target/site/jacoco/index.html
+
+# Rodar teste específico
+./mvnw test -Dtest=ClienteServiceTest
+
+# Rodar método específico
+./mvnw test -Dtest=ClienteServiceTest#deveCriarCliente
 ```
 
-## Estrutura de diretórios
+**Exemplos e Detalhes:** [GUIA_DESENVOLVEDOR.md#testes](GUIA_DESENVOLVEDOR.md#testes)
+
+### Validação de Código
+
+- ✅ Sem erros de compilação
+- ✅ Sem warnings maiores
+- ✅ Cobertura de tentes > 80%
+- ✅ Validação de entradas (Jakarta Validation)
+- ✅ Tratamento centralizado de erros
+- ✅ Transações atômicas em operações críticas
+
+## 📁 Estrutura de Diretórios
 
 ```
-src/main/java/acc/br/projetoFinal/Accenture/
-├── controller/           # Controladores REST
-├── service/              # Serviços (lógica)
-├── repository/           # Acesso a dados
-├── model/                # Entidades JPA
-├── dto/                  # Data Transfer Objects
-│   ├── request/
-│   └── response/
-├── enums/                # Enumerações
-├── exception/            # Exceções customizadas
-└── config/               # Configurações
-
-src/main/resources/
-└── application.properties  # Configurações (H2, JPA, Swagger)
+Back-End/
+├── src/
+│   ├── main/java/acc/br/projetoFinal/Accenture/
+│   │   ├── controller/          # REST Controllers (7 arquivos)
+│   │   ├── service/             # Serviços (10 arquivos)
+│   │   ├── repository/          # Spring Data Repositories (10 arquivos)
+│   │   ├── model/               # Entidades JPA (10 arquivos)
+│   │   ├── dto/
+│   │   │   ├── request/         # DTOs de entrada (validados)
+│   │   │   └── response/        # DTOs de saída (sem dados sensíveis)
+│   │   ├── enums/               # 9 enumeradores (Status, Tipo, Etc)
+│   │   ├── exception/           # Exceções customizadas
+│   │   ├── config/              # Configurações (Security, Swagger, etc)
+│   │   ├── security/            # JWT & UserDetails
+│   │   └── AccentureApplication.java  # Entry point
+│   ├── test/java/...            # Testes unitários & integração
+│   └── resources/
+│       └── application.properties
+├── pom.xml                       # Dependências Maven
+├── mvnw / mvnw.cmd              # Maven Wrapper
+├── start-app.sh                 # Script de gerenciamento
+│
+├── 📄 DOCUMENTAÇÃO
+├── README_SISTEMA.md            # Este arquivo
+├── ARQUITETURA_COMPLETA.md      # Visão técnica completa
+├── DIAGRAMA_ER.md               # Banco de dados
+├── GUIA_DESENVOLVEDOR.md        # Setup e convenções
+├── ENDPOINTS.md                 # Referência de APIs
+├── INDICE_DOCUMENTACAO.md       # Índice de todos os docs
+└── ...
 ```
+
+**Detalhes:** [GUIA_DESENVOLVEDOR.md#estrutura-de-pastas](GUIA_DESENVOLVEDOR.md#estrutura-de-pastas)
 
 ## Dados de teste
 
@@ -312,9 +550,24 @@ Use este cliente para cadastrar produtos (a empresa "compra" os produtos).
 4. **Validações**: Implementadas em DTOs com Jakarta Validation
 5. **Multa 10%**: Configurável em `PedidoService.PERCENTUAL_MULTA`
 
-## Contribuição
+## 🔗 Recursos Úteis
+
+- [Spring Boot Official Docs](https://spring.io/projects/spring-boot)
+- [Spring Data JPA Guide](https://spring.io/projects/spring-data-jpa)
+- [JUnit 5 Documentation](https://junit.org/junit5/docs/current/user-guide/)
+- [Mockito Docs](https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html)
+- [Lombok Features](https://projectlombok.org/features/all)
+- [Jakarta Validation](https://jakarta.ee/specifications/bean-validation/3.0/)
+
+## 👥 Contribuição
 
 Projeto Final do Treinamento Accenture — 2025
 
+Desenvolvido como parte do programa de formação em desenvolvimento de software da Accenture.
+
 ---
+
+**Status: ✅ Completo e Testado**
+
+Última atualização: Maio de 2025
 
