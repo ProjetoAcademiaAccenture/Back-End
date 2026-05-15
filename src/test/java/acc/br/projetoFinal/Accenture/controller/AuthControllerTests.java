@@ -30,6 +30,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import static org.mockito.Mockito.lenient;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,53 +59,53 @@ class AuthControllerTests {
     private Cliente cliente;
     private Conta conta;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-            when(contaService.criarEntidade(any())).thenReturn(conta);
-    when(contaService.depositar(any(), any())).thenReturn(conta);
-    when(contaService.creditarLimiteCredito(any(), any())).thenReturn(conta);
+@BeforeEach
+void setUp() {
+    MockitoAnnotations.openMocks(this);
 
+    loginDto = new LoginRequestDTO();
+    loginDto.setEmail("joao@test.com");
+    loginDto.setSenha("senha123");
 
-        loginDto = new LoginRequestDTO();
-        loginDto.setEmail("joao@test.com");
-        loginDto.setSenha("senha123");
+    loginBankDto = new LoginBankRequestDTO();
+    loginBankDto.setNumero_conta("12345-6");
+    loginBankDto.setSenha("senha123");
 
-        loginBankDto = new LoginBankRequestDTO();
-        loginBankDto.setNumero_conta("12345-6");
-        loginBankDto.setSenha("senha123");
+    registerDto = ClienteRequestDTO.builder()
+            .nome("João Silva")
+            .email("joao@test.com")
+            .cpf("12345678900")
+            .telefone("11999999999")
+            .senha("senha123")
+            .build();
 
-        registerDto = ClienteRequestDTO.builder()
-                .nome("João Silva")
-                .email("joao@test.com")
-                .cpf("12345678900")
-                .telefone("11999999999")
-                .senha("senha123")
-                .build();
+    contaRequestDTO = ContaRequestDTO.builder()
+            .clienteId(1L)
+            .senhaTransacao("senha123")
+            .build();
 
-        contaRequestDTO = ContaRequestDTO.builder()
-                .clienteId(1L)
-                .senhaTransacao("senha123")
-                .build();
+    cliente = Cliente.builder()
+            .id(1L)
+            .nome("João Silva")
+            .email("joao@test.com")
+            .cpf("12345678900")
+            .tipoCliente(TipoCliente.ROLE_USER)
+            .build();
 
-        cliente = Cliente.builder()
-                .id(1L)
-                .nome("João Silva")
-                .email("joao@test.com")
-                .cpf("12345678900")
-                .tipoCliente(TipoCliente.ROLE_USER)
-                .build();
+    conta = Conta.builder()
+            .id(1L)
+            .numeroConta("12345-6")
+            .saldo(BigDecimal.valueOf(1000))
+            .senhaTransacao("senhaCriptografada")
+            .tipo(TipoConta.CORRENTE)
+            .cliente(cliente)
+            .build();
 
-        conta = Conta.builder()
-                .id(1L)
-                .numeroConta("12345-6")
-                .saldo(BigDecimal.valueOf(1000))
-                .senhaTransacao("senhaCriptografada")
-                .tipo(TipoConta.CORRENTE)
-                .cliente(cliente)
-                .build();
-    }
-
+    // ← stubs DEPOIS de conta ser construído
+    lenient().when(contaService.criarEntidade(any())).thenReturn(conta);
+    lenient().when(contaService.depositar(any(), any())).thenReturn(conta);
+    lenient().when(contaService.creditarLimiteCredito(any(), any())).thenReturn(conta);
+}    
     // -------------------------------------------------------
     // LOGIN
     // -------------------------------------------------------

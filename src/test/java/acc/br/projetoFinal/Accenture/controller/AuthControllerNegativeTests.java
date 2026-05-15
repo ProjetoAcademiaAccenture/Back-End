@@ -35,7 +35,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class) // ESSENCIAL para habilitar os @Mock
+@ExtendWith(MockitoExtension.class)
 @DisplayName("AuthController - Testes Negativos")
 class AuthControllerNegativeTests {
 
@@ -59,10 +59,6 @@ class AuthControllerNegativeTests {
 
     @BeforeEach
     void setUp() {
-        when(contaService.criarEntidade(any())).thenReturn(conta);
-        when(contaService.depositar(any(), any())).thenReturn(conta);
-        when(contaService.creditarLimiteCredito(any(), any())).thenReturn(conta);
-
         loginDto = new LoginRequestDTO();
         loginDto.setEmail("joao@test.com");
         loginDto.setSenha("senha123");
@@ -101,12 +97,9 @@ class AuthControllerNegativeTests {
                 .build();
     }
 
-    // --- LOGIN ---
-
     @Test
     @DisplayName("✗ Deve lançar SenhaInvalidaException ao login com credenciais inválidas")
     void testLoginComCredenciaisInvalidas() {
-        // Corrigido: Usar any() para o tipo específico esperado pelo método
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenThrow(new BadCredentialsException("Credenciais inválidas"));
 
@@ -127,20 +120,15 @@ class AuthControllerNegativeTests {
     @Test
     @DisplayName("✗ Deve lançar RecursoNaoEncontradoException ao não encontrar cliente no login")
     void testLoginClienteNaoEncontrado() {
-        // No Mockito puro, se o método for void ou retornar algo, você define o comportamento
-        // authenticationManager.authenticate não lança erro aqui, então apenas segue
         when(clienteRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
         assertThrows(RecursoNaoEncontradoException.class, () -> authController.login(loginDto));
     }
 
-    // --- LOGIN BANK ---
-
     @Test
     @DisplayName("✗ Deve lançar SenhaInvalidaException ao login-bank com senha inválida")
     void testLoginBankSenhaInvalida() {
         when(contaRepository.findByNumeroConta(anyString())).thenReturn(Optional.of(conta));
-        // Força o matches a retornar false
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         assertThrows(SenhaInvalidaException.class, () -> authController.loginBank(loginBankDto));
@@ -156,8 +144,6 @@ class AuthControllerNegativeTests {
 
         verifyNoInteractions(jwtService);
     }
-
-    // --- REGISTER ---
 
     @Test
     @DisplayName("✗ Não deve gerar token quando clienteService lança exceção")
