@@ -61,6 +61,10 @@ class AuthControllerTests {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+            when(contaService.criarEntidade(any())).thenReturn(conta);
+    when(contaService.depositar(any(), any())).thenReturn(conta);
+    when(contaService.creditarLimiteCredito(any(), any())).thenReturn(conta);
+
 
         loginDto = new LoginRequestDTO();
         loginDto.setEmail("joao@test.com");

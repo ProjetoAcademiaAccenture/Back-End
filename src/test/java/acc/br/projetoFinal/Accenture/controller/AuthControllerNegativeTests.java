@@ -32,6 +32,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class) // ESSENCIAL para habilitar os @Mock
@@ -58,6 +59,10 @@ class AuthControllerNegativeTests {
 
     @BeforeEach
     void setUp() {
+        when(contaService.criarEntidade(any())).thenReturn(conta);
+        when(contaService.depositar(any(), any())).thenReturn(conta);
+        when(contaService.creditarLimiteCredito(any(), any())).thenReturn(conta);
+
         loginDto = new LoginRequestDTO();
         loginDto.setEmail("joao@test.com");
         loginDto.setSenha("senha123");

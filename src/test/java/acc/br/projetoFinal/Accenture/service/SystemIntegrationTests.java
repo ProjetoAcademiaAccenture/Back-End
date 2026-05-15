@@ -140,7 +140,7 @@ class SystemIntegrationTests {
         update.setDescricao("Mouse Gamer");
         update.setPreco(new BigDecimal("150.00"));
         update.setQuantidadeEstoque(5);
-
+        update.setCategoria(Categoria.ELETRONICOS); 
         produtoService.atualizar(produto.getId(), update);
 
         var produtoAtualizado =
