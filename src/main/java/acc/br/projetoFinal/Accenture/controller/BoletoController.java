@@ -48,4 +48,8 @@ public class BoletoController {
         boletoService.cancelarBoleto(id);
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/pedido/{pedidoId}")
+public ResponseEntity<BoletoResponseDTO> buscarPorPedidoId(@PathVariable Long pedidoId) {
+    return ResponseEntity.ok(boletoService.buscarPorPedidoId(pedidoId));
+}
 }
