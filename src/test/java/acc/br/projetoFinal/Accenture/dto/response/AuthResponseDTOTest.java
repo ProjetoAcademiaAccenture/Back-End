@@ -239,4 +239,149 @@ class AuthResponseDTOTest {
                 .tipoCliente("ADMIN")
                 .build();
     }
+    // -----------------------------------------------------------------------
+// equals — branches por campo individual (valor diferente)
+// -----------------------------------------------------------------------
+
+@Test
+@DisplayName("DTOs com token diferente não devem ser iguais")
+void dtoComTokenDiferenteNaoDeveSerIgual() {
+    AuthResponseDTO a = construirDTO();
+    AuthResponseDTO b = construirDTO();
+    b.setToken("outro-token");
+    assertNotEquals(a, b);
+}
+
+@Test
+@DisplayName("DTOs com nome diferente não devem ser iguais")
+void dtoComNomeDiferenteNaoDeveSerIgual() {
+    AuthResponseDTO a = construirDTO();
+    AuthResponseDTO b = construirDTO();
+    b.setNome("Outro Nome");
+    assertNotEquals(a, b);
+}
+
+@Test
+@DisplayName("DTOs com email diferente não devem ser iguais")
+void dtoComEmailDiferenteNaoDeveSerIgual() {
+    AuthResponseDTO a = construirDTO();
+    AuthResponseDTO b = construirDTO();
+    b.setEmail("outro@email.com");
+    assertNotEquals(a, b);
+}
+
+@Test
+@DisplayName("DTOs com tipoCliente diferente não devem ser iguais")
+void dtoComTipoClienteDiferenteNaoDeveSerIgual() {
+    AuthResponseDTO a = construirDTO();
+    AuthResponseDTO b = construirDTO();
+    b.setTipoCliente("OUTRO");
+    assertNotEquals(a, b);
+}
+
+// -----------------------------------------------------------------------
+// equals/hashCode — null-check branches (campo null vs não-null)
+// -----------------------------------------------------------------------
+
+@Test
+@DisplayName("Dois DTOs com todos os campos nulos devem ser iguais")
+void doisDTOsTodosNulosDevemSerIguais() {
+    AuthResponseDTO a = AuthResponseDTO.builder().build();
+    AuthResponseDTO b = AuthResponseDTO.builder().build();
+    assertEquals(a, b);
+    assertEquals(a.hashCode(), b.hashCode());
+}
+
+@Test
+@DisplayName("DTO com token null não deve ser igual ao com token preenchido")
+void dtoComTokenNuloNaoDeveSerIgualAoPreenchido() {
+    AuthResponseDTO a = AuthResponseDTO.builder().build(); // token = null
+    AuthResponseDTO b = construirDTO();                    // token = "jwt-token-xyz"
+    assertNotEquals(a, b);
+}
+
+@Test
+@DisplayName("DTO com clienteId null não deve ser igual ao com clienteId preenchido")
+void dtoComClienteIdNuloNaoDeveSerIgualAoPreenchido() {
+    AuthResponseDTO a = AuthResponseDTO.builder()
+            .token("jwt-token-xyz")
+            // clienteId = null
+            .build();
+    AuthResponseDTO b = construirDTO();
+    assertNotEquals(a, b);
+}
+
+@Test
+@DisplayName("DTO com nome null não deve ser igual ao com nome preenchido")
+void dtoComNomeNuloNaoDeveSerIgualAoPreenchido() {
+    AuthResponseDTO a = AuthResponseDTO.builder()
+            .token("jwt-token-xyz")
+            .clienteId(1L)
+            // nome = null
+            .build();
+    AuthResponseDTO b = construirDTO();
+    assertNotEquals(a, b);
+}
+
+@Test
+@DisplayName("DTO com email null não deve ser igual ao com email preenchido")
+void dtoComEmailNuloNaoDeveSerIgualAoPreenchido() {
+    AuthResponseDTO a = AuthResponseDTO.builder()
+            .token("jwt-token-xyz")
+            .clienteId(1L)
+            .nome("Carlos")
+            // email = null
+            .build();
+    AuthResponseDTO b = construirDTO();
+    assertNotEquals(a, b);
+}
+
+@Test
+@DisplayName("DTO com tipoCliente null não deve ser igual ao com tipoCliente preenchido")
+void dtoComTipoClienteNuloNaoDeveSerIgualAoPreenchido() {
+    AuthResponseDTO a = AuthResponseDTO.builder()
+            .token("jwt-token-xyz")
+            .clienteId(1L)
+            .nome("Carlos")
+            .email("carlos@email.com")
+            // tipoCliente = null
+            .build();
+    AuthResponseDTO b = construirDTO();
+    assertNotEquals(a, b);
+}
+
+// -----------------------------------------------------------------------
+// hashCode — campos nulos não quebram o cálculo
+// -----------------------------------------------------------------------
+
+@Test
+@DisplayName("hashCode não deve lançar exceção quando campos são nulos")
+void hashCodeComCamposNulosNaoDeveLancarExcecao() {
+    AuthResponseDTO dto = AuthResponseDTO.builder().build();
+    assertDoesNotThrow(() -> dto.hashCode());
+}
+
+@Test
+@DisplayName("hashCode deve diferir quando token difere")
+void hashCodeDeveDiferirComTokenDiferente() {
+    AuthResponseDTO a = construirDTO();
+    AuthResponseDTO b = construirDTO();
+    b.setToken("token-diferente");
+    assertNotEquals(a.hashCode(), b.hashCode());
+}
+
+// -----------------------------------------------------------------------
+// toString — campos nulos não quebram
+// -----------------------------------------------------------------------
+
+@Test
+@DisplayName("toString não deve lançar exceção quando todos os campos são nulos")
+void toStringComCamposNulosNaoDeveLancarExcecao() {
+    AuthResponseDTO dto = AuthResponseDTO.builder().build();
+    assertDoesNotThrow(() -> {
+        String result = dto.toString();
+        assertNotNull(result);
+        assertTrue(result.contains("AuthResponseDTO"));
+    });
+}
 }
