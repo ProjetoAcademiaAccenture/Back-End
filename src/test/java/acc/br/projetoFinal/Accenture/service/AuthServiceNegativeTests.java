@@ -8,9 +8,10 @@ import acc.br.projetoFinal.Accenture.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -20,12 +21,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 @DisplayName("AuthService - Testes Negativos")
 class AuthServiceNegativeTests {
 
     @Mock private ClienteRepository clienteRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
+    @Mock private EmailService emailService; // <- estava faltando
 
     @InjectMocks
     private AuthService authService;
@@ -35,8 +38,6 @@ class AuthServiceNegativeTests {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
         dto = ClienteRequestDTO.builder()
                 .nome("João Silva")
                 .email("joao@test.com")
@@ -60,8 +61,10 @@ class AuthServiceNegativeTests {
         when(clienteRepository.findByCpf("12345678900")).thenReturn(Optional.of(clienteExistente));
 
         assertThrows(IllegalArgumentException.class, () -> authService.register(dto));
-        verify(clienteRepository, times(1)).findByCpf("12345678900");
+
+        verify(clienteRepository).findByCpf("12345678900");
         verify(clienteRepository, never()).save(any(Cliente.class));
+        verifyNoInteractions(emailService);
     }
 
     @Test
@@ -71,8 +74,10 @@ class AuthServiceNegativeTests {
         when(clienteRepository.findByEmail("joao@test.com")).thenReturn(Optional.of(clienteExistente));
 
         assertThrows(IllegalArgumentException.class, () -> authService.register(dto));
-        verify(clienteRepository, times(1)).findByEmail("joao@test.com");
+
+        verify(clienteRepository).findByEmail("joao@test.com");
         verify(clienteRepository, never()).save(any(Cliente.class));
+        verifyNoInteractions(emailService);
     }
 
     @Test
@@ -82,11 +87,12 @@ class AuthServiceNegativeTests {
         when(clienteRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(clienteExistente);
-        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token"); // corrigido
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+        doNothing().when(emailService).enviarBoasVindas(anyString(), anyString());
 
         authService.register(dto);
 
-        verify(clienteRepository, times(1)).findByCpf(dto.getCpf());
+        verify(clienteRepository).findByCpf(dto.getCpf());
     }
 
     @Test
@@ -96,11 +102,12 @@ class AuthServiceNegativeTests {
         when(clienteRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(clienteExistente);
-        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token"); // corrigido
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token");
+        doNothing().when(emailService).enviarBoasVindas(anyString(), anyString());
 
         authService.register(dto);
 
-        verify(clienteRepository, times(1)).findByEmail(dto.getEmail());
+        verify(clienteRepository).findByEmail(dto.getEmail());
     }
 
     @Test
@@ -117,6 +124,9 @@ class AuthServiceNegativeTests {
         when(clienteRepository.findByCpf("12345678900")).thenReturn(Optional.of(outroCliente));
 
         assertThrows(IllegalArgumentException.class, () -> authService.register(dto));
+
+        verify(clienteRepository, never()).save(any());
+        verifyNoInteractions(emailService);
     }
 
     @Test
@@ -142,9 +152,35 @@ class AuthServiceNegativeTests {
         when(clienteRepository.findByEmail("cliente1@test.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(clienteRepository.save(any(Cliente.class))).thenReturn(cliente1);
-        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token1"); // corrigido
+        when(jwtService.gerarToken(any(Cliente.class))).thenReturn("token1");
+        doNothing().when(emailService).enviarBoasVindas(anyString(), anyString());
 
         assertDoesNotThrow(() -> authService.register(dto1));
-        verify(clienteRepository, times(1)).save(any(Cliente.class));
+
+        verify(clienteRepository).save(any(Cliente.class));
+        verify(emailService).enviarBoasVindas("cliente1@test.com", "Cliente Um");
+    }
+
+    @Test
+    @DisplayName("✗ Não deve salvar cliente quando CPF duplicado")
+    void testNaoDeveSalvarClienteComCpfDuplicado() {
+        when(clienteRepository.findByCpf(anyString())).thenReturn(Optional.of(clienteExistente));
+
+        assertThrows(IllegalArgumentException.class, () -> authService.register(dto))  ;
+
+        verifyNoInteractions(passwordEncoder, emailService, jwtService);
+        verify(clienteRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("✗ Não deve salvar cliente quando email duplicado")
+    void testNaoDeveSalvarClienteComEmailDuplicado() {
+        when(clienteRepository.findByCpf(anyString())).thenReturn(Optional.empty());
+        when(clienteRepository.findByEmail(anyString())).thenReturn(Optional.of(clienteExistente));
+
+        assertThrows(IllegalArgumentException.class, () -> authService.register(dto));
+
+        verifyNoInteractions(passwordEncoder, emailService, jwtService);
+        verify(clienteRepository, never()).save(any());
     }
 }

@@ -19,12 +19,12 @@ public class ContaResponseDTO {
     private String tipo;
 
     public static ContaResponseDTO fromEntity(Conta conta) {
-        return ContaResponseDTO.builder()
-            .id(conta.getId())
-            .numeroConta(conta.getNumeroConta())
-            .saldo(conta.getSaldo())
-            .limiteCreditoDisponivel(conta.getLimiteCreditoDisponivel())
-            .tipo(conta.getTipo().name())
-            .build();
-    }
+    return ContaResponseDTO.builder()
+        .id(conta.getId())
+        .numeroConta(conta.getNumeroConta())
+        .saldo(conta.getSaldo())
+        .limiteCreditoDisponivel(conta.getLimiteCreditoDisponivel())
+        .tipo(conta.getTipo() != null ? conta.getTipo().name() : null)
+        .build();
+}
 }

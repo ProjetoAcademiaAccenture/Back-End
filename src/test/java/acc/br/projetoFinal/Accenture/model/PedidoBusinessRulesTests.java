@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class PedidoBusinessRulesTests {
 
     private Pedido pedido;
-    private Cliente cliente;
     private Produto produto1;
     private Produto produto2;
     private ItemPedido item1;
@@ -23,7 +22,7 @@ class PedidoBusinessRulesTests {
 
     @BeforeEach
     void setUp() {
-        cliente = Cliente.builder()
+        Cliente cliente = Cliente.builder()
                 .id(1L)
                 .nome("João Silva")
                 .cpf("12345678901")
@@ -49,15 +48,11 @@ class PedidoBusinessRulesTests {
                 .cliente(cliente)
                 .status(StatusPedido.CRIADO)
                 .dataCriacao(LocalDateTime.now())
-                // valorTotal e multaCancelamento ficam nulos/default via builder;
-                // usamos setters nos testes que precisam de valores específicos.
+                .valorBruto(BigDecimal.ZERO)
+                .desconto(BigDecimal.ZERO)
+                .valorFinal(BigDecimal.ZERO)
                 .itens(new ArrayList<>())
                 .build();
-
-        // Garante multaCancelamento = ZERO (campo tem @Builder.Default mas
-        // builder explícito com .itens(...) pode resetar o default do Lombok)
-        pedido.setMultaCancelamento(BigDecimal.ZERO);
-        pedido.setValorTotal(BigDecimal.ZERO);
 
         item1 = ItemPedido.builder()
                 .id(1L)
@@ -80,23 +75,69 @@ class PedidoBusinessRulesTests {
     }
 
     // =========================================================
-    // calcularValorTotal()
+    // calcularValorBruto()
     // =========================================================
 
     @Test
-    @DisplayName("Deve calcular valor total do pedido corretamente")
-    void deveCalcularValorTotal() {
+    @DisplayName("Deve calcular valor bruto corretamente")
+    void deveCalcularValorBruto() {
         // (100 * 2) + (50 * 3) = 200 + 150 = 350
-        pedido.calcularValorTotal();
-        assertEquals(new BigDecimal("350.00"), pedido.getValorTotal());
+        pedido.calcularValorBruto();
+        assertEquals(new BigDecimal("350.00"), pedido.getValorBruto());
     }
 
     @Test
-    @DisplayName("Deve calcular valor total de pedido vazio como ZERO")
-    void deveCalcularValorTotalPedidoVazio() {
+    @DisplayName("Deve calcular valor bruto de pedido vazio como ZERO")
+    void deveCalcularValorBrutoPedidoVazio() {
         pedido.getItens().clear();
-        pedido.calcularValorTotal();
-        assertEquals(BigDecimal.ZERO, pedido.getValorTotal());
+        pedido.calcularValorBruto();
+        assertEquals(BigDecimal.ZERO, pedido.getValorBruto());
+    }
+
+    // =========================================================
+    // aplicarDesconto()
+    // =========================================================
+
+    @Test
+    @DisplayName("Deve aplicar desconto e calcular valorFinal corretamente")
+    void deveAplicarDesconto() {
+        pedido.setValorBruto(new BigDecimal("350.00"));
+        pedido.aplicarDesconto(new BigDecimal("17.50")); // 5% de 350
+        assertEquals(new BigDecimal("17.50"), pedido.getDesconto());
+        assertEquals(new BigDecimal("332.50"), pedido.getValorFinal());
+    }
+
+    @Test
+    @DisplayName("Deve aplicar desconto ZERO sem alterar valorFinal")
+    void deveAplicarDescontoZero() {
+        pedido.setValorBruto(new BigDecimal("200.00"));
+        pedido.aplicarDesconto(BigDecimal.ZERO);
+        assertEquals(BigDecimal.ZERO, pedido.getDesconto());
+        assertEquals(new BigDecimal("200.00"), pedido.getValorFinal());
+    }
+
+    @Test
+    @DisplayName("Não deve aplicar desconto negativo")
+    void naoDeveAplicarDescontoNegativo() {
+        pedido.setValorBruto(new BigDecimal("200.00"));
+        assertThrows(IllegalArgumentException.class,
+            () -> pedido.aplicarDesconto(new BigDecimal("-10.00")));
+    }
+
+    @Test
+    @DisplayName("Não deve aplicar desconto nulo")
+    void naoDeveAplicarDescontoNulo() {
+        pedido.setValorBruto(new BigDecimal("200.00"));
+        assertThrows(IllegalArgumentException.class,
+            () -> pedido.aplicarDesconto(null));
+    }
+
+    @Test
+    @DisplayName("Não deve aplicar desconto maior que o valor bruto")
+    void naoDeveAplicarDescontoMaiorQueValorBruto() {
+        pedido.setValorBruto(new BigDecimal("100.00"));
+        assertThrows(IllegalArgumentException.class,
+            () -> pedido.aplicarDesconto(new BigDecimal("150.00")));
     }
 
     // =========================================================
@@ -152,7 +193,7 @@ class PedidoBusinessRulesTests {
     }
 
     @Test
-    @DisplayName("Não deve pagar pedido PAGO")
+    @DisplayName("Não deve pagar pedido já PAGO")
     void naoDevePagarPedidoPago() {
         pedido.setStatus(StatusPedido.PAGO);
         assertThrows(IllegalArgumentException.class, () -> pedido.pagar());
@@ -170,7 +211,7 @@ class PedidoBusinessRulesTests {
     // =========================================================
 
     @Test
-    @DisplayName("Deve permitir cancelamento de pedido CRIADO")
+    @DisplayName("Deve cancelar pedido CRIADO")
     void deveCancelarPedidoCriado() {
         pedido.setStatus(StatusPedido.CRIADO);
         assertDoesNotThrow(() -> pedido.cancelar());
@@ -178,7 +219,7 @@ class PedidoBusinessRulesTests {
     }
 
     @Test
-    @DisplayName("Deve permitir cancelamento de pedido RESERVADO")
+    @DisplayName("Deve cancelar pedido RESERVADO")
     void deveCancelarPedidoReservado() {
         pedido.setStatus(StatusPedido.RESERVADO);
         assertDoesNotThrow(() -> pedido.cancelar());
@@ -186,10 +227,9 @@ class PedidoBusinessRulesTests {
     }
 
     @Test
-    @DisplayName("Deve permitir cancelamento de pedido PAGO")
+    @DisplayName("Deve cancelar pedido PAGO")
     void deveCancelarPedidoPago() {
         pedido.setStatus(StatusPedido.PAGO);
-        pedido.setValorTotal(new BigDecimal("500.00"));
         assertDoesNotThrow(() -> pedido.cancelar());
         assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
     }
@@ -199,54 +239,6 @@ class PedidoBusinessRulesTests {
     void naoDeveCancelarPedidoCancelado() {
         pedido.setStatus(StatusPedido.CANCELADO);
         assertThrows(IllegalArgumentException.class, () -> pedido.cancelar());
-    }
-
-    // =========================================================
-    // calcularMultaCancelamento()
-    // =========================================================
-
-    @Test
-    @DisplayName("Deve calcular multa de cancelamento em 10% do valor total")
-    void deveCalcularMultaCancelamento() {
-        pedido.setValorTotal(new BigDecimal("1000.00"));
-        BigDecimal multa = pedido.calcularMultaCancelamento();
-        assertEquals(new BigDecimal("100.00"), multa);
-    }
-
-    @Test
-    @DisplayName("Deve aplicar multa ao cancelar pedido PAGO")
-    void deveAplicarMultaAoCancelarPago() {
-        pedido.setStatus(StatusPedido.PAGO);
-        pedido.setValorTotal(new BigDecimal("500.00"));
-
-        pedido.cancelar();
-
-        assertEquals(new BigDecimal("50.00"), pedido.getMultaCancelamento());
-        assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
-    }
-
-    @Test
-    @DisplayName("Não deve aplicar multa ao cancelar pedido CRIADO")
-    void naoDeveAplicarMultaAoCancelarCriado() {
-        pedido.setStatus(StatusPedido.CRIADO);
-        pedido.setValorTotal(new BigDecimal("500.00"));
-
-        pedido.cancelar();
-
-        assertEquals(BigDecimal.ZERO, pedido.getMultaCancelamento());
-        assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
-    }
-
-    @Test
-    @DisplayName("Não deve aplicar multa ao cancelar pedido RESERVADO")
-    void naoDeveAplicarMultaAoCancelarReservado() {
-        pedido.setStatus(StatusPedido.RESERVADO);
-        pedido.setValorTotal(new BigDecimal("500.00"));
-
-        pedido.cancelar();
-
-        assertEquals(BigDecimal.ZERO, pedido.getMultaCancelamento());
-        assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
     }
 
     // =========================================================

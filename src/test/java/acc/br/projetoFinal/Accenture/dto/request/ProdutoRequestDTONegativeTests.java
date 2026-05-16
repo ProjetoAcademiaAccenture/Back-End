@@ -1,6 +1,5 @@
 package acc.br.projetoFinal.Accenture.dto.request;
 
-import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.DisplayName;
@@ -21,10 +20,6 @@ class ProdutoRequestDTONegativeTests {
     private Validator validator;
 
     private ProdutoRequestDTO dto;
-
-    // ─────────────────────────────────────────────
-    //  nome
-    // ─────────────────────────────────────────────
 
     @Test
     @DisplayName("Deve rejeitar quando nome é null")
@@ -96,10 +91,6 @@ class ProdutoRequestDTONegativeTests {
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("nome")));
     }
 
-    // ─────────────────────────────────────────────
-    //  descricao
-    // ─────────────────────────────────────────────
-
     @Test
     @DisplayName("Deve rejeitar quando descricao excede 500 caracteres")
     void deveRejeitar_DescricaoMaior500Caracteres() {
@@ -114,10 +105,6 @@ class ProdutoRequestDTONegativeTests {
         assertFalse(violations.isEmpty(), "Deve haver violação para descricao com mais de 500 caracteres");
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("descricao")));
     }
-
-    // ─────────────────────────────────────────────
-    //  preco
-    // ─────────────────────────────────────────────
 
     @Test
     @DisplayName("Deve rejeitar quando preco é null")
@@ -161,10 +148,6 @@ class ProdutoRequestDTONegativeTests {
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("preco")));
     }
 
-    // ─────────────────────────────────────────────
-    //  quantidade
-    // ─────────────────────────────────────────────
-
     @Test
     @DisplayName("Deve rejeitar quando quantidade é null")
     void deveRejeitar_QuantidadeNull() {
@@ -193,28 +176,6 @@ class ProdutoRequestDTONegativeTests {
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("quantidadeEstoque")));
     }
 
-    // ─────────────────────────────────────────────
-    //  metodoPgto
-    // ─────────────────────────────────────────────
-
-    @Test
-    @DisplayName("Deve rejeitar quando metodoPgto é null")
-    void deveRejeitar_MetodoPgtoNull() {
-        dto = ProdutoRequestDTO.builder()
-                .nome("Produto")
-                .preco(new BigDecimal("100.00"))
-                .quantidadeEstoque(1)
-                .build();
-
-        Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty(), "Deve haver violação para metodoPgto null");
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("metodoPgto")));
-    }
-
-    // ─────────────────────────────────────────────
-    //  Múltiplas violações simultâneas
-    // ─────────────────────────────────────────────
-
     @Test
     @DisplayName("Deve rejeitar DTO completamente inválido com múltiplas violações")
     void deveRejeitar_DtoCompletamenteInvalido() {
@@ -227,6 +188,6 @@ class ProdutoRequestDTONegativeTests {
 
         Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty(), "Deve haver múltiplas violações");
-        assertTrue(violations.size() >= 4, "Devem existir ao menos 4 violações simultâneas");
+        assertTrue(violations.size() >= 3, "Devem existir ao menos 3 violações simultâneas");
     }
 }

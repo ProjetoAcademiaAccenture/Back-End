@@ -70,9 +70,15 @@ public class SecurityConfig {
 						// ✅ H2 Console liberado
 						.requestMatchers("/h2-console/**").permitAll()
 
-						// Auth e Docs
-						.requestMatchers("/auth/*", "/v3/api-docs/", "/swagger-ui/*", "/swagger-ui.html").permitAll()
+				
 
+						// Auth e Docs
+                    .requestMatchers(
+                        "/auth/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html"
+                    ).permitAll()
 						// --- Produtos ---
 						.requestMatchers(HttpMethod.GET, "/api/produtos/**").permitAll()
 						.requestMatchers("/api/produtos/**").hasAuthority("ROLE_ADMIN")

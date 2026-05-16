@@ -39,4 +39,52 @@ public class Produto {
 
     @Version
     private Long version;
+ // ── Regras de negócio ──────────────────────────────────────
+ 
+    /**
+     * Verifica se há estoque suficiente para a quantidade solicitada.
+     */
+    public boolean temEstoqueSuficiente(int quantidade) {
+        return this.quantidadeEstoque >= quantidade;
+    }
+ 
+    /**
+     * Reserva (diminui) o estoque pelo quantidade informada.
+     * Lança exceção se estoque insuficiente ou quantidade inválida.
+     */
+    public void reservarEstoque(int quantidade) {
+        if (quantidade <= 0) {
+            throw new IllegalArgumentException(
+                "Quantidade a reservar deve ser maior que zero.");
+        }
+        if (!temEstoqueSuficiente(quantidade)) {
+            throw new IllegalArgumentException(
+                "Estoque insuficiente para o produto: " + this.nome);
+        }
+        this.quantidadeEstoque -= quantidade;
+    }
+ 
+    /**
+     * Devolve (aumenta) o estoque pela quantidade informada.
+     * Lança exceção se quantidade inválida.
+     */
+    public void devolverEstoque(int quantidade) {
+        if (quantidade <= 0) {
+            throw new IllegalArgumentException(
+                "Quantidade a devolver deve ser maior que zero.");
+        }
+        this.quantidadeEstoque += quantidade;
+    }
+ 
+    /**
+     * Ajusta o estoque para um valor absoluto.
+     * Espelha o ProdutoService.ajustarEstoque() no modelo.
+     */
+    public void ajustarEstoque(int novaQuantidade) {
+        if (novaQuantidade < 0) {
+            throw new IllegalArgumentException(
+                "Quantidade não pode ser negativa.");
+        }
+        this.quantidadeEstoque = novaQuantidade;
+    }
 }

@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -72,7 +73,8 @@ class ContaControllerPositiveTests {
         conta.setTipo(TipoConta.CORRENTE);
         conta.setCliente(cliente);
 
-        when(contaRepository.findById(1L)).thenReturn(Optional.of(conta));
+        when(contaService.buscarPorId(1L)).thenReturn(conta);
+
 
         mockMvc.perform(get("/api/contas/1")
                 .with(user("admin").roles("USER", "ADMIN"))
@@ -97,7 +99,8 @@ class ContaControllerPositiveTests {
         conta.setTipo(TipoConta.CORRENTE);
         conta.setCliente(cliente);
 
-        when(contaRepository.findById(1L)).thenReturn(Optional.of(conta));
+        when(contaService.depositar(eq(1L), any(BigDecimal.class))).thenReturn(conta);
+
 
         mockMvc.perform(patch("/api/contas/1/depositar")
                 .with(user("admin").roles("USER", "ADMIN"))

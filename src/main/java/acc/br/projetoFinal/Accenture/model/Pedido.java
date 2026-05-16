@@ -50,4 +50,72 @@ public class Pedido {
 
     @OneToOne(mappedBy = "pedido", cascade = CascadeType.ALL)
     private Pagamento pagamento;
+
+    // ── Regras de negócio ──────────────────────────────────────
+
+    /**
+     * Calcula valorBruto somando precoUnitario * quantidade de cada item.
+     */
+    public void calcularValorBruto() {
+        this.valorBruto = itens.stream()
+            .map(item -> item.getPrecoUnitario()
+                             .multiply(BigDecimal.valueOf(item.getQuantidade())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Aplica desconto e recalcula valorFinal.
+     * valorFinal = valorBruto - desconto
+     */
+    public void aplicarDesconto(BigDecimal desconto) {
+        if (desconto == null || desconto.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Desconto não pode ser negativo ou nulo.");
+        }
+        if (desconto.compareTo(this.valorBruto) > 0) {
+            throw new IllegalArgumentException("Desconto não pode ser maior que o valor bruto.");
+        }
+        this.desconto = desconto;
+        this.valorFinal = this.valorBruto.subtract(desconto);
+    }
+
+    /**
+     * Transição CRIADO → RESERVADO.
+     */
+    public void reservar() {
+        if (this.status != StatusPedido.CRIADO) {
+            throw new IllegalArgumentException(
+                "Pedido só pode ser reservado se estiver com status CRIADO.");
+        }
+        this.status = StatusPedido.RESERVADO;
+    }
+
+    /**
+     * Transição RESERVADO → PAGO.
+     */
+    public void pagar() {
+        if (this.status != StatusPedido.RESERVADO) {
+            throw new IllegalArgumentException(
+                "Pedido só pode ser pago se estiver com status RESERVADO.");
+        }
+        this.status = StatusPedido.PAGO;
+    }
+
+    /**
+     * Cancela o pedido a partir de qualquer status exceto CANCELADO.
+     */
+    public void cancelar() {
+        if (this.status == StatusPedido.CANCELADO) {
+            throw new IllegalArgumentException("Pedido já está cancelado.");
+        }
+        this.status = StatusPedido.CANCELADO;
+    }
+
+    /**
+     * Indica se o estoque deve ser devolvido ao cancelar.
+     * Apenas RESERVADO e PAGO tiveram estoque reservado.
+     */
+    public boolean deveDevolverEstoque() {
+        return this.status == StatusPedido.RESERVADO
+            || this.status == StatusPedido.PAGO;
+    }
 }

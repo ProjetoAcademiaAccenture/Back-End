@@ -23,10 +23,10 @@ class ContaResponseDTOTests {
     void setUp() {
         contaPadrao = new Conta();
         contaPadrao.setId(1L);
+        contaPadrao.setTipo(TipoConta.CORRENTE);
         contaPadrao.setNumeroConta("EMPRESA-001");
         contaPadrao.setSaldo(SALDO_PADRAO);
         contaPadrao.setLimiteCreditoDisponivel(LIMITE_PADRAO);
-        contaPadrao.setTipo(TipoConta.CORRENTE);
     }
 
     // ------------------------------------------------------------------ helper

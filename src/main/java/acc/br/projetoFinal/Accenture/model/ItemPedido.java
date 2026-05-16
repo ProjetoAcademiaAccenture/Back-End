@@ -11,6 +11,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
+@EqualsAndHashCode(exclude = {"pedido", "produto"})
+@ToString(exclude = {"pedido", "produto"})
 public class ItemPedido {
 
     @Id

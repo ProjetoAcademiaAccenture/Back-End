@@ -1,467 +1,224 @@
+// FILE 1: ItemPedidoResponseDTOPositiveTests.java
 package acc.br.projetoFinal.Accenture.dto.response;
 
-import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
-import acc.br.projetoFinal.Accenture.enums.StatusPedido;
-import acc.br.projetoFinal.Accenture.model.Cliente;
 import acc.br.projetoFinal.Accenture.model.ItemPedido;
-import acc.br.projetoFinal.Accenture.model.Pedido;
 import acc.br.projetoFinal.Accenture.model.Produto;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("PedidoResponseDTO - Testes Positivos")
-class PedidoResponseDTOPositiveTests {
+class ItemPedidoResponseDTOPositiveTests {
 
-    private static final LocalDateTime DATA_CRIACAO  = LocalDateTime.of(2024, 6, 10, 14, 30);
-    private static final Long          ID            = 1L;
-    private static final Long          CLIENTE_ID    = 10L;
-    private static final BigDecimal    VALOR_BRUTO   = new BigDecimal("500.00");
-    private static final BigDecimal    DESCONTO      = new BigDecimal("50.00");
-    private static final BigDecimal    VALOR_FINAL   = new BigDecimal("450.00");
-    private static final StatusPedido  STATUS        = StatusPedido.CRIADO;
+    // ─── Helper ───────────────────────────────────────────────────────────────
 
-    private Cliente clienteBase;
-    private Produto produtoBase;
+    private ItemPedido buildItem(Long id, Long produtoId, String nome,
+                                  Integer quantidade, BigDecimal preco) {
+        Produto produto = new Produto();
+        produto.setId(produtoId);
+        produto.setNome(nome);
 
-    @BeforeEach
-    void setUp() {
-        clienteBase = Cliente.builder()
-                .id(CLIENTE_ID)
-                .nome("João Silva")
-                .cpf("12345678901")
-                .email("joao@email.com")
-                .senha("senha123")
-                .build();
-
-        produtoBase = Produto.builder()
-                .id(1L)
-                .nome("Notebook")
-                .preco(new BigDecimal("250.00"))
-                .build();
+        ItemPedido item = new ItemPedido();
+        item.setId(id);
+        item.setProduto(produto);
+        item.setQuantidade(quantidade);
+        item.setPrecoUnitario(preco);
+        return item;
     }
 
-    // ------------------------------------------------------------------ helper
-
-    private PedidoResponseDTO dtoPadraoValido() {
-        return PedidoResponseDTO.builder()
-                .id(ID)
-                .dataCriacao(DATA_CRIACAO)
-                .status(STATUS)
-                .valorBruto(VALOR_BRUTO)
-                .desconto(DESCONTO)
-                .valorFinal(VALOR_FINAL)
-                .clienteId(CLIENTE_ID)
-                .itens(List.of())
-                .build();
-    }
-
-    private Pedido pedidoPadrao() {
-        return Pedido.builder()
-                .id(ID)
-                .dataCriacao(DATA_CRIACAO)
-                .status(STATUS)
-                .valorBruto(VALOR_BRUTO)
-                .desconto(DESCONTO)
-                .valorFinal(VALOR_FINAL)
-                .cliente(clienteBase)
-                .itens(new ArrayList<>())
-                .build();
-    }
-
-    // =========================================================
-    // Construtores
-    // =========================================================
+    // ─── fromEntity ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Deve criar objeto com construtor padrão")
-    void deveCriarComConstrutorPadrao() {
-        PedidoResponseDTO dto = new PedidoResponseDTO();
-        assertNotNull(dto);
-    }
+    void fromEntity_ShouldMapAllFieldsCorrectly() {
+        ItemPedido item = buildItem(1L, 10L, "Produto A", 3, new BigDecimal("50.00"));
 
-    @Test
-    @DisplayName("Deve criar objeto com construtor all-args e todos os campos")
-    void deveCriarComConstrutorAllArgs() {
-        // Ordem: id, dataCriacao, status, valorBruto, desconto, valorFinal,
-        //        clienteId, itens, pagamento
-        List<ItemPedidoResponseDTO> itens = List.of();
+        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
 
-        PedidoResponseDTO dto = new PedidoResponseDTO(
-                ID, DATA_CRIACAO, STATUS,
-                VALOR_BRUTO, DESCONTO, VALOR_FINAL,
-                CLIENTE_ID, itens, null
-        );
-
-        assertAll("AllArgsConstructor",
-                () -> assertEquals(ID,           dto.getId()),
-                () -> assertEquals(DATA_CRIACAO,  dto.getDataCriacao()),
-                () -> assertEquals(STATUS,        dto.getStatus()),
-                () -> assertEquals(VALOR_BRUTO,   dto.getValorBruto()),
-                () -> assertEquals(DESCONTO,      dto.getDesconto()),
-                () -> assertEquals(VALOR_FINAL,   dto.getValorFinal()),
-                () -> assertEquals(CLIENTE_ID,    dto.getClienteId()),
-                () -> assertEquals(itens,         dto.getItens()),
-                () -> assertNull(dto.getPagamento())
-        );
-    }
-
-    // =========================================================
-    // Builder
-    // =========================================================
-
-    @Test
-    @DisplayName("Deve criar objeto via builder com todos os campos")
-    void deveCriarViaBuilderCompleto() {
-        PedidoResponseDTO dto = dtoPadraoValido();
-
-        assertAll("builder completo",
-                () -> assertEquals(ID,          dto.getId()),
-                () -> assertEquals(DATA_CRIACAO, dto.getDataCriacao()),
-                () -> assertEquals(STATUS,       dto.getStatus()),
-                () -> assertEquals(VALOR_BRUTO,  dto.getValorBruto()),
-                () -> assertEquals(DESCONTO,     dto.getDesconto()),
-                () -> assertEquals(VALOR_FINAL,  dto.getValorFinal()),
-                () -> assertEquals(CLIENTE_ID,   dto.getClienteId()),
-                () -> assertNotNull(dto.getItens())
+        assertAll(
+            () -> assertEquals(1L,                       dto.getId()),
+            () -> assertEquals(10L,                      dto.getProdutoId()),
+            () -> assertEquals("Produto A",              dto.getProdutoNome()),
+            () -> assertEquals(3,                        dto.getQuantidade()),
+            () -> assertEquals(new BigDecimal("50.00"),  dto.getPrecoUnitario()),
+            () -> assertEquals(new BigDecimal("150.00"), dto.getSubtotal())
         );
     }
 
     @Test
-    @DisplayName("Deve criar objeto via builder parcial")
-    void deveCriarViaBuilderParcial() {
-        PedidoResponseDTO dto = PedidoResponseDTO.builder()
-                .id(ID)
-                .status(STATUS)
-                .build();
+    void fromEntity_ShouldCalculateSubtotalCorrectly() {
+        ItemPedido item = buildItem(2L, 20L, "Produto B", 5, new BigDecimal("19.99"));
 
-        assertEquals(ID, dto.getId());
-        assertEquals(STATUS, dto.getStatus());
-        assertNull(dto.getValorBruto());
-        assertNull(dto.getDesconto());
-        assertNull(dto.getValorFinal());
+        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
+
+        assertEquals(new BigDecimal("99.95"), dto.getSubtotal());
     }
 
-    // =========================================================
-    // Setters e Getters
-    // =========================================================
-
     @Test
-    @DisplayName("Deve definir e obter todos os campos via setters")
-    void deveDefinirEObterTodosCamposViaSetters() {
-        PedidoResponseDTO dto = new PedidoResponseDTO();
-        List<ItemPedidoResponseDTO> itens = List.of(ItemPedidoResponseDTO.builder().id(1L).build());
+    void fromEntity_ShouldHandleQuantityOfOne() {
+        ItemPedido item = buildItem(3L, 30L, "Produto C", 1, new BigDecimal("100.00"));
 
-        dto.setId(ID);
-        dto.setDataCriacao(DATA_CRIACAO);
-        dto.setStatus(STATUS);
-        dto.setValorBruto(VALOR_BRUTO);
-        dto.setDesconto(DESCONTO);
-        dto.setValorFinal(VALOR_FINAL);
-        dto.setClienteId(CLIENTE_ID);
-        dto.setItens(itens);
-        dto.setPagamento(null);
+        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
 
-        assertAll("setters/getters",
-                () -> assertEquals(ID,          dto.getId()),
-                () -> assertEquals(DATA_CRIACAO, dto.getDataCriacao()),
-                () -> assertEquals(STATUS,       dto.getStatus()),
-                () -> assertEquals(VALOR_BRUTO,  dto.getValorBruto()),
-                () -> assertEquals(DESCONTO,     dto.getDesconto()),
-                () -> assertEquals(VALOR_FINAL,  dto.getValorFinal()),
-                () -> assertEquals(CLIENTE_ID,   dto.getClienteId()),
-                () -> assertEquals(itens,        dto.getItens()),
-                () -> assertNull(dto.getPagamento())
+        assertAll(
+            () -> assertEquals(new BigDecimal("100.00"), dto.getSubtotal()),
+            () -> assertEquals(1,                        dto.getQuantidade())
         );
     }
 
     @Test
-    @DisplayName("Deve atualizar campos múltiplas vezes")
-    void deveAtualizarCamposMultiplasVezes() {
-        PedidoResponseDTO dto = new PedidoResponseDTO();
+    void fromEntity_ShouldHandleLargeQuantity() {
+        ItemPedido item = buildItem(4L, 40L, "Produto D", 1000, new BigDecimal("9.99"));
 
-        dto.setValorBruto(new BigDecimal("100.00"));
-        assertEquals(new BigDecimal("100.00"), dto.getValorBruto());
+        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
 
-        dto.setValorBruto(new BigDecimal("200.00"));
-        assertEquals(new BigDecimal("200.00"), dto.getValorBruto());
+        assertEquals(new BigDecimal("9990.00"), dto.getSubtotal());
     }
 
-    // =========================================================
-    // fromEntity — branch itens != null
-    // =========================================================
+    @Test
+    void fromEntity_ShouldHandleDecimalPreco() {
+        ItemPedido item = buildItem(5L, 50L, "Produto E", 3, new BigDecimal("10.555"));
+
+        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
+
+        assertEquals(new BigDecimal("31.665"), dto.getSubtotal());
+    }
+
+    // ─── NoArgsConstructor ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Deve converter Pedido com um item para DTO corretamente")
-    void deveConverterPedidoComUmItem() {
-        ItemPedido item = ItemPedido.builder()
-                .id(1L)
-                .produto(produtoBase)
-                .quantidade(2)
-                .precoUnitario(new BigDecimal("250.00"))
-                .build();
+    void noArgsConstructor_ShouldCreateEmptyDTO() {
+        ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO();
 
-        Pedido pedido = Pedido.builder()
-                .id(ID).dataCriacao(DATA_CRIACAO).status(STATUS)
-                .valorBruto(VALOR_BRUTO).desconto(DESCONTO).valorFinal(VALOR_FINAL)
-                .cliente(clienteBase).itens(new ArrayList<>(List.of(item))).build();
+        assertAll(
+            () -> assertNull(dto.getId()),
+            () -> assertNull(dto.getProdutoId()),
+            () -> assertNull(dto.getProdutoNome()),
+            () -> assertNull(dto.getQuantidade()),
+            () -> assertNull(dto.getPrecoUnitario()),
+            () -> assertNull(dto.getSubtotal())
+        );
+    }
 
-        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido);
+    // ─── AllArgsConstructor ───────────────────────────────────────────────────
 
-        assertAll("fromEntity com um item",
-                () -> assertNotNull(dto),
-                () -> assertEquals(ID,          dto.getId()),
-                () -> assertEquals(DATA_CRIACAO, dto.getDataCriacao()),
-                () -> assertEquals(STATUS,       dto.getStatus()),
-                () -> assertEquals(VALOR_BRUTO,  dto.getValorBruto()),
-                () -> assertEquals(DESCONTO,     dto.getDesconto()),
-                () -> assertEquals(VALOR_FINAL,  dto.getValorFinal()),
-                () -> assertEquals(CLIENTE_ID,   dto.getClienteId()),
-                () -> assertEquals(1,            dto.getItens().size())
+    @Test
+    void allArgsConstructor_ShouldCreateDTOWithAllFields() {
+        ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO(
+            1L, 10L, "Produto A", 3,
+            new BigDecimal("50.00"), new BigDecimal("150.00")
+        );
+
+        assertAll(
+            () -> assertEquals(1L,                       dto.getId()),
+            () -> assertEquals(10L,                      dto.getProdutoId()),
+            () -> assertEquals("Produto A",              dto.getProdutoNome()),
+            () -> assertEquals(3,                        dto.getQuantidade()),
+            () -> assertEquals(new BigDecimal("50.00"),  dto.getPrecoUnitario()),
+            () -> assertEquals(new BigDecimal("150.00"), dto.getSubtotal())
+        );
+    }
+
+    // ─── Builder ──────────────────────────────────────────────────────────────
+
+    @Test
+    void builder_ShouldCreateDTOWithAllFields() {
+        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.builder()
+            .id(2L)
+            .produtoId(20L)
+            .produtoNome("Produto B")
+            .quantidade(4)
+            .precoUnitario(new BigDecimal("25.00"))
+            .subtotal(new BigDecimal("100.00"))
+            .build();
+
+        assertAll(
+            () -> assertEquals(2L,                       dto.getId()),
+            () -> assertEquals(20L,                      dto.getProdutoId()),
+            () -> assertEquals("Produto B",              dto.getProdutoNome()),
+            () -> assertEquals(4,                        dto.getQuantidade()),
+            () -> assertEquals(new BigDecimal("25.00"),  dto.getPrecoUnitario()),
+            () -> assertEquals(new BigDecimal("100.00"), dto.getSubtotal())
         );
     }
 
     @Test
-    @DisplayName("Deve converter Pedido com múltiplos itens")
-    void deveConverterPedidoComMultiplosItens() {
-        Produto produto2 = Produto.builder()
-                .id(2L).nome("Mouse").preco(new BigDecimal("80.00")).build();
+    void builder_ShouldCreateDTOWithPartialFields() {
+        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.builder()
+            .id(3L)
+            .produtoNome("Produto C")
+            .build();
 
-        ItemPedido item1 = ItemPedido.builder()
-                .id(1L).produto(produtoBase).quantidade(2)
-                .precoUnitario(new BigDecimal("250.00")).build();
-
-        ItemPedido item2 = ItemPedido.builder()
-                .id(2L).produto(produto2).quantidade(1)
-                .precoUnitario(new BigDecimal("80.00")).build();
-
-        Pedido pedido = Pedido.builder()
-                .id(ID).dataCriacao(DATA_CRIACAO).status(STATUS)
-                .valorBruto(new BigDecimal("580.00")).desconto(BigDecimal.ZERO)
-                .valorFinal(new BigDecimal("580.00"))
-                .cliente(clienteBase).itens(new ArrayList<>(List.of(item1, item2))).build();
-
-        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido);
-
-        assertEquals(2, dto.getItens().size());
-        assertThat(dto.getItens()).extracting("produtoNome")
-                .containsExactly("Notebook", "Mouse");
+        assertAll(
+            () -> assertEquals(3L,          dto.getId()),
+            () -> assertEquals("Produto C", dto.getProdutoNome()),
+            () -> assertNull(dto.getProdutoId()),
+            () -> assertNull(dto.getQuantidade()),
+            () -> assertNull(dto.getPrecoUnitario()),
+            () -> assertNull(dto.getSubtotal())
+        );
     }
 
-    @Test
-    @DisplayName("Deve converter Pedido com lista de itens vazia")
-    void deveConverterPedidoComItensVazios() {
-        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedidoPadrao());
+    // ─── Setters (@Data) ──────────────────────────────────────────────────────
 
-        assertNotNull(dto.getItens());
-        assertTrue(dto.getItens().isEmpty());
+    @Test
+    void setters_ShouldUpdateAllFieldsCorrectly() {
+        ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO();
+
+        dto.setId(9L);
+        dto.setProdutoId(90L);
+        dto.setProdutoNome("Produto Z");
+        dto.setQuantidade(7);
+        dto.setPrecoUnitario(new BigDecimal("77.00"));
+        dto.setSubtotal(new BigDecimal("539.00"));
+
+        assertAll(
+            () -> assertEquals(9L,                       dto.getId()),
+            () -> assertEquals(90L,                      dto.getProdutoId()),
+            () -> assertEquals("Produto Z",              dto.getProdutoNome()),
+            () -> assertEquals(7,                        dto.getQuantidade()),
+            () -> assertEquals(new BigDecimal("77.00"),  dto.getPrecoUnitario()),
+            () -> assertEquals(new BigDecimal("539.00"), dto.getSubtotal())
+        );
     }
 
-    @Test
-    @DisplayName("fromEntity deve retornar lista vazia quando itens for null")
-    void fromEntity_ItensNull_DeveRetornarListaVazia() {
-        Pedido pedido = pedidoPadrao();
-        pedido.setItens(null);
-
-        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido);
-
-        assertNotNull(dto.getItens());
-        assertTrue(dto.getItens().isEmpty());
-    }
+    // ─── equals / hashCode ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("fromEntity deve mapear pagamento como null quando não há pagamento (branch false)")
-    void fromEntity_SemPagamento_PagamentoDeveSerNull() {
-        Pedido pedido = pedidoPadrao();
-        pedido.setPagamento(null);
-
-        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido);
-
-        assertNull(dto.getPagamento());
-    }
-
-    @Test
-    @DisplayName("fromEntity(pedido, metodoPagamento) deve definir pagamento com método informado")
-    void fromEntity_ComMetodoPagamento_DeveSetarMetodo() {
-        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedidoPadrao(), MetodoPagamento.PIX);
-
-        assertNotNull(dto.getPagamento());
-        assertEquals(MetodoPagamento.PIX, dto.getPagamento().getMetodoPagamento());
-    }
-
-    @Test
-    @DisplayName("fromEntity(pedido, metodoPagamento) deve manter demais campos do pedido")
-    void fromEntity_ComMetodoPagamento_DeveManterDemaisCampos() {
-        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedidoPadrao(), MetodoPagamento.BOLETO);
-
-        assertEquals(ID,         dto.getId());
-        assertEquals(STATUS,     dto.getStatus());
-        assertEquals(VALOR_BRUTO, dto.getValorBruto());
-        assertEquals(DESCONTO,   dto.getDesconto());
-        assertEquals(VALOR_FINAL, dto.getValorFinal());
-        assertEquals(CLIENTE_ID, dto.getClienteId());
-    }
-
-    // =========================================================
-    // fromEntity — cada StatusPedido
-    // =========================================================
-
-    @Test
-    @DisplayName("Deve converter Pedido com status RESERVADO")
-    void deveConverterPedidoComStatusReservado() {
-        Pedido pedido = Pedido.builder()
-                .id(ID).dataCriacao(DATA_CRIACAO).status(StatusPedido.RESERVADO)
-                .valorBruto(VALOR_BRUTO).desconto(DESCONTO).valorFinal(VALOR_FINAL)
-                .cliente(clienteBase).itens(new ArrayList<>()).build();
-
-        assertEquals(StatusPedido.RESERVADO, PedidoResponseDTO.fromEntity(pedido).getStatus());
-    }
-
-    @Test
-    @DisplayName("Deve converter Pedido com status PAGO")
-    void deveConverterPedidoComStatusPago() {
-        Pedido pedido = Pedido.builder()
-                .id(ID).dataCriacao(DATA_CRIACAO).status(StatusPedido.PAGO)
-                .valorBruto(VALOR_BRUTO).desconto(DESCONTO).valorFinal(VALOR_FINAL)
-                .cliente(clienteBase).itens(new ArrayList<>()).build();
-
-        assertEquals(StatusPedido.PAGO, PedidoResponseDTO.fromEntity(pedido).getStatus());
-    }
-
-    @Test
-    @DisplayName("Deve converter Pedido com status CANCELADO")
-    void deveConverterPedidoComStatusCancelado() {
-        Pedido pedido = Pedido.builder()
-                .id(ID).dataCriacao(DATA_CRIACAO).status(StatusPedido.CANCELADO)
-                .valorBruto(VALOR_BRUTO).desconto(DESCONTO).valorFinal(VALOR_FINAL)
-                .cliente(clienteBase).itens(new ArrayList<>()).build();
-
-        assertEquals(StatusPedido.CANCELADO, PedidoResponseDTO.fromEntity(pedido).getStatus());
-    }
-
-    @Test
-    @DisplayName("Deve converter Pedido com valores zerados")
-    void deveConverterPedidoComValoresZerados() {
-        Pedido pedido = Pedido.builder()
-                .id(ID).dataCriacao(DATA_CRIACAO).status(STATUS)
-                .valorBruto(BigDecimal.ZERO).desconto(BigDecimal.ZERO).valorFinal(BigDecimal.ZERO)
-                .cliente(clienteBase).itens(new ArrayList<>()).build();
-
-        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido);
-
-        assertEquals(BigDecimal.ZERO, dto.getValorBruto());
-        assertEquals(BigDecimal.ZERO, dto.getDesconto());
-        assertEquals(BigDecimal.ZERO, dto.getValorFinal());
-    }
-
-    // =========================================================
-    // equals / hashCode
-    // =========================================================
-
-    @Test
-    @DisplayName("Dois objetos com mesmos valores devem ser iguais")
-    void doisObjetosComMesmosValoresDevemSerIguais() {
-        PedidoResponseDTO dto1 = dtoPadraoValido();
-        PedidoResponseDTO dto2 = dtoPadraoValido();
+    void equals_ShouldReturnTrue_ForEqualDTOs() {
+        ItemPedidoResponseDTO dto1 = new ItemPedidoResponseDTO(
+            1L, 10L, "P", 2, BigDecimal.TEN, BigDecimal.TEN);
+        ItemPedidoResponseDTO dto2 = new ItemPedidoResponseDTO(
+            1L, 10L, "P", 2, BigDecimal.TEN, BigDecimal.TEN);
 
         assertEquals(dto1, dto2);
         assertEquals(dto1.hashCode(), dto2.hashCode());
     }
 
     @Test
-    @DisplayName("Objeto deve ser igual a si mesmo")
-    void objetoDeveSerIgualASiMesmo() {
-        PedidoResponseDTO dto = dtoPadraoValido();
+    void equals_ShouldReturnTrue_WithItself() {
+        ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO(
+            1L, 10L, "P", 2, BigDecimal.TEN, BigDecimal.TEN);
+
         assertEquals(dto, dto);
     }
 
-    @Test
-    @DisplayName("Dois objetos padrão devem ser iguais entre si")
-    void doisObjetosPadraoDevemSerIguais() {
-        PedidoResponseDTO dto1 = new PedidoResponseDTO();
-        PedidoResponseDTO dto2 = new PedidoResponseDTO();
-        assertEquals(dto1, dto2);
-        assertEquals(dto1.hashCode(), dto2.hashCode());
-    }
+    // ─── toString ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("equals deve ser simétrico")
-    void equals_DeveSerSimetrico() {
-        PedidoResponseDTO dto1 = dtoPadraoValido();
-        PedidoResponseDTO dto2 = dtoPadraoValido();
-        assertEquals(dto1.equals(dto2), dto2.equals(dto1));
-    }
+    void toString_ShouldContainAllFieldValues() {
+        ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO(
+            1L, 10L, "Produto A", 3,
+            new BigDecimal("50.00"), new BigDecimal("150.00"));
 
-    @Test
-    @DisplayName("hashCode deve ser consistente em múltiplas chamadas")
-    void hashCode_DeveSerConsistente() {
-        PedidoResponseDTO dto = dtoPadraoValido();
-        assertEquals(dto.hashCode(), dto.hashCode());
-    }
+        String result = dto.toString();
 
-    @Test
-    @DisplayName("hashCode não deve lançar exceção com campos nulos")
-    void hashCode_NaoDeveLancarExcecao_QuandoCamposNulos() {
-        assertThatCode(() -> new PedidoResponseDTO().hashCode()).doesNotThrowAnyException();
-    }
-
-    // =========================================================
-    // toString
-    // =========================================================
-
-    @Test
-    @DisplayName("toString não deve ser nulo")
-    void toStringNaoDeveSerNulo() {
-        assertNotNull(new PedidoResponseDTO().toString());
-    }
-
-    @Test
-    @DisplayName("toString deve conter os campos principais")
-    void toStringDeveConterCamposPrincipais() {
-        String result = dtoPadraoValido().toString();
-
-        assertAll("toString",
-                () -> assertTrue(result.contains("id")),
-                () -> assertTrue(result.contains("status")),
-                () -> assertTrue(result.contains("valorBruto")),
-                () -> assertTrue(result.contains("desconto")),
-                () -> assertTrue(result.contains("valorFinal")),
-                () -> assertTrue(result.contains("clienteId"))
+        assertAll(
+            () -> assertTrue(result.contains("1")),
+            () -> assertTrue(result.contains("Produto A")),
+            () -> assertTrue(result.contains("3")),
+            () -> assertTrue(result.contains("50.00")),
+            () -> assertTrue(result.contains("150.00"))
         );
-    }
-
-    @Test
-    @DisplayName("toString não deve lançar exceção com campos nulos")
-    void toString_NaoDeveLancarExcecao_QuandoCamposNulos() {
-        assertThatCode(() -> new PedidoResponseDTO().toString()).doesNotThrowAnyException();
-    }
-
-    // =========================================================
-    // canEqual
-    // =========================================================
-
-    @Test
-    @DisplayName("canEqual deve retornar true para instância do mesmo tipo")
-    void canEqual_MesmoTipo_DeveRetornarTrue() {
-        PedidoResponseDTO dto1 = dtoPadraoValido();
-        PedidoResponseDTO dto2 = new PedidoResponseDTO();
-        assertTrue(dto1.canEqual(dto2));
-    }
-
-    @Test
-    @DisplayName("canEqual deve retornar false para tipo diferente")
-    void canEqual_TipoDiferente_DeveRetornarFalse() {
-        PedidoResponseDTO dto = dtoPadraoValido();
-        assertFalse(dto.canEqual("string"));
-        assertFalse(dto.canEqual(null));
     }
 }

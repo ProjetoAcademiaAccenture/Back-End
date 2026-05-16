@@ -136,6 +136,7 @@ class BoletoControllerNegativeTests {
         mockMvc.perform(patch("/api/boletos/99/pagar")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .with(csrf())
+                .param("senhaTransacao", "1234")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Boleto está cancelado")));
@@ -150,6 +151,7 @@ class BoletoControllerNegativeTests {
         mockMvc.perform(patch("/api/boletos/99/pagar")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .with(csrf())
+                .param("senhaTransacao", "1234")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Boleto não encontrado")));

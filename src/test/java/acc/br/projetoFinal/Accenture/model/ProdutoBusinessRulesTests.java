@@ -1,5 +1,6 @@
 package acc.br.projetoFinal.Accenture.model;
 
+import acc.br.projetoFinal.Accenture.enums.Categoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,120 +16,83 @@ class ProdutoBusinessRulesTests {
 
     @BeforeEach
     void setUp() {
-        // MetodoPagamento foi removido do modelo — campo não existe em Produto.
-        // Categoria é obrigatória conforme @Column(nullable = false).
         produto = Produto.builder()
                 .id(1L)
-                .nome("Produto Teste")
-                .descricao("Descrição teste")
-                .preco(new BigDecimal("100.00"))
+                .nome("Notebook")
+                .descricao("Notebook gamer")
+                .preco(new BigDecimal("3500.00"))
                 .quantidadeEstoque(10)
+                .categoria(Categoria.ELETRONICOS)
                 .build();
     }
 
     // =========================================================
-    // validarPreco()
+    // temEstoqueSuficiente()
     // =========================================================
 
     @Test
-    @DisplayName("Deve validar preço positivo com sucesso")
-    void deveValidarPrecoPositivoComSucesso() {
-        produto.setPreco(new BigDecimal("50.00"));
-        assertDoesNotThrow(() -> produto.validarPreco());
+    @DisplayName("Deve retornar true quando estoque é suficiente")
+    void deveRetornarTrueQuandoEstoqueSuficiente() {
+        assertTrue(produto.temEstoqueSuficiente(5));
     }
 
     @Test
-    @DisplayName("Não deve validar preço zero")
-    void naoDeveValidarPrecoZero() {
-        produto.setPreco(BigDecimal.ZERO);
-        assertThrows(IllegalArgumentException.class, () -> produto.validarPreco());
+    @DisplayName("Deve retornar true quando quantidade é exatamente igual ao estoque")
+    void deveRetornarTrueQuandoQuantidadeIgualAoEstoque() {
+        assertTrue(produto.temEstoqueSuficiente(10));
     }
 
     @Test
-    @DisplayName("Não deve validar preço negativo")
-    void naoDeveValidarPrecoNegativo() {
-        produto.setPreco(new BigDecimal("-10.00"));
-        assertThrows(IllegalArgumentException.class, () -> produto.validarPreco());
-    }
-
-    @Test
-    @DisplayName("Não deve validar preço nulo")
-    void naoDeveValidarPrecoNulo() {
-        produto.setPreco(null);
-        assertThrows(IllegalArgumentException.class, () -> produto.validarPreco());
+    @DisplayName("Deve retornar false quando estoque é insuficiente")
+    void deveRetornarFalseQuandoEstoqueInsuficiente() {
+        assertFalse(produto.temEstoqueSuficiente(11));
     }
 
     // =========================================================
-    // validarEstoque()
+    // reservarEstoque()
     // =========================================================
 
     @Test
-    @DisplayName("Deve validar estoque zero com sucesso")
-    void deveValidarEstoqueZeroComSucesso() {
-        produto.setQuantidadeEstoque(0);
-        assertDoesNotThrow(() -> produto.validarEstoque());
-    }
-
-    @Test
-    @DisplayName("Deve validar estoque positivo com sucesso")
-    void deveValidarEstoquePositivoComSucesso() {
-        produto.setQuantidadeEstoque(100);
-        assertDoesNotThrow(() -> produto.validarEstoque());
-    }
-
-    @Test
-    @DisplayName("Não deve validar estoque negativo")
-    void naoDeveValidarEstoqueNegativo() {
-        produto.setQuantidadeEstoque(-5);
-        assertThrows(IllegalArgumentException.class, () -> produto.validarEstoque());
-    }
-
-    @Test
-    @DisplayName("Não deve validar estoque nulo")
-    void naoDeveValidarEstoqueNulo() {
-        produto.setQuantidadeEstoque(null);
-        assertThrows(IllegalArgumentException.class, () -> produto.validarEstoque());
-    }
-
-    // =========================================================
-    // reduzirEstoque()
-    // =========================================================
-
-    @Test
-    @DisplayName("Deve reduzir estoque corretamente")
-    void deveReduzirEstoqueCorretamente() {
-        produto.setQuantidadeEstoque(10);
-        produto.reduzirEstoque(3);
+    @DisplayName("Deve reservar estoque corretamente")
+    void deveReservarEstoque() {
+        produto.reservarEstoque(3);
         assertEquals(7, produto.getQuantidadeEstoque());
     }
 
     @Test
-    @DisplayName("Deve reduzir estoque até zero")
-    void deveReduzirEstoqueAteZero() {
-        produto.setQuantidadeEstoque(5);
-        produto.reduzirEstoque(5);
+    @DisplayName("Deve reservar todo o estoque disponível")
+    void deveReservarTodoOEstoque() {
+        produto.reservarEstoque(10);
         assertEquals(0, produto.getQuantidadeEstoque());
     }
 
     @Test
-    @DisplayName("Não deve reduzir estoque com quantidade insuficiente")
-    void naoDeveReduzirEstoqueComQuantidadeInsuficiente() {
-        produto.setQuantidadeEstoque(5);
-        assertThrows(IllegalArgumentException.class, () -> produto.reduzirEstoque(10));
+    @DisplayName("Não deve reservar quantidade zero")
+    void naoDeveReservarQuantidadeZero() {
+        assertThrows(IllegalArgumentException.class,
+            () -> produto.reservarEstoque(0));
     }
 
     @Test
-    @DisplayName("Não deve reduzir estoque com quantidade negativa")
-    void naoDeveReduzirEstoqueComQuantidadeNegativa() {
-        produto.setQuantidadeEstoque(10);
-        assertThrows(IllegalArgumentException.class, () -> produto.reduzirEstoque(-1));
+    @DisplayName("Não deve reservar quantidade negativa")
+    void naoDeveReservarQuantidadeNegativa() {
+        assertThrows(IllegalArgumentException.class,
+            () -> produto.reservarEstoque(-1));
     }
 
     @Test
-    @DisplayName("Não deve reduzir estoque com quantidade nula")
-    void naoDeveReduzirEstoqueComQuantidadeNula() {
-        produto.setQuantidadeEstoque(10);
-        assertThrows(IllegalArgumentException.class, () -> produto.reduzirEstoque(null));
+    @DisplayName("Não deve reservar quando estoque insuficiente")
+    void naoDeveReservarQuandoEstoqueInsuficiente() {
+        assertThrows(IllegalArgumentException.class,
+            () -> produto.reservarEstoque(11));
+    }
+
+    @Test
+    @DisplayName("Não deve alterar estoque ao lançar exceção por insuficiência")
+    void naoDeveAlterarEstoqueAoLancarExcecao() {
+        assertThrows(IllegalArgumentException.class,
+            () -> produto.reservarEstoque(20));
+        assertEquals(10, produto.getQuantidadeEstoque());
     }
 
     // =========================================================
@@ -136,63 +100,72 @@ class ProdutoBusinessRulesTests {
     // =========================================================
 
     @Test
-    @DisplayName("Deve devolver estoque ao produto")
-    void deveDevolverEstoqueAoProduto() {
-        produto.setQuantidadeEstoque(5);
+    @DisplayName("Deve devolver estoque corretamente")
+    void deveDevolverEstoque() {
+        produto.devolverEstoque(5);
+        assertEquals(15, produto.getQuantidadeEstoque());
+    }
+
+    @Test
+    @DisplayName("Deve acumular devoluções sucessivas")
+    void deveAcumularDevolucoesSucessivas() {
+        produto.devolverEstoque(2);
         produto.devolverEstoque(3);
-        assertEquals(8, produto.getQuantidadeEstoque());
+        assertEquals(15, produto.getQuantidadeEstoque());
     }
 
     @Test
-    @DisplayName("Não deve devolver estoque com quantidade negativa")
-    void naoDeveDevolverEstoqueComQuantidadeNegativa() {
-        produto.setQuantidadeEstoque(10);
-        assertThrows(IllegalArgumentException.class, () -> produto.devolverEstoque(-1));
+    @DisplayName("Não deve devolver quantidade zero")
+    void naoDeveDevolverQuantidadeZero() {
+        assertThrows(IllegalArgumentException.class,
+            () -> produto.devolverEstoque(0));
     }
 
     @Test
-    @DisplayName("Não deve devolver estoque com quantidade nula")
-    void naoDeveDevolverEstoqueComQuantidadeNula() {
-        produto.setQuantidadeEstoque(10);
-        assertThrows(IllegalArgumentException.class, () -> produto.devolverEstoque(null));
+    @DisplayName("Não deve devolver quantidade negativa")
+    void naoDeveDevolverQuantidadeNegativa() {
+        assertThrows(IllegalArgumentException.class,
+            () -> produto.devolverEstoque(-5));
+    }
+
+    @Test
+    @DisplayName("Não deve alterar estoque ao lançar exceção na devolução")
+    void naoDeveAlterarEstoqueAoLancarExcecaoNaDevolucao() {
+        assertThrows(IllegalArgumentException.class,
+            () -> produto.devolverEstoque(0));
+        assertEquals(10, produto.getQuantidadeEstoque());
     }
 
     // =========================================================
-    // temEstoque()
+    // ajustarEstoque()
     // =========================================================
 
     @Test
-    @DisplayName("Deve retornar true quando estoque é suficiente")
-    void deveRetornarTrueQuandoEstoqueSuficiente() {
-        produto.setQuantidadeEstoque(10);
-        assertTrue(produto.temEstoque(5));
+    @DisplayName("Deve ajustar estoque para novo valor positivo")
+    void deveAjustarEstoqueParaValorPositivo() {
+        produto.ajustarEstoque(50);
+        assertEquals(50, produto.getQuantidadeEstoque());
     }
 
     @Test
-    @DisplayName("Deve retornar true quando estoque é exatamente igual à quantidade")
-    void deveRetornarTrueQuandoEstoqueExato() {
-        produto.setQuantidadeEstoque(10);
-        assertTrue(produto.temEstoque(10));
+    @DisplayName("Deve ajustar estoque para zero")
+    void deveAjustarEstoqueParaZero() {
+        produto.ajustarEstoque(0);
+        assertEquals(0, produto.getQuantidadeEstoque());
     }
 
     @Test
-    @DisplayName("Deve retornar false quando estoque é insuficiente")
-    void deveRetornarFalseQuandoEstoqueInsuficiente() {
-        produto.setQuantidadeEstoque(10);
-        assertFalse(produto.temEstoque(11));
+    @DisplayName("Não deve ajustar estoque para valor negativo")
+    void naoDeveAjustarEstoqueParaNegativo() {
+        assertThrows(IllegalArgumentException.class,
+            () -> produto.ajustarEstoque(-1));
     }
 
     @Test
-    @DisplayName("Deve retornar false quando estoque é nulo")
-    void deveRetornarFalseQuandoEstoqueNulo() {
-        produto.setQuantidadeEstoque(null);
-        assertFalse(produto.temEstoque(1));
-    }
-
-    @Test
-    @DisplayName("Deve retornar false quando estoque é zero")
-    void deveRetornarFalseQuandoEstoqueZero() {
-        produto.setQuantidadeEstoque(0);
-        assertFalse(produto.temEstoque(1));
+    @DisplayName("Não deve alterar estoque ao ajustar com valor negativo")
+    void naoDeveAlterarEstoqueAoAjustarComNegativo() {
+        assertThrows(IllegalArgumentException.class,
+            () -> produto.ajustarEstoque(-10));
+        assertEquals(10, produto.getQuantidadeEstoque());
     }
 }

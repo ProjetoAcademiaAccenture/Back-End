@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
-
+import acc.br.projetoFinal.Accenture.enums.Categoria;
 /**
  * Testes de integração do sistema Loja + Banco
  * Cobre: Cliente, Conta, Produto, Depósito e validações
@@ -89,6 +89,8 @@ class SystemIntegrationTests {
         produtoRequest.setDescricao("Mouse Óptico");
         produtoRequest.setPreco(new BigDecimal("100.00"));
         produtoRequest.setQuantidadeEstoque(5);
+        produtoRequest.setCategoria(acc.br.projetoFinal.Accenture.enums.Categoria.ELETRONICOS); 
+
 
         produto = produtoService.criar(produtoRequest);
     }
@@ -138,7 +140,7 @@ class SystemIntegrationTests {
         update.setDescricao("Mouse Gamer");
         update.setPreco(new BigDecimal("150.00"));
         update.setQuantidadeEstoque(5);
-
+        update.setCategoria(Categoria.ELETRONICOS); 
         produtoService.atualizar(produto.getId(), update);
 
         var produtoAtualizado =
