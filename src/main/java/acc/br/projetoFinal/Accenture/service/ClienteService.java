@@ -3,6 +3,7 @@ package acc.br.projetoFinal.Accenture.service;
 import acc.br.projetoFinal.Accenture.dto.request.ClienteRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.request.EnderecoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.response.ClienteResponseDTO;
+import acc.br.projetoFinal.Accenture.dto.response.EnderecoResponseDTO;
 import acc.br.projetoFinal.Accenture.enums.TipoCliente;
 import acc.br.projetoFinal.Accenture.exception.RecursoNaoEncontradoException;
 import acc.br.projetoFinal.Accenture.model.Cliente;
@@ -111,6 +112,28 @@ public class ClienteService {
             throw new RecursoNaoEncontradoException("Cliente não encontrado");
         }
         clienteRepository.deleteById(id);
+    }
+
+    // ── Endereços ──────────────────────────────────────────────────────────────
+
+    public List<EnderecoResponseDTO> listarEnderecos(Long clienteId) {
+        if (!clienteRepository.existsById(clienteId)) {
+            throw new RecursoNaoEncontradoException("Cliente não encontrado");
+        }
+        return enderecoRepository.findByClienteId(clienteId).stream()
+            .map(EnderecoResponseDTO::fromEntity)
+            .collect(Collectors.toList());
+    }
+
+    public EnderecoResponseDTO buscarEnderecoPorId(Long clienteId, Long enderecoId) {
+        Endereco endereco = enderecoRepository.findById(enderecoId)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Endereço não encontrado"));
+
+        if (!endereco.getCliente().getId().equals(clienteId)) {
+            throw new IllegalArgumentException("Endereço não pertence a este cliente");
+        }
+
+        return EnderecoResponseDTO.fromEntity(endereco);
     }
 
     @Transactional
