@@ -22,7 +22,6 @@ class PagamentoRequestDTOTest {
         validator = factory.getValidator();
     }
 
-    // helper — DTO sempre válido
     private PagamentoRequestDTO dtoValido() {
         return PagamentoRequestDTO.builder()
                 .pagamentoId(1L)
@@ -32,7 +31,7 @@ class PagamentoRequestDTOTest {
     }
 
     // -----------------------------------------------------------------------
-    // Lombok: @NoArgsConstructor, @AllArgsConstructor, @Builder, @Data
+    // Lombok
     // -----------------------------------------------------------------------
 
     @Test
@@ -43,19 +42,17 @@ class PagamentoRequestDTOTest {
     @Test
     void allArgsConstructor_devePreencherTodosOsCampos() {
         PagamentoRequestDTO dto = new PagamentoRequestDTO(1L, MetodoPagamento.PIX, "1234");
-
-        assertEquals(1L,                   dto.getPagamentoId());
-        assertEquals(MetodoPagamento.PIX,  dto.getMetodoPagamento());
-        assertEquals("1234",               dto.getSenhaTransacao());
+        assertEquals(1L, dto.getPagamentoId());
+        assertEquals(MetodoPagamento.PIX, dto.getMetodoPagamento());
+        assertEquals("1234", dto.getSenhaTransacao());
     }
 
     @Test
     void builder_devePreencherTodosOsCampos() {
         PagamentoRequestDTO dto = dtoValido();
-
-        assertEquals(1L,                      dto.getPagamentoId());
-        assertEquals(MetodoPagamento.PIX,     dto.getMetodoPagamento());
-        assertEquals("1234",                  dto.getSenhaTransacao());
+        assertEquals(1L, dto.getPagamentoId());
+        assertEquals(MetodoPagamento.PIX, dto.getMetodoPagamento());
+        assertEquals("1234", dto.getSenhaTransacao());
     }
 
     @Test
@@ -64,10 +61,9 @@ class PagamentoRequestDTOTest {
         dto.setPagamentoId(2L);
         dto.setMetodoPagamento(MetodoPagamento.CREDITO);
         dto.setSenhaTransacao("5678");
-
-        assertEquals(2L,                      dto.getPagamentoId());
+        assertEquals(2L, dto.getPagamentoId());
         assertEquals(MetodoPagamento.CREDITO, dto.getMetodoPagamento());
-        assertEquals("5678",                  dto.getSenhaTransacao());
+        assertEquals("5678", dto.getSenhaTransacao());
     }
 
     @Test
@@ -94,91 +90,33 @@ class PagamentoRequestDTOTest {
     }
 
     // -----------------------------------------------------------------------
-    // Caminho feliz — sem violações
+    // POSITIVOS — caminho feliz
     // -----------------------------------------------------------------------
 
     @Test
-    void validacao_devePassar_quandoDTOValido() {
+    void validacao_devePassar_quandoDTOValido_comPix() {
         assertTrue(validator.validate(dtoValido()).isEmpty());
     }
 
-    // -----------------------------------------------------------------------
-    // @NotNull — pagamentoId
-    // -----------------------------------------------------------------------
-
     @Test
-    void validacao_deveFalhar_quandoPagamentoIdNulo() {
-        PagamentoRequestDTO dto = dtoValido();
-        dto.setPagamentoId(null);
-        assertViolacaoEm("pagamentoId", dto);
-    }
-
-    // -----------------------------------------------------------------------
-    // @NotNull — metodoPagamento
-    // -----------------------------------------------------------------------
-
-    @Test
-    void validacao_deveFalhar_quandoMetodoPagamentoNulo() {
-        PagamentoRequestDTO dto = dtoValido();
-        dto.setMetodoPagamento(null);
-        assertViolacaoEm("metodoPagamento", dto);
-    }
-
-    @Test
-    void validacao_devePassar_paraMetodoBoleto() {
+    void validacao_devePassar_quandoDTOValido_comBoleto() {
         PagamentoRequestDTO dto = dtoValido();
         dto.setMetodoPagamento(MetodoPagamento.BOLETO);
         assertTrue(validator.validate(dto).isEmpty());
     }
 
     @Test
-    void validacao_devePassar_paraMetodoDebito() {
+    void validacao_devePassar_quandoDTOValido_comDebito() {
         PagamentoRequestDTO dto = dtoValido();
         dto.setMetodoPagamento(MetodoPagamento.DEBITO);
         assertTrue(validator.validate(dto).isEmpty());
     }
 
     @Test
-    void validacao_devePassar_paraMetodoCredito() {
+    void validacao_devePassar_quandoDTOValido_comCredito() {
         PagamentoRequestDTO dto = dtoValido();
         dto.setMetodoPagamento(MetodoPagamento.CREDITO);
         assertTrue(validator.validate(dto).isEmpty());
-    }
-
-    // -----------------------------------------------------------------------
-    // @NotBlank — senhaTransacao
-    // -----------------------------------------------------------------------
-
-    @Test
-    void validacao_deveFalhar_quandoSenhaTransacaoNula() {
-        PagamentoRequestDTO dto = dtoValido();
-        dto.setSenhaTransacao(null);
-        assertViolacaoEm("senhaTransacao", dto);
-    }
-
-    @Test
-    void validacao_deveFalhar_quandoSenhaTransacaoEmBranco() {
-        PagamentoRequestDTO dto = dtoValido();
-        dto.setSenhaTransacao("    ");
-        assertViolacaoEm("senhaTransacao", dto);
-    }
-
-    // -----------------------------------------------------------------------
-    // @Size(min=4, max=4) — senhaTransacao
-    // -----------------------------------------------------------------------
-
-    @Test
-    void validacao_deveFalhar_quandoSenhaMenorQue4Digitos() {
-        PagamentoRequestDTO dto = dtoValido();
-        dto.setSenhaTransacao("123");
-        assertViolacaoEm("senhaTransacao", dto);
-    }
-
-    @Test
-    void validacao_deveFalhar_quandoSenhaMaiorQue4Digitos() {
-        PagamentoRequestDTO dto = dtoValido();
-        dto.setSenhaTransacao("12345");
-        assertViolacaoEm("senhaTransacao", dto);
     }
 
     @Test
@@ -189,15 +127,188 @@ class PagamentoRequestDTOTest {
     }
 
     // -----------------------------------------------------------------------
-    // Utilitário
+    // NEGATIVOS — pagamentoId
     // -----------------------------------------------------------------------
 
-    private void assertViolacaoEm(String campo, PagamentoRequestDTO dto) {
+    @Test
+    void validacao_deveFalhar_quandoPagamentoIdNulo() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setPagamentoId(null);
+
         Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty(), "Esperava violação no campo: " + campo);
-        assertTrue(
-            violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals(campo)),
-            "Violação esperada em '" + campo + "' mas não encontrada. Encontradas: " + violations
-        );
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("pagamentoId")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().equals("ID do pagamento é obrigatório")));
+    }
+
+    // -----------------------------------------------------------------------
+    // NEGATIVOS — metodoPagamento
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoMetodoPagamentoNulo() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setMetodoPagamento(null);
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("metodoPagamento")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().equals("Método de pagamento é obrigatório")));
+    }
+
+    // -----------------------------------------------------------------------
+    // NEGATIVOS — senhaTransacao (@NotBlank)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoSenhaTransacaoNula() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setSenhaTransacao(null);
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().equals("Senha de transação é obrigatória")));
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoSenhaTransacaoVazia() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setSenhaTransacao("");
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoSenhaTransacaoSoEspacos() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setSenhaTransacao("    ");
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().equals("Senha de transação é obrigatória")));
+    }
+
+    // -----------------------------------------------------------------------
+    // NEGATIVOS — senhaTransacao (@Size min=4, max=4)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoSenhaMenorQue4Digitos() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setSenhaTransacao("123");
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().equals("Senha de transação deve ter 4 dígitos")));
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoSenhaComUmDigito() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setSenhaTransacao("1");
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoSenhaMaiorQue4Digitos() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setSenhaTransacao("12345");
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getMessage().equals("Senha de transação deve ter 4 dígitos")));
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoSenhaComDezDigitos() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setSenhaTransacao("1234567890");
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
+    }
+
+    // -----------------------------------------------------------------------
+    // NEGATIVOS — múltiplos campos inválidos simultaneamente
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoTodosOsCamposNulos() {
+        PagamentoRequestDTO dto = new PagamentoRequestDTO(null, null, null);
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        // espera violações nos 3 campos
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("pagamentoId")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("metodoPagamento")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoPagamentoIdNuloEMetodoNulo() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setPagamentoId(null);
+        dto.setMetodoPagamento(null);
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertEquals(2, violations.size());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("pagamentoId")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("metodoPagamento")));
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoSenhaInvalidaEMetodoNulo() {
+        PagamentoRequestDTO dto = dtoValido();
+        dto.setMetodoPagamento(null);
+        dto.setSenhaTransacao("99999");
+
+        Set<ConstraintViolation<PagamentoRequestDTO>> violations = validator.validate(dto);
+
+        assertTrue(violations.size() >= 2);
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("metodoPagamento")));
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
     }
 }
