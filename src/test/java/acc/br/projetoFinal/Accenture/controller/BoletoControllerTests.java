@@ -50,10 +50,6 @@ class BoletoControllerPositiveTests {
                 .build();
     }
 
-    // -------------------------------------------------------
-    // GET /api/boletos/{id}
-    // -------------------------------------------------------
-
     @Test
     @DisplayName("✓ Deve retornar 200 e boleto ao buscar por id existente")
     void deveRetornarBoletoAoBuscarPorId() throws Exception {
@@ -70,10 +66,6 @@ class BoletoControllerPositiveTests {
                 .andExpect(jsonPath("$.codigoBarras", hasLength(44)));
     }
 
-    // -------------------------------------------------------
-    // GET /api/boletos/pedido/{pedidoId}
-    // -------------------------------------------------------
-
     @Test
     @DisplayName("✓ Deve retornar 200 e boleto ao buscar por pedidoId existente")
     void deveRetornarBoletoAoBuscarPorPedidoId() throws Exception {
@@ -86,10 +78,6 @@ class BoletoControllerPositiveTests {
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.status", is("PENDENTE")));
     }
-
-    // -------------------------------------------------------
-    // POST /api/boletos/gerar/{pagamentoId}
-    // -------------------------------------------------------
 
     @Test
     @DisplayName("✓ Deve retornar 201 ao gerar boleto com sucesso")
@@ -109,10 +97,6 @@ class BoletoControllerPositiveTests {
                 .andExpect(jsonPath("$.dataVencimento", notNullValue()));
     }
 
-    // -------------------------------------------------------
-    // PATCH /api/boletos/{id}/pagar
-    // -------------------------------------------------------
-
     @Test
     @DisplayName("✓ Deve retornar 200 ao pagar boleto no prazo")
     void devePagarBoletoNoPrazo() throws Exception {
@@ -130,6 +114,7 @@ class BoletoControllerPositiveTests {
         mockMvc.perform(patch("/api/boletos/1/pagar")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .with(csrf())
+                .param("senhaTransacao", "1234")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
@@ -154,15 +139,12 @@ class BoletoControllerPositiveTests {
         mockMvc.perform(patch("/api/boletos/1/pagar")
                 .with(user("admin").roles("USER", "ADMIN"))
                 .with(csrf())
+                .param("senhaTransacao", "1234")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("PAGO")))
                 .andExpect(jsonPath("$.valor", is(193.80)));
     }
-
-    // -------------------------------------------------------
-    // PATCH /api/boletos/{id}/cancelar
-    // -------------------------------------------------------
 
     @Test
     @DisplayName("✓ Deve retornar 204 ao cancelar boleto com sucesso")
