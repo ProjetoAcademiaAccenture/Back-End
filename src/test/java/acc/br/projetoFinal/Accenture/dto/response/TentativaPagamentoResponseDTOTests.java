@@ -501,7 +501,7 @@ void hashCode_ShouldDiffer_WhenFieldsDiffer() {
 
 // ─── toString — campos nulos não quebram ──────────────────────────────────────
 
-@Test
+@Test 
 void toString_ShouldNotBeNull_WhenAllFieldsNull() {
     TentativaPagamentoResponseDTO dto = new TentativaPagamentoResponseDTO();
     String result = dto.toString();
