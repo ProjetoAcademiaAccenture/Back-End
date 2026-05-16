@@ -1,9 +1,11 @@
 package acc.br.projetoFinal.Accenture.dto.response;
 
 import acc.br.projetoFinal.Accenture.enums.MetodoPagamento;
+import acc.br.projetoFinal.Accenture.enums.StatusPagamento;
 import acc.br.projetoFinal.Accenture.enums.StatusPedido;
 import acc.br.projetoFinal.Accenture.model.Cliente;
 import acc.br.projetoFinal.Accenture.model.ItemPedido;
+import acc.br.projetoFinal.Accenture.model.Pagamento;
 import acc.br.projetoFinal.Accenture.model.Pedido;
 import acc.br.projetoFinal.Accenture.model.Produto;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +44,7 @@ class PedidoResponseDTOPositiveTests {
                 .build();
     }
 
-    // ─── Helper ───────────────────────────────────────────────────────────────
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private Pedido pedidoPadrao() {
         return Pedido.builder()
@@ -70,6 +72,20 @@ class PedidoResponseDTOPositiveTests {
                 .build();
     }
 
+    private Pagamento pagamentoPadrao(Pedido pedido) {
+        return Pagamento.builder()
+                .id(100L)
+                .pedido(pedido)
+                .metodo(MetodoPagamento.PIX)
+                .status(StatusPagamento.APROVADO)
+                .valorBruto(VALOR_BRUTO)
+                .desconto(DESCONTO)
+                .valorFinal(VALOR_FINAL)
+                .dataCriacao(DATA_CRIACAO)
+                .dataConclusao(DATA_CRIACAO.plusHours(1))
+                .build();
+    }
+
     // =========================================================
     // fromEntity — mapeamento básico
     // =========================================================
@@ -82,15 +98,16 @@ class PedidoResponseDTOPositiveTests {
         PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido);
 
         assertAll("todos os campos",
-                () -> assertEquals(ID,           dto.getId()),
-                () -> assertEquals(DATA_CRIACAO,  dto.getDataCriacao()),
-                () -> assertEquals(STATUS,        dto.getStatus()),
-                () -> assertEquals(VALOR_BRUTO,   dto.getValorBruto()),
-                () -> assertEquals(DESCONTO,      dto.getDesconto()),
-                () -> assertEquals(VALOR_FINAL,   dto.getValorFinal()),
-                () -> assertEquals(CLIENTE_ID,    dto.getClienteId()),
+                () -> assertEquals(ID,          dto.getId()),
+                () -> assertEquals(DATA_CRIACAO, dto.getDataCriacao()),
+                () -> assertEquals(STATUS,       dto.getStatus()),
+                () -> assertEquals(VALOR_BRUTO,  dto.getValorBruto()),
+                () -> assertEquals(DESCONTO,     dto.getDesconto()),
+                () -> assertEquals(VALOR_FINAL,  dto.getValorFinal()),
+                () -> assertEquals(CLIENTE_ID,   dto.getClienteId()),
                 () -> assertNotNull(dto.getItens()),
-                () -> assertTrue(dto.getItens().isEmpty())
+                () -> assertTrue(dto.getItens().isEmpty()),
+                () -> assertNull(dto.getPagamento())
         );
     }
 
@@ -99,6 +116,18 @@ class PedidoResponseDTOPositiveTests {
     void fromEntity_DeveRetornarListaVazia_QuandoItensVazio() {
         Pedido pedido = pedidoPadrao();
         pedido.setItens(new ArrayList<>());
+
+        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido);
+
+        assertNotNull(dto.getItens());
+        assertTrue(dto.getItens().isEmpty());
+    }
+
+    @Test
+    @DisplayName("fromEntity deve retornar lista vazia quando itens for null (branch ternário)")
+    void fromEntity_DeveRetornarListaVazia_QuandoItensNull() {
+        Pedido pedido = pedidoPadrao();
+        pedido.setItens(null);
 
         PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido);
 
@@ -130,10 +159,26 @@ class PedidoResponseDTOPositiveTests {
         assertThat(dto.getItens()).hasSize(1);
         assertThat(dto.getItens().get(0).getProdutoId()).isEqualTo(1L);
         assertThat(dto.getItens().get(0).getProdutoNome()).isEqualTo("Produto Teste");
+        assertThat(dto.getItens().get(0).getSubtotal()).isEqualByComparingTo("200.00");
     }
 
     @Test
-    @DisplayName("fromEntity deve mapear pagamento como null quando pedido não tem pagamento")
+    @DisplayName("fromEntity deve mapear pagamento quando pedido tem pagamento (branch true)")
+    void fromEntity_DeveMapearPagamento_QuandoPedidoTemPagamento() {
+        Pedido pedido = pedidoPadrao();
+        Pagamento pagamento = pagamentoPadrao(pedido);
+        pedido.setPagamento(pagamento);
+
+        PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido);
+
+        assertNotNull(dto.getPagamento());
+        assertEquals(100L,                dto.getPagamento().getId());
+        assertEquals(MetodoPagamento.PIX, dto.getPagamento().getMetodoPagamento());
+        assertEquals(StatusPagamento.APROVADO, dto.getPagamento().getStatus());
+    }
+
+    @Test
+    @DisplayName("fromEntity deve mapear pagamento como null quando pedido não tem pagamento (branch false)")
     void fromEntity_DeveMappearPagamentoNull_QuandoSemPagamento() {
         Pedido pedido = pedidoPadrao();
         pedido.setPagamento(null);
@@ -144,8 +189,8 @@ class PedidoResponseDTOPositiveTests {
     }
 
     @Test
-    @DisplayName("fromEntity com MetodoPagamento deve setar pagamento corretamente")
-    void fromEntity_ComMetodoPagamento_DeveSetarPagamento() {
+    @DisplayName("fromEntity com MetodoPagamento PIX deve setar pagamento corretamente")
+    void fromEntity_ComMetodoPagamentoPix_DeveSetarPagamento() {
         Pedido pedido = pedidoPadrao();
 
         PedidoResponseDTO dto = PedidoResponseDTO.fromEntity(pedido, MetodoPagamento.PIX);
@@ -242,13 +287,13 @@ class PedidoResponseDTOPositiveTests {
         );
 
         assertAll(
-                () -> assertEquals(ID,           dto.getId()),
-                () -> assertEquals(DATA_CRIACAO,  dto.getDataCriacao()),
-                () -> assertEquals(STATUS,        dto.getStatus()),
-                () -> assertEquals(VALOR_BRUTO,   dto.getValorBruto()),
-                () -> assertEquals(DESCONTO,      dto.getDesconto()),
-                () -> assertEquals(VALOR_FINAL,   dto.getValorFinal()),
-                () -> assertEquals(CLIENTE_ID,    dto.getClienteId()),
+                () -> assertEquals(ID,          dto.getId()),
+                () -> assertEquals(DATA_CRIACAO, dto.getDataCriacao()),
+                () -> assertEquals(STATUS,       dto.getStatus()),
+                () -> assertEquals(VALOR_BRUTO,  dto.getValorBruto()),
+                () -> assertEquals(DESCONTO,     dto.getDesconto()),
+                () -> assertEquals(VALOR_FINAL,  dto.getValorFinal()),
+                () -> assertEquals(CLIENTE_ID,   dto.getClienteId()),
                 () -> assertNotNull(dto.getItens()),
                 () -> assertNull(dto.getPagamento())
         );
@@ -264,13 +309,13 @@ class PedidoResponseDTOPositiveTests {
         PedidoResponseDTO dto = dtoPadraoValido();
 
         assertAll(
-                () -> assertEquals(ID,           dto.getId()),
-                () -> assertEquals(DATA_CRIACAO,  dto.getDataCriacao()),
-                () -> assertEquals(STATUS,        dto.getStatus()),
-                () -> assertEquals(VALOR_BRUTO,   dto.getValorBruto()),
-                () -> assertEquals(DESCONTO,      dto.getDesconto()),
-                () -> assertEquals(VALOR_FINAL,   dto.getValorFinal()),
-                () -> assertEquals(CLIENTE_ID,    dto.getClienteId()),
+                () -> assertEquals(ID,          dto.getId()),
+                () -> assertEquals(DATA_CRIACAO, dto.getDataCriacao()),
+                () -> assertEquals(STATUS,       dto.getStatus()),
+                () -> assertEquals(VALOR_BRUTO,  dto.getValorBruto()),
+                () -> assertEquals(DESCONTO,     dto.getDesconto()),
+                () -> assertEquals(VALOR_FINAL,  dto.getValorFinal()),
+                () -> assertEquals(CLIENTE_ID,   dto.getClienteId()),
                 () -> assertNotNull(dto.getItens())
         );
     }
@@ -312,13 +357,13 @@ class PedidoResponseDTOPositiveTests {
         dto.setPagamento(null);
 
         assertAll(
-                () -> assertEquals(ID,           dto.getId()),
-                () -> assertEquals(DATA_CRIACAO,  dto.getDataCriacao()),
-                () -> assertEquals(STATUS,        dto.getStatus()),
-                () -> assertEquals(VALOR_BRUTO,   dto.getValorBruto()),
-                () -> assertEquals(DESCONTO,      dto.getDesconto()),
-                () -> assertEquals(VALOR_FINAL,   dto.getValorFinal()),
-                () -> assertEquals(CLIENTE_ID,    dto.getClienteId()),
+                () -> assertEquals(ID,          dto.getId()),
+                () -> assertEquals(DATA_CRIACAO, dto.getDataCriacao()),
+                () -> assertEquals(STATUS,       dto.getStatus()),
+                () -> assertEquals(VALOR_BRUTO,  dto.getValorBruto()),
+                () -> assertEquals(DESCONTO,     dto.getDesconto()),
+                () -> assertEquals(VALOR_FINAL,  dto.getValorFinal()),
+                () -> assertEquals(CLIENTE_ID,   dto.getClienteId()),
                 () -> assertNotNull(dto.getItens()),
                 () -> assertNull(dto.getPagamento())
         );
