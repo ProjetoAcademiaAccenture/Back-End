@@ -2,314 +2,317 @@ package acc.br.projetoFinal.Accenture.dto.request;
 
 import acc.br.projetoFinal.Accenture.enums.TipoEndereco;
 import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import org.junit.jupiter.api.DisplayName;
+import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@DisplayName("EnderecoRequestDTO - Testes Positivos")
-class EnderecoRequestDTOTests {
+class EnderecoRequestDTOTest {
 
-    @Autowired
-    private Validator validator;
+    private static Validator validator;
 
-    private EnderecoRequestDTO dto;
+    @BeforeAll
+    static void setUpValidator() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+    }
 
-    // ─────────────────────────────────────────────
-    //  Cenários positivos (sem violações esperadas)
-    // ─────────────────────────────────────────────
-
-    @Test
-    @DisplayName("Deve validar EnderecoRequestDTO com todos os dados válidos")
-    void deveValidarComDadosValidos() {
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
+    // helper para montar um DTO 100% válido
+    private EnderecoRequestDTO dtoValido() {
+        return EnderecoRequestDTO.builder()
+                .cep("58700000")
+                .logradouro("Rua das Flores")
+                .bairro("Centro")
+                .cidade("Patos")
+                .uf("PB")
                 .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .numero("1000")
-                .complemento("Apto 101")
+                .numero("123")
+                .complemento("Apto 01")
                 .build();
+    }
 
-        Set<ConstraintViolation<EnderecoRequestDTO>> violations = validator.validate(dto);
-        assertTrue(violations.isEmpty(), "Não deve haver violações de validação");
+    // -----------------------------------------------------------------------
+    // Lombok: @NoArgsConstructor, @AllArgsConstructor, @Builder, @Data
+    // -----------------------------------------------------------------------
+
+    @Test
+    void noArgsConstructor_deveCriarInstanciaSemErro() {
+        assertNotNull(new EnderecoRequestDTO());
     }
 
     @Test
-    @DisplayName("Deve validar EnderecoRequestDTO sem numero (campo opcional)")
-    void deveValidarSemNumero() {
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .complemento("Apto 101")
-                .build();
-
-        Set<ConstraintViolation<EnderecoRequestDTO>> violations = validator.validate(dto);
-        assertTrue(violations.isEmpty(), "Não deve haver violações de validação");
-    }
-
-    @Test
-    @DisplayName("Deve validar EnderecoRequestDTO sem complemento (campo opcional)")
-    void deveValidarSemComplemento() {
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.COMERCIAL)
-                .numero("1000")
-                .build();
-
-        Set<ConstraintViolation<EnderecoRequestDTO>> violations = validator.validate(dto);
-        assertTrue(violations.isEmpty(), "Não deve haver violações de validação");
-    }
-
-    @Test
-    @DisplayName("Deve validar EnderecoRequestDTO sem numero e sem complemento")
-    void deveValidarSemNumeroESemComplemento() {
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .build();
-
-        Set<ConstraintViolation<EnderecoRequestDTO>> violations = validator.validate(dto);
-        assertTrue(violations.isEmpty(), "Não deve haver violações de validação");
-    }
-
-    @Test
-    @DisplayName("Deve validar EnderecoRequestDTO com numero no limite máximo (10 caracteres)")
-    void deveValidarComNumeroMaximo() {
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .numero("1234567890")
-                .build();
-
-        Set<ConstraintViolation<EnderecoRequestDTO>> violations = validator.validate(dto);
-        assertTrue(violations.isEmpty(), "Não deve haver violações de validação");
-    }
-
-    @Test
-    @DisplayName("Deve validar EnderecoRequestDTO com complemento no limite máximo (100 caracteres)")
-    void deveValidarComComplementoMaximo() {
-        String complementoMaximo = "a".repeat(100);
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .complemento(complementoMaximo)
-                .build();
-
-        Set<ConstraintViolation<EnderecoRequestDTO>> violations = validator.validate(dto);
-        assertTrue(violations.isEmpty(), "Não deve haver violações de validação");
-    }
-
-    @Test
-    @DisplayName("Deve validar com tipoEndereco COMERCIAL")
-    void deveValidarComTipoEnderecoComercial() {
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Rua Augusta")
-                .bairro("Consolação")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.COMERCIAL)
-                .build();
-
-        Set<ConstraintViolation<EnderecoRequestDTO>> violations = validator.validate(dto);
-        assertTrue(violations.isEmpty(), "Não deve haver violações para tipoEndereco COMERCIAL");
-    }
-
-    // ─────────────────────────────────────────────
-    //  Cobertura de getters / equals / hashCode / toString (Lombok)
-    // ─────────────────────────────────────────────
-
-    @Test
-    @DisplayName("Deve retornar os valores corretos pelos getters")
-    void deveRetornarValoresCorretosPelosGetters() {
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .numero("1000")
-                .complemento("Apto 101")
-                .build();
-
-        assertEquals("01310100", dto.getCep());
-        assertEquals("Avenida Paulista", dto.getLogradouro());
-        assertEquals("Bela Vista", dto.getBairro());
-        assertEquals("São Paulo", dto.getCidade());
-        assertEquals("SP", dto.getUf());
-        assertEquals(TipoEndereco.RESIDENCIAL, dto.getTipoEndereco());
-        assertEquals("1000", dto.getNumero());
-        assertEquals("Apto 101", dto.getComplemento());
-    }
-
-    @Test
-    @DisplayName("Deve instanciar via construtor sem args e permitir setters")
-    void deveInstanciarViaConstrutorSemArgs() {
-        dto = new EnderecoRequestDTO();
-        dto.setCep("04538133");
-        dto.setLogradouro("Rua Funchal");
-        dto.setBairro("Vila Olímpia");
-        dto.setCidade("São Paulo");
-        dto.setUf("SP");
-        dto.setTipoEndereco(TipoEndereco.RESIDENCIAL);
-        dto.setNumero("100");
-        dto.setComplemento("Sala 3");
-
-        assertEquals("04538133", dto.getCep());
-        assertEquals("Rua Funchal", dto.getLogradouro());
-        assertEquals("Vila Olímpia", dto.getBairro());
-        assertEquals("São Paulo", dto.getCidade());
-        assertEquals("SP", dto.getUf());
-        assertEquals(TipoEndereco.RESIDENCIAL, dto.getTipoEndereco());
-        assertEquals("100", dto.getNumero());
-        assertEquals("Sala 3", dto.getComplemento());
-    }
-
-    @Test
-    @DisplayName("Deve instanciar via construtor com todos os args")
-    void deveInstanciarViaConstrutorComTodosArgs() {
-        dto = new EnderecoRequestDTO(
-                "01310100",
-                "Avenida Paulista",
-                "Bela Vista",
-                "São Paulo",
-                "SP",
-                TipoEndereco.RESIDENCIAL,
-                "1000",
-                "Apto 101"
+    void allArgsConstructor_devePreencherTodosOsCampos() {
+        EnderecoRequestDTO dto = new EnderecoRequestDTO(
+                "58700000", "Rua das Flores", "Centro", "Patos",
+                "PB", TipoEndereco.RESIDENCIAL, "123", "Apto 01"
         );
 
-        assertNotNull(dto);
-        assertEquals("01310100", dto.getCep());
+        assertEquals("58700000",           dto.getCep());
+        assertEquals("Rua das Flores",     dto.getLogradouro());
+        assertEquals("Centro",             dto.getBairro());
+        assertEquals("Patos",              dto.getCidade());
+        assertEquals("PB",                 dto.getUf());
         assertEquals(TipoEndereco.RESIDENCIAL, dto.getTipoEndereco());
+        assertEquals("123",                dto.getNumero());
+        assertEquals("Apto 01",            dto.getComplemento());
     }
 
     @Test
-    @DisplayName("Dois DTOs com mesmos dados devem ser iguais (equals/hashCode)")
-    void doisDtosComMesmosDadosDevemSerIguais() {
-        EnderecoRequestDTO dto1 = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .numero("1000")
-                .complemento("Apto 101")
-                .build();
+    void builder_devePreencherTodosOsCampos() {
+        EnderecoRequestDTO dto = dtoValido();
 
-        EnderecoRequestDTO dto2 = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .numero("1000")
-                .complemento("Apto 101")
-                .build();
-
-        assertEquals(dto1, dto2);
-        assertEquals(dto1.hashCode(), dto2.hashCode());
+        assertEquals("58700000",           dto.getCep());
+        assertEquals("Rua das Flores",     dto.getLogradouro());
+        assertEquals("Centro",             dto.getBairro());
+        assertEquals("Patos",              dto.getCidade());
+        assertEquals("PB",                 dto.getUf());
+        assertEquals(TipoEndereco.RESIDENCIAL, dto.getTipoEndereco());
+        assertEquals("123",                dto.getNumero());
+        assertEquals("Apto 01",            dto.getComplemento());
     }
 
     @Test
-    @DisplayName("Dois DTOs com dados diferentes não devem ser iguais")
-    void doisDtosComDadosDiferentesNaoDevemSerIguais() {
-        EnderecoRequestDTO dto1 = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .build();
+    void setters_devemAtualizarCampos() {
+        EnderecoRequestDTO dto = new EnderecoRequestDTO();
+        dto.setCep("58700000");
+        dto.setLogradouro("Av. Principal");
+        dto.setBairro("Bela Vista");
+        dto.setCidade("Campina Grande");
+        dto.setUf("PB");
+        dto.setTipoEndereco(TipoEndereco.COMERCIAL);
+        dto.setNumero("999");
+        dto.setComplemento("Sala 2");
 
-        EnderecoRequestDTO dto2 = EnderecoRequestDTO.builder()
-                .cep("04538133")
-                .logradouro("Rua Funchal")
-                .bairro("Vila Olímpia")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.COMERCIAL)
-                .build();
-
-        assertNotEquals(dto1, dto2);
+        assertEquals("58700000",          dto.getCep());
+        assertEquals("Av. Principal",     dto.getLogradouro());
+        assertEquals("Bela Vista",        dto.getBairro());
+        assertEquals("Campina Grande",    dto.getCidade());
+        assertEquals("PB",                dto.getUf());
+        assertEquals(TipoEndereco.COMERCIAL, dto.getTipoEndereco());
+        assertEquals("999",               dto.getNumero());
+        assertEquals("Sala 2",            dto.getComplemento());
     }
 
     @Test
-    @DisplayName("toString deve conter os campos principais")
-    void toStringDeveConterCamposPrincipais() {
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .numero("1000")
-                .complemento("Apto 101")
-                .build();
-
-        String result = dto.toString();
-        assertNotNull(result);
-        assertTrue(result.contains("01310100"));
-        assertTrue(result.contains("Avenida Paulista"));
-        assertTrue(result.contains("SP"));
+    void equals_hashCode_deveSerVerdadeiro_paraInstanciasIguais() {
+        EnderecoRequestDTO a = dtoValido();
+        EnderecoRequestDTO b = dtoValido();
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
     }
 
     @Test
-    @DisplayName("Deve permitir alterar campo via setter após criação")
-    void devePermitirAlterarCampoViaSetterAposCriacao() {
-        dto = EnderecoRequestDTO.builder()
-                .cep("01310100")
-                .logradouro("Avenida Paulista")
-                .bairro("Bela Vista")
-                .cidade("São Paulo")
-                .uf("SP")
-                .tipoEndereco(TipoEndereco.RESIDENCIAL)
-                .build();
+    void equals_deveSerFalso_paraInstanciasDiferentes() {
+        EnderecoRequestDTO a = dtoValido();
+        EnderecoRequestDTO b = dtoValido();
+        b.setCidade("João Pessoa");
+        assertNotEquals(a, b);
+    }
 
-        dto.setCidade("Campinas");
+    @Test
+    void toString_naoDeveRetornarNulo_eDeveConterNomeClasse() {
+        String str = dtoValido().toString();
+        assertNotNull(str);
+        assertTrue(str.contains("EnderecoRequestDTO"));
+    }
+
+    // -----------------------------------------------------------------------
+    // Caminho feliz — sem violações
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_devePassar_quandoDTOValido() {
+        assertTrue(validator.validate(dtoValido()).isEmpty());
+    }
+
+    @Test
+    void validacao_devePassar_quandoNumeroEComplementoNulos() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setNumero(null);
+        dto.setComplemento(null);
+        assertTrue(validator.validate(dto).isEmpty());
+    }
+
+    // -----------------------------------------------------------------------
+    // @NotBlank — cep
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoCepNulo() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setCep(null);
+        assertViolacaoEm("cep", dto);
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoCepEmBranco() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setCep("   ");
+        assertViolacaoEm("cep", dto);
+    }
+
+    // -----------------------------------------------------------------------
+    // @NotBlank — logradouro
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoLogradouroNulo() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setLogradouro(null);
+        assertViolacaoEm("logradouro", dto);
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoLogradouroEmBranco() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setLogradouro("");
+        assertViolacaoEm("logradouro", dto);
+    }
+
+    // -----------------------------------------------------------------------
+    // @NotBlank — bairro
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoBairroNulo() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setBairro(null);
+        assertViolacaoEm("bairro", dto);
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoBairroEmBranco() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setBairro("  ");
+        assertViolacaoEm("bairro", dto);
+    }
+
+    // -----------------------------------------------------------------------
+    // @NotBlank — cidade
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoCidadeNula() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setCidade(null);
+        assertViolacaoEm("cidade", dto);
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoCidadeEmBranco() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setCidade("");
+        assertViolacaoEm("cidade", dto);
+    }
+
+    // -----------------------------------------------------------------------
+    // @NotBlank + @Size(min=2, max=2) — uf
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoUfNula() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setUf(null);
+        assertViolacaoEm("uf", dto);
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoUfEmBranco() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setUf("  ");
+        assertViolacaoEm("uf", dto);
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoUfMenorQue2Caracteres() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setUf("P");
+        assertViolacaoEm("uf", dto);
+    }
+
+    @Test
+    void validacao_deveFalhar_quandoUfMaiorQue2Caracteres() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setUf("PBA");
+        assertViolacaoEm("uf", dto);
+    }
+
+    @Test
+    void validacao_devePassar_quandoUfTem2Caracteres() {
+        EnderecoRequestDTO dto = dtoValido();
         dto.setUf("SP");
-        dto.setNumero("200");
-        dto.setComplemento("Bloco B");
+        assertTrue(validator.validate(dto).isEmpty());
+    }
 
-        assertEquals("Campinas", dto.getCidade());
-        assertEquals("200", dto.getNumero());
-        assertEquals("Bloco B", dto.getComplemento());
+    // -----------------------------------------------------------------------
+    // @NotNull — tipoEndereco
+    // -----------------------------------------------------------------------
 
+    @Test
+    void validacao_deveFalhar_quandoTipoEnderecoNulo() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setTipoEndereco(null);
+        assertViolacaoEm("tipoEndereco", dto);
+    }
+
+    @Test
+    void validacao_devePassar_paraTipoEnderecoComercial() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setTipoEndereco(TipoEndereco.COMERCIAL);
+        assertTrue(validator.validate(dto).isEmpty());
+    }
+
+    // -----------------------------------------------------------------------
+    // @Size(max=10) — numero
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoNumeroMaiorQue10Caracteres() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setNumero("12345678901"); // 11 chars
+        assertViolacaoEm("numero", dto);
+    }
+
+    @Test
+    void validacao_devePassar_quandoNumeroTem10Caracteres() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setNumero("1234567890"); // exato limite
+        assertTrue(validator.validate(dto).isEmpty());
+    }
+
+    // -----------------------------------------------------------------------
+    // @Size(max=100) — complemento
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validacao_deveFalhar_quandoComplementoMaiorQue100Caracteres() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setComplemento("A".repeat(101));
+        assertViolacaoEm("complemento", dto);
+    }
+
+    @Test
+    void validacao_devePassar_quandoComplementoTem100Caracteres() {
+        EnderecoRequestDTO dto = dtoValido();
+        dto.setComplemento("A".repeat(100));
+        assertTrue(validator.validate(dto).isEmpty());
+    }
+
+    // -----------------------------------------------------------------------
+    // Utilitário
+    // -----------------------------------------------------------------------
+
+    private void assertViolacaoEm(String campo, EnderecoRequestDTO dto) {
         Set<ConstraintViolation<EnderecoRequestDTO>> violations = validator.validate(dto);
-        assertTrue(violations.isEmpty(), "Não deve haver violações após alteração válida");
+        assertFalse(violations.isEmpty(), "Esperava violação no campo: " + campo);
+        assertTrue(
+            violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals(campo)),
+            "Violação esperada em '" + campo + "' mas não encontrada. Encontradas: " + violations
+        );
     }
 }
