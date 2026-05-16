@@ -311,4 +311,99 @@ class PagamentoRequestDTOTest {
         assertTrue(violations.stream()
                 .anyMatch(v -> v.getPropertyPath().toString().equals("senhaTransacao")));
     }
+    // -----------------------------------------------------------------------
+// LOMBOK — equals/hashCode branches faltando
+// -----------------------------------------------------------------------
+
+@Test
+void equals_deveSerFalso_comparandoComNulo() {
+    PagamentoRequestDTO dto = dtoValido();
+    assertNotEquals(null, dto);
+}
+
+@Test
+void equals_deveSerVerdadeiro_comparandoConsigoProprio() {
+    PagamentoRequestDTO dto = dtoValido();
+    assertEquals(dto, dto);
+}
+
+@Test
+void equals_deveSerFalso_comparandoComOutroTipo() {
+    PagamentoRequestDTO dto = dtoValido();
+    assertNotEquals("string qualquer", dto);
+}
+
+@Test
+void equals_deveSerFalso_quandoMetodoPagamentoDiferente() {
+    PagamentoRequestDTO a = dtoValido();
+    PagamentoRequestDTO b = dtoValido();
+    b.setMetodoPagamento(MetodoPagamento.CREDITO);
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoSenhaTransacaoDiferente() {
+    PagamentoRequestDTO a = dtoValido();
+    PagamentoRequestDTO b = dtoValido();
+    b.setSenhaTransacao("9999");
+    assertNotEquals(a, b);
+}
+
+@Test
+void hashCode_deveDiferir_quandoCamposDiferentes() {
+    PagamentoRequestDTO a = dtoValido();
+    PagamentoRequestDTO b = dtoValido();
+    b.setPagamentoId(99L);
+    assertNotEquals(a.hashCode(), b.hashCode());
+}
+
+@Test
+void toString_deveConterValoresDosAtributos() {
+    PagamentoRequestDTO dto = dtoValido();
+    String str = dto.toString();
+    assertTrue(str.contains("1"));        // pagamentoId
+    assertTrue(str.contains("PIX"));      // metodoPagamento
+    assertTrue(str.contains("1234"));     // senhaTransacao
+}
+
+// -----------------------------------------------------------------------
+// LOMBOK — campos nulos no equals/hashCode (branches null-check)
+// -----------------------------------------------------------------------
+
+@Test
+void equals_deveSerVerdadeiro_quandoAmbosCamposNulos() {
+    PagamentoRequestDTO a = new PagamentoRequestDTO();
+    PagamentoRequestDTO b = new PagamentoRequestDTO();
+    assertEquals(a, b);
+    assertEquals(a.hashCode(), b.hashCode());
+}
+
+@Test
+void equals_deveSerFalso_quandoUmPagamentoIdNuloEOutroNao() {
+    PagamentoRequestDTO a = new PagamentoRequestDTO();   // pagamentoId = null
+    PagamentoRequestDTO b = dtoValido();                 // pagamentoId = 1L
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoUmMetodoNuloEOutroNao() {
+    PagamentoRequestDTO a = new PagamentoRequestDTO();
+    a.setPagamentoId(1L);
+    a.setSenhaTransacao("1234");
+    // metodoPagamento = null
+
+    PagamentoRequestDTO b = dtoValido(); // metodoPagamento = PIX
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoUmaSenhaNulaEOutraNao() {
+    PagamentoRequestDTO a = new PagamentoRequestDTO();
+    a.setPagamentoId(1L);
+    a.setMetodoPagamento(MetodoPagamento.PIX);
+    // senhaTransacao = null
+
+    PagamentoRequestDTO b = dtoValido(); // senhaTransacao = "1234"
+    assertNotEquals(a, b);
+}
 }

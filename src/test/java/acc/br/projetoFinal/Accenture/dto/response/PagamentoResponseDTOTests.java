@@ -372,4 +372,5 @@ class PagamentoResponseDTOTests {
             () -> assertTrue(result.contains("450.00"))
         );
     }
+    
 }
