@@ -167,4 +167,25 @@ public class ClienteService {
 
         enderecoRepository.deleteById(enderecoId);
     }
+
+    @Transactional
+    public EnderecoResponseDTO atualizarEndereco(Long clienteId, Long enderecoId, EnderecoRequestDTO dto) {
+        Endereco endereco = enderecoRepository.findById(enderecoId)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Endereço não encontrado"));
+
+        if (!endereco.getCliente().getId().equals(clienteId)) {
+            throw new IllegalArgumentException("Endereço não pertence a este cliente");
+        }
+
+        endereco.setCep(dto.getCep());
+        endereco.setLogradouro(dto.getLogradouro());
+        endereco.setBairro(dto.getBairro());
+        endereco.setCidade(dto.getCidade());
+        endereco.setUf(dto.getUf());
+        endereco.setNumero(dto.getNumero());
+        endereco.setComplemento(dto.getComplemento());
+        endereco.setTipoEndereco(dto.getTipoEndereco());
+
+        return EnderecoResponseDTO.fromEntity(enderecoRepository.save(endereco));
+    }
 }

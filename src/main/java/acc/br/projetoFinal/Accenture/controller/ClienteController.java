@@ -77,6 +77,13 @@ public class ClienteController {
         clienteService.adicionarEndereco(id, dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+    @PutMapping("/{id}/enderecos/{enderecoId}")
+public ResponseEntity<EnderecoResponseDTO> atualizarEndereco(
+        @PathVariable Long id,
+        @PathVariable Long enderecoId,
+        @RequestBody @Valid EnderecoRequestDTO dto) {
+    return ResponseEntity.ok(clienteService.atualizarEndereco(id, enderecoId, dto));
+}
 
     @DeleteMapping("/{id}/enderecos/{enderecoId}")
     public ResponseEntity<Void> removerEndereco(@PathVariable Long id, @PathVariable Long enderecoId) {
