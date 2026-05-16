@@ -313,7 +313,7 @@ curl http://localhost:8080/api/contas/2/extrato
 
 ## 📞 Documentação
 
-- Guia Completo: [README_SISTEMA.md](README_SISTEMA.md)
+- Guia Completo: [README_SISTEMA.md](README.md)
 - Swagger UI: http://localhost:8080/swagger-ui.html
 - H2 Console: http://localhost:8080/h2-console
 
