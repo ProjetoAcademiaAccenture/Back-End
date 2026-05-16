@@ -20,7 +20,7 @@ class ProdutoResponseDTOTests {
     private static final String     URL       = "https://img.com/nb.jpg";
     private static final BigDecimal PRECO     = new BigDecimal("3500.00");
     private static final Integer    ESTOQUE   = 10;
-    private static final String     CATEGORIA = "ELETRONICO";
+    private static final String     CATEGORIA = "ELETRONICOS";
 
     private Produto produtoBase;
 
@@ -37,10 +37,7 @@ class ProdutoResponseDTOTests {
                 .build();
     }
 
-    // ------------------------------------------------------------------ helper
-
     private ProdutoResponseDTO dtoPadraoValido() {
-        // AllArgsConstructor: id, nome, descricao, urlImagem, preco, quantidadeEstoque, categoria
         return new ProdutoResponseDTO(ID, NOME, DESCRICAO, URL, PRECO, ESTOQUE, CATEGORIA);
     }
 
@@ -66,7 +63,6 @@ class ProdutoResponseDTOTests {
     @Test
     @DisplayName("Deve criar objeto com construtor all-args")
     void deveCriarComConstrutorAllArgs() {
-        // Ordem: id, nome, descricao, urlImagem, preco, quantidadeEstoque, categoria
         ProdutoResponseDTO dto = dtoPadraoValido();
 
         assertAll("AllArgsConstructor",
@@ -191,7 +187,7 @@ class ProdutoResponseDTOTests {
     }
 
     // =========================================================
-    // fromEntity — cada CategoriaProduto
+    // fromEntity
     // =========================================================
 
     @Test
@@ -201,13 +197,13 @@ class ProdutoResponseDTOTests {
 
         assertAll("fromEntity campos",
                 () -> assertNotNull(dto),
-                () -> assertEquals(ID,           dto.getId()),
-                () -> assertEquals(NOME,         dto.getNome()),
-                () -> assertEquals(DESCRICAO,    dto.getDescricao()),
-                () -> assertEquals(URL,          dto.getUrlImagem()),
-                () -> assertEquals(PRECO,        dto.getPreco()),
-                () -> assertEquals(ESTOQUE,      dto.getQuantidadeEstoque()),
-                () -> assertEquals("ELETRONICO", dto.getCategoria())
+                () -> assertEquals(ID,            dto.getId()),
+                () -> assertEquals(NOME,          dto.getNome()),
+                () -> assertEquals(DESCRICAO,     dto.getDescricao()),
+                () -> assertEquals(URL,           dto.getUrlImagem()),
+                () -> assertEquals(PRECO,         dto.getPreco()),
+                () -> assertEquals(ESTOQUE,       dto.getQuantidadeEstoque()),
+                () -> assertEquals("ELETRONICOS", dto.getCategoria())
         );
     }
 
@@ -218,9 +214,10 @@ class ProdutoResponseDTOTests {
                 .id(2L).nome("Arroz").descricao("Arroz tipo 1")
                 .urlImagem("https://img.com/arroz.jpg")
                 .preco(new BigDecimal("25.00")).quantidadeEstoque(100)
-                .categoria(Categoria.PERIFERICOS).build();
+                .categoria(Categoria.ALIMENTOS)
+                .build();
 
-        assertEquals("ALIMENTO", ProdutoResponseDTO.fromEntity(produto).getCategoria());
+        assertEquals("ALIMENTOS", ProdutoResponseDTO.fromEntity(produto).getCategoria());
     }
 
     @Test
@@ -230,7 +227,8 @@ class ProdutoResponseDTOTests {
                 .id(3L).nome("Camiseta").descricao("Camiseta polo")
                 .urlImagem("https://img.com/camisa.jpg")
                 .preco(new BigDecimal("80.00")).quantidadeEstoque(50)
-                .categoria(Categoria.ELETRONICOS).build();
+                .categoria(Categoria.VESTUARIO)
+                .build();
 
         assertEquals("VESTUARIO", ProdutoResponseDTO.fromEntity(produto).getCategoria());
     }
@@ -242,7 +240,8 @@ class ProdutoResponseDTOTests {
                 .id(4L).nome("Produto Esgotado").descricao("Sem estoque")
                 .urlImagem("https://img.com/esg.jpg")
                 .preco(new BigDecimal("99.99")).quantidadeEstoque(0)
-                .categoria(Categoria.ELETRONICOS).build();
+                .categoria(Categoria.ELETRONICOS)
+                .build();
 
         assertEquals(0, ProdutoResponseDTO.fromEntity(produto).getQuantidadeEstoque());
     }
@@ -254,7 +253,8 @@ class ProdutoResponseDTOTests {
                 .id(5L).nome("Produto Sem Foto").descricao("Sem imagem")
                 .urlImagem(null)
                 .preco(new BigDecimal("50.00")).quantidadeEstoque(5)
-                .categoria(Categoria.ELETRONICOS).build();
+                .categoria(Categoria.ELETRONICOS)
+                .build();
 
         assertNull(ProdutoResponseDTO.fromEntity(produto).getUrlImagem());
     }

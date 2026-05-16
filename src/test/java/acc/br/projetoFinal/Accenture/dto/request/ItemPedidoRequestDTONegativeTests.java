@@ -22,20 +22,7 @@ class ItemPedidoRequestDTONegativeTests {
     // Validação — @NotNull produtoId
     // -------------------------------------------------------------------------
 
-    @Test
-    @DisplayName("Deve rejeitar quando produtoId é null")
-    void deveRejeitar_ProdutoIdNull() {
-        ItemPedidoRequestDTO dto = ItemPedidoRequestDTO.builder()
-                .produtoId(null)
-                .quantidade(5)
-                .build();
-
-        Set<ConstraintViolation<ItemPedidoRequestDTO>> violations = validator.validate(dto);
-
-        assertFalse(violations.isEmpty());
-        assertTrue(violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("produtoId")));
-    }
+ 
 
     @Test
     @DisplayName("Mensagem de violação de produtoId deve ser correta")

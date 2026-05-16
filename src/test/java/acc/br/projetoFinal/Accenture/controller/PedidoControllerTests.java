@@ -55,6 +55,7 @@ class PedidoControllerTests {
         pedidoRequest = PedidoRequestDTO.builder()
                 .clienteId(1L)
                 .itens(itens)
+                .metodoPagamento("BOLETO")
                 .build();
 
         pedidoResponse = PedidoResponseDTO.builder()
