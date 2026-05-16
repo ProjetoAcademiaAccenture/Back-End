@@ -278,4 +278,234 @@ class TentativaPagamentoResponseDTOTests {
             () -> assertTrue(result.contains("OK"))
         );
     }
+    // ─── equals/hashCode — branches por campo individual ─────────────────────────
+
+@Test
+void equals_ShouldReturnFalse_WhenPagamentoIdDifers() {
+    LocalDateTime now = LocalDateTime.now();
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO(
+        1L, 99L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenMetodoPagamentoDifers() {
+    LocalDateTime now = LocalDateTime.now();
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.CREDITO, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenStatusDifers() {
+    LocalDateTime now = LocalDateTime.now();
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.RECUSADO,
+        new BigDecimal("100.00"), "OK", now);
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenValorTentadoDifers() {
+    LocalDateTime now = LocalDateTime.now();
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("999.00"), "OK", now);
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenMensagemDifers() {
+    LocalDateTime now = LocalDateTime.now();
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "FALHOU", now);
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenDataTentativaDifers() {
+    LocalDateTime now = LocalDateTime.now();
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now.minusDays(1));
+
+    assertNotEquals(a, b);
+}
+
+// ─── equals/hashCode — null-check branches (campo null vs não-null) ───────────
+
+@Test
+void equals_ShouldReturnTrue_WhenBothDTOsAllFieldsNull() {
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO();
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO();
+    assertEquals(a, b);
+    assertEquals(a.hashCode(), b.hashCode());
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenOneIdNullAndOtherNot() {
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO(); // id = null
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO();
+    b.setId(1L);
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenOnePagamentoIdNullAndOtherNot() {
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO();
+    a.setId(1L);
+    // pagamentoId = null
+
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO();
+    b.setId(1L);
+    b.setPagamentoId(10L);
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenOneMetodoNullAndOtherNot() {
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO();
+    a.setId(1L);
+    a.setPagamentoId(10L);
+    // metodoPagamento = null
+
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO();
+    b.setId(1L);
+    b.setPagamentoId(10L);
+    b.setMetodoPagamento(MetodoPagamento.PIX);
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenOneStatusNullAndOtherNot() {
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO();
+    a.setId(1L);
+    a.setPagamentoId(10L);
+    a.setMetodoPagamento(MetodoPagamento.PIX);
+    // status = null
+
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO();
+    b.setId(1L);
+    b.setPagamentoId(10L);
+    b.setMetodoPagamento(MetodoPagamento.PIX);
+    b.setStatus(StatusPagamento.APROVADO);
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenOneValorNullAndOtherNot() {
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO();
+    a.setId(1L);
+    a.setPagamentoId(10L);
+    a.setMetodoPagamento(MetodoPagamento.PIX);
+    a.setStatus(StatusPagamento.APROVADO);
+    // valorTentado = null
+
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO();
+    b.setId(1L);
+    b.setPagamentoId(10L);
+    b.setMetodoPagamento(MetodoPagamento.PIX);
+    b.setStatus(StatusPagamento.APROVADO);
+    b.setValorTentado(new BigDecimal("100.00"));
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenOneMensagemNullAndOtherNot() {
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO();
+    a.setId(1L);
+    a.setPagamentoId(10L);
+    a.setMetodoPagamento(MetodoPagamento.PIX);
+    a.setStatus(StatusPagamento.APROVADO);
+    a.setValorTentado(new BigDecimal("100.00"));
+    // mensagem = null
+
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO();
+    b.setId(1L);
+    b.setPagamentoId(10L);
+    b.setMetodoPagamento(MetodoPagamento.PIX);
+    b.setStatus(StatusPagamento.APROVADO);
+    b.setValorTentado(new BigDecimal("100.00"));
+    b.setMensagem("OK");
+
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_ShouldReturnFalse_WhenOneDataNullAndOtherNot() {
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO();
+    a.setId(1L);
+    a.setPagamentoId(10L);
+    a.setMetodoPagamento(MetodoPagamento.PIX);
+    a.setStatus(StatusPagamento.APROVADO);
+    a.setValorTentado(new BigDecimal("100.00"));
+    a.setMensagem("OK");
+    // dataTentativa = null
+
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO();
+    b.setId(1L);
+    b.setPagamentoId(10L);
+    b.setMetodoPagamento(MetodoPagamento.PIX);
+    b.setStatus(StatusPagamento.APROVADO);
+    b.setValorTentado(new BigDecimal("100.00"));
+    b.setMensagem("OK");
+    b.setDataTentativa(LocalDateTime.now());
+
+    assertNotEquals(a, b);
+}
+
+// ─── hashCode — valores diferentes geram hash diferente ──────────────────────
+
+@Test
+void hashCode_ShouldDiffer_WhenFieldsDiffer() {
+    LocalDateTime now = LocalDateTime.now();
+    TentativaPagamentoResponseDTO a = new TentativaPagamentoResponseDTO(
+        1L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+    TentativaPagamentoResponseDTO b = new TentativaPagamentoResponseDTO(
+        2L, 10L, MetodoPagamento.PIX, StatusPagamento.APROVADO,
+        new BigDecimal("100.00"), "OK", now);
+
+    assertNotEquals(a.hashCode(), b.hashCode());
+}
+
+// ─── toString — campos nulos não quebram ──────────────────────────────────────
+
+@Test 
+void toString_ShouldNotBeNull_WhenAllFieldsNull() {
+    TentativaPagamentoResponseDTO dto = new TentativaPagamentoResponseDTO();
+    String result = dto.toString();
+    assertNotNull(result);
+    assertTrue(result.contains("TentativaPagamentoResponseDTO"));
+}
 }

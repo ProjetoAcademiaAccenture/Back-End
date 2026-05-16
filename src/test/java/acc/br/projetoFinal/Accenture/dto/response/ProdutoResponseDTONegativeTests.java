@@ -1,240 +1,413 @@
-// FILE 2: ItemPedidoResponseDTONegativeTests.java
 package acc.br.projetoFinal.Accenture.dto.response;
 
-import acc.br.projetoFinal.Accenture.model.ItemPedido;
+import acc.br.projetoFinal.Accenture.enums.Categoria;
 import acc.br.projetoFinal.Accenture.model.Produto;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ItemPedidoResponseDTONegativeTests {
+@DisplayName("ProdutoResponseDTO - Testes Negativos")
+class ProdutoResponseDTONegativeTests {
 
-    // ─── fromEntity: entradas nulas ───────────────────────────────────────────
+    // ─── Helper ───────────────────────────────────────────────────────────────
+
+    private Produto buildProduto(Long id, String nome, String descricao,
+                                  String urlImagem, BigDecimal preco,
+                                  Integer quantidade, Categoria categoria) {
+        return Produto.builder()
+                .id(id)
+                .nome(nome)
+                .descricao(descricao)
+                .urlImagem(urlImagem)
+                .preco(preco)
+                .quantidadeEstoque(quantidade)
+                .categoria(categoria)
+                .build();
+    }
+
+    private ProdutoResponseDTO dtoPadraoValido() {
+        return ProdutoResponseDTO.builder()
+                .id(1L)
+                .nome("Produto A")
+                .descricao("Descrição A")
+                .urlImagem("http://img.com/a.png")
+                .preco(new BigDecimal("99.90"))
+                .quantidadeEstoque(10)
+                .categoria("ELETRONICO")
+                .build();
+    }
+
+    // =========================================================
+    // Construtor padrão — campos nulos
+    // =========================================================
 
     @Test
-    void fromEntity_ShouldThrow_WhenItemIsNull() {
-        assertThrows(NullPointerException.class,
-            () -> ItemPedidoResponseDTO.fromEntity(null));
+    @DisplayName("Deve criar objeto com construtor padrão com todos os campos nulos")
+    void deveCriarComConstrutorPadraoComCamposNulos() {
+        ProdutoResponseDTO dto = new ProdutoResponseDTO();
+
+        assertNull(dto.getId());
+        assertNull(dto.getNome());
+        assertNull(dto.getDescricao());
+        assertNull(dto.getUrlImagem());
+        assertNull(dto.getPreco());
+        assertNull(dto.getQuantidadeEstoque());
+        assertNull(dto.getCategoria());
+    }
+
+    // =========================================================
+    // Builder — campos nulos individualmente
+    // =========================================================
+
+    @Test
+    @DisplayName("Deve criar objeto via builder vazio com todos os campos nulos")
+    void deveCriarViaBuilderVazioComCamposNulos() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder().build();
+
+        assertNull(dto.getId());
+        assertNull(dto.getNome());
+        assertNull(dto.getDescricao());
+        assertNull(dto.getUrlImagem());
+        assertNull(dto.getPreco());
+        assertNull(dto.getQuantidadeEstoque());
+        assertNull(dto.getCategoria());
     }
 
     @Test
-    void fromEntity_ShouldThrow_WhenProdutoIsNull() {
-        ItemPedido item = new ItemPedido();
-        item.setId(1L);
-        item.setProduto(null);
-        item.setQuantidade(2);
-        item.setPrecoUnitario(new BigDecimal("10.00"));
+    @DisplayName("Deve criar objeto com id null via builder")
+    void deveCriarComIdNull() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .id(null).nome("Produto X").build();
 
-        assertThrows(NullPointerException.class,
-            () -> ItemPedidoResponseDTO.fromEntity(item));
+        assertNull(dto.getId());
+        assertNotNull(dto.getNome());
     }
 
     @Test
-    void fromEntity_ShouldThrow_WhenPrecoUnitarioIsNull() {
-        Produto produto = new Produto();
-        produto.setId(1L);
-        produto.setNome("Produto A");
+    @DisplayName("Deve criar objeto com nome null via builder")
+    void deveCriarComNomeNull() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .id(1L).nome(null).build();
 
-        ItemPedido item = new ItemPedido();
-        item.setId(1L);
-        item.setProduto(produto);
-        item.setQuantidade(2);
-        item.setPrecoUnitario(null);
-
-        assertThrows(NullPointerException.class,
-            () -> ItemPedidoResponseDTO.fromEntity(item));
+        assertNull(dto.getNome());
     }
 
     @Test
-    void fromEntity_ShouldThrow_WhenQuantidadeIsNull() {
-        Produto produto = new Produto();
-        produto.setId(1L);
-        produto.setNome("Produto A");
+    @DisplayName("Deve criar objeto com descricao null via builder")
+    void deveCriarComDescricaoNull() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .id(1L).descricao(null).build();
 
-        ItemPedido item = new ItemPedido();
-        item.setId(1L);
-        item.setProduto(produto);
-        item.setQuantidade(null);
-        item.setPrecoUnitario(new BigDecimal("10.00"));
-
-        assertThrows(NullPointerException.class,
-            () -> ItemPedidoResponseDTO.fromEntity(item));
-    }
-
-    // ─── Subtotal: valores incorretos ─────────────────────────────────────────
-
-    @Test
-    void fromEntity_SubtotalShouldNotMatchWrongExpectedValue() {
-        Produto produto = new Produto();
-        produto.setId(1L);
-        produto.setNome("Produto A");
-
-        ItemPedido item = new ItemPedido();
-        item.setId(1L);
-        item.setProduto(produto);
-        item.setQuantidade(3);
-        item.setPrecoUnitario(new BigDecimal("10.00"));
-
-        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
-
-        assertNotEquals(new BigDecimal("999.00"), dto.getSubtotal());
+        assertNull(dto.getDescricao());
     }
 
     @Test
-    void fromEntity_SubtotalShouldNotBeZero_WhenPrecoAndQuantidadeArePositive() {
-        Produto produto = new Produto();
-        produto.setId(2L);
-        produto.setNome("Produto B");
+    @DisplayName("Deve criar objeto com urlImagem null via builder")
+    void deveCriarComUrlImagemNull() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .id(1L).urlImagem(null).build();
 
-        ItemPedido item = new ItemPedido();
-        item.setId(2L);
-        item.setProduto(produto);
-        item.setQuantidade(5);
-        item.setPrecoUnitario(new BigDecimal("20.00"));
-
-        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
-
-        assertNotEquals(BigDecimal.ZERO, dto.getSubtotal());
-    }
-
-    // ─── Mapeamento: campos incorretos ────────────────────────────────────────
-
-    @Test
-    void fromEntity_ShouldNotMapWrongProdutoId() {
-        Produto produto = new Produto();
-        produto.setId(99L);
-        produto.setNome("Produto C");
-
-        ItemPedido item = new ItemPedido();
-        item.setId(3L);
-        item.setProduto(produto);
-        item.setQuantidade(1);
-        item.setPrecoUnitario(new BigDecimal("5.00"));
-
-        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
-
-        assertNotEquals(1L, dto.getProdutoId());
+        assertNull(dto.getUrlImagem());
     }
 
     @Test
-    void fromEntity_ShouldNotMapWrongProdutoNome() {
-        Produto produto = new Produto();
-        produto.setId(1L);
-        produto.setNome("Nome Real");
+    @DisplayName("Deve criar objeto com preco null via builder")
+    void deveCriarComPrecoNull() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .id(1L).preco(null).build();
 
-        ItemPedido item = new ItemPedido();
-        item.setId(4L);
-        item.setProduto(produto);
-        item.setQuantidade(1);
-        item.setPrecoUnitario(new BigDecimal("5.00"));
-
-        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
-
-        assertNotEquals("Nome Errado", dto.getProdutoNome());
+        assertNull(dto.getPreco());
     }
 
     @Test
-    void fromEntity_ShouldNotMapWrongItemId() {
-        Produto produto = new Produto();
-        produto.setId(1L);
-        produto.setNome("Produto D");
+    @DisplayName("Deve criar objeto com quantidadeEstoque null via builder")
+    void deveCriarComQuantidadeEstoqueNull() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .id(1L).quantidadeEstoque(null).build();
 
-        ItemPedido item = new ItemPedido();
-        item.setId(5L);
-        item.setProduto(produto);
-        item.setQuantidade(2);
-        item.setPrecoUnitario(new BigDecimal("10.00"));
-
-        ItemPedidoResponseDTO dto = ItemPedidoResponseDTO.fromEntity(item);
-
-        assertNotEquals(999L, dto.getId());
+        assertNull(dto.getQuantidadeEstoque());
     }
 
-    // ─── equals: DTOs diferentes ──────────────────────────────────────────────
+    @Test
+    @DisplayName("Deve criar objeto com categoria null via builder")
+    void deveCriarComCategoriaNull() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .id(1L).categoria(null).build();
+
+        assertNull(dto.getCategoria());
+    }
+
+    // =========================================================
+    // Valores extremos / inválidos
+    // =========================================================
 
     @Test
-    void equals_ShouldReturnFalse_WhenIdsDiffer() {
-        ItemPedidoResponseDTO dto1 = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto", 2, new BigDecimal("10.00"), new BigDecimal("20.00"));
-        ItemPedidoResponseDTO dto2 = new ItemPedidoResponseDTO(
-            2L, 10L, "Produto", 2, new BigDecimal("10.00"), new BigDecimal("20.00"));
+    @DisplayName("Deve aceitar id negativo")
+    void deveAceitarIdNegativo() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder().id(-1L).build();
+        assertTrue(dto.getId() < 0);
+    }
 
+    @Test
+    @DisplayName("Deve aceitar preco negativo")
+    void deveAceitarPrecoNegativo() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .preco(new BigDecimal("-10.00")).build();
+
+        assertTrue(dto.getPreco().signum() < 0);
+    }
+
+    @Test
+    @DisplayName("Deve aceitar preco zero")
+    void deveAceitarPrecoZero() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .preco(BigDecimal.ZERO).build();
+
+        assertEquals(BigDecimal.ZERO, dto.getPreco());
+    }
+
+    @Test
+    @DisplayName("Deve aceitar preco muito grande")
+    void deveAceitarPrecoMuitoGrande() {
+        BigDecimal valorGrande = new BigDecimal("999999999.99");
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .preco(valorGrande).build();
+
+        assertEquals(valorGrande, dto.getPreco());
+    }
+
+    @Test
+    @DisplayName("Deve aceitar quantidadeEstoque negativa")
+    void deveAceitarQuantidadeEstoqueNegativa() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .quantidadeEstoque(-5).build();
+
+        assertTrue(dto.getQuantidadeEstoque() < 0);
+    }
+
+    @Test
+    @DisplayName("Deve aceitar quantidadeEstoque zero")
+    void deveAceitarQuantidadeEstoqueZero() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder()
+                .quantidadeEstoque(0).build();
+
+        assertEquals(0, dto.getQuantidadeEstoque());
+    }
+
+    @Test
+    @DisplayName("Deve aceitar nome vazio")
+    void deveAceitarNomeVazio() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder().nome("").build();
+        assertEquals("", dto.getNome());
+    }
+
+    @Test
+    @DisplayName("Deve aceitar descricao vazia")
+    void deveAceitarDescricaoVazia() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder().descricao("").build();
+        assertEquals("", dto.getDescricao());
+    }
+
+    @Test
+    @DisplayName("Deve aceitar urlImagem vazia")
+    void deveAceitarUrlImagemVazia() {
+        ProdutoResponseDTO dto = ProdutoResponseDTO.builder().urlImagem("").build();
+        assertEquals("", dto.getUrlImagem());
+    }
+
+    // =========================================================
+    // fromEntity — branches de NPE
+    // =========================================================
+
+    @Test
+    @DisplayName("fromEntity deve lançar NullPointerException quando produto for null")
+    void fromEntity_DeveLancarExcecao_QuandoProdutoNull() {
+        assertThatThrownBy(() -> ProdutoResponseDTO.fromEntity(null))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("fromEntity deve lançar NullPointerException quando categoria for null")
+    void fromEntity_DeveLancarExcecao_QuandoCategoriaNull() {
+        Produto produto = buildProduto(1L, "Produto A", "Desc", "url",
+                new BigDecimal("10.00"), 5, null);
+
+        assertThatThrownBy(() -> ProdutoResponseDTO.fromEntity(produto))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    // =========================================================
+    // Setters — atribuição de nulos
+    // =========================================================
+
+    @Test
+    @DisplayName("Deve aceitar null em todos os setters")
+    void deveAceitarNullEmTodosOsSetters() {
+        ProdutoResponseDTO dto = dtoPadraoValido();
+
+        assertThatCode(() -> {
+            dto.setId(null);
+            dto.setNome(null);
+            dto.setDescricao(null);
+            dto.setUrlImagem(null);
+            dto.setPreco(null);
+            dto.setQuantidadeEstoque(null);
+            dto.setCategoria(null);
+        }).doesNotThrowAnyException();
+
+        assertNull(dto.getId());
+        assertNull(dto.getNome());
+        assertNull(dto.getDescricao());
+        assertNull(dto.getUrlImagem());
+        assertNull(dto.getPreco());
+        assertNull(dto.getQuantidadeEstoque());
+        assertNull(dto.getCategoria());
+    }
+
+    // =========================================================
+    // equals / hashCode — objetos diferentes
+    // =========================================================
+
+    @Test
+    @DisplayName("Objetos com id diferentes não devem ser iguais")
+    void objetosComIdDiferentesNaoDevemSerIguais() {
+        ProdutoResponseDTO dto1 = ProdutoResponseDTO.builder().id(1L).build();
+        ProdutoResponseDTO dto2 = ProdutoResponseDTO.builder().id(2L).build();
         assertNotEquals(dto1, dto2);
     }
 
     @Test
-    void equals_ShouldReturnFalse_WhenProdutoNomeDiffers() {
-        ItemPedidoResponseDTO dto1 = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto A", 2, new BigDecimal("10.00"), new BigDecimal("20.00"));
-        ItemPedidoResponseDTO dto2 = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto B", 2, new BigDecimal("10.00"), new BigDecimal("20.00"));
-
+    @DisplayName("Objetos com nome diferentes não devem ser iguais")
+    void objetosComNomeDiferentesNaoDevemSerIguais() {
+        ProdutoResponseDTO dto1 = ProdutoResponseDTO.builder().id(1L).nome("A").build();
+        ProdutoResponseDTO dto2 = ProdutoResponseDTO.builder().id(1L).nome("B").build();
         assertNotEquals(dto1, dto2);
     }
 
     @Test
-    void equals_ShouldReturnFalse_WhenSubtotalDiffers() {
-        ItemPedidoResponseDTO dto1 = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto", 2, new BigDecimal("10.00"), new BigDecimal("20.00"));
-        ItemPedidoResponseDTO dto2 = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto", 2, new BigDecimal("10.00"), new BigDecimal("99.00"));
-
+    @DisplayName("Objetos com preco diferentes não devem ser iguais")
+    void objetosComPrecoDiferentesNaoDevemSerIguais() {
+        ProdutoResponseDTO dto1 = ProdutoResponseDTO.builder()
+                .id(1L).preco(new BigDecimal("10.00")).build();
+        ProdutoResponseDTO dto2 = ProdutoResponseDTO.builder()
+                .id(1L).preco(new BigDecimal("20.00")).build();
         assertNotEquals(dto1, dto2);
     }
 
     @Test
-    void equals_ShouldReturnFalse_WhenQuantidadeDiffers() {
-        ItemPedidoResponseDTO dto1 = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto", 2, new BigDecimal("10.00"), new BigDecimal("20.00"));
-        ItemPedidoResponseDTO dto2 = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto", 5, new BigDecimal("10.00"), new BigDecimal("50.00"));
-
+    @DisplayName("Objetos com quantidadeEstoque diferentes não devem ser iguais")
+    void objetosComQuantidadeEstoqueDiferentesNaoDevemSerIguais() {
+        ProdutoResponseDTO dto1 = ProdutoResponseDTO.builder().id(1L).quantidadeEstoque(1).build();
+        ProdutoResponseDTO dto2 = ProdutoResponseDTO.builder().id(1L).quantidadeEstoque(2).build();
         assertNotEquals(dto1, dto2);
     }
 
     @Test
-    void equals_ShouldReturnFalse_WhenComparedToNull() {
-        ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto", 2, new BigDecimal("10.00"), new BigDecimal("20.00"));
-
-        assertNotEquals(null, dto);
+    @DisplayName("Objetos com categoria diferentes não devem ser iguais")
+    void objetosComCategoriaDiferentesNaoDevemSerIguais() {
+        ProdutoResponseDTO dto1 = ProdutoResponseDTO.builder().id(1L).categoria("ELETRONICO").build();
+        ProdutoResponseDTO dto2 = ProdutoResponseDTO.builder().id(1L).categoria("ALIMENTO").build();
+        assertNotEquals(dto1, dto2);
     }
 
     @Test
-    void equals_ShouldReturnFalse_WhenComparedToDifferentType() {
-        ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto", 2, new BigDecimal("10.00"), new BigDecimal("20.00"));
-
-        assertNotEquals("uma string qualquer", dto);
+    @DisplayName("Objeto não deve ser igual a null")
+    void objetoNaoDeveSerIgualANull() {
+        assertNotEquals(null, dtoPadraoValido());
     }
 
-    // ─── hashCode: DTOs diferentes ────────────────────────────────────────────
-
     @Test
-    void hashCode_ShouldDiffer_WhenDTOsDiffer() {
-        ItemPedidoResponseDTO dto1 = new ItemPedidoResponseDTO(
-            1L, 10L, "Produto A", 2, new BigDecimal("10.00"), new BigDecimal("20.00"));
-        ItemPedidoResponseDTO dto2 = new ItemPedidoResponseDTO(
-            2L, 20L, "Produto B", 3, new BigDecimal("30.00"), new BigDecimal("90.00"));
-
-        assertNotEquals(dto1.hashCode(), dto2.hashCode());
+    @DisplayName("Objeto não deve ser igual a tipo diferente")
+    void objetoNaoDeveSerIgualATipoDiferente() {
+        assertNotEquals("string", dtoPadraoValido());
+        assertNotEquals(42, dtoPadraoValido());
     }
 
-    // ─── toString: não deve conter valores errados ────────────────────────────
+    @Test
+    @DisplayName("Objetos com mesmos dados devem ser iguais")
+    void objetosComMesmosDadosDevemSerIguais() {
+        ProdutoResponseDTO dto1 = dtoPadraoValido();
+        ProdutoResponseDTO dto2 = dtoPadraoValido();
+        assertEquals(dto1, dto2);
+    }
 
     @Test
-void toString_ShouldNotContainWrongValues() {
-    ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO(
-        1L, 10L, "Produto A", 3,
-        new BigDecimal("50.00"), new BigDecimal("150.00"));
+    @DisplayName("Mesma instância deve ser igual a si mesma")
+    void mesmaInstanciaDeveSerIgualASiMesma() {
+        ProdutoResponseDTO dto = dtoPadraoValido();
+        assertEquals(dto, dto);
+    }
 
-    String result = dto.toString();
+    // =========================================================
+    // hashCode
+    // =========================================================
 
-    assertAll(
-        () -> assertFalse(result.contains("999")),
-        () -> assertFalse(result.contains("Produto Z"))
-    );
-}
+    @Test
+    @DisplayName("hashCode: objetos iguais devem ter mesmo hashCode")
+    void hashCode_ObjetosIguais_DeveTerMesmoHashCode() {
+        assertEquals(dtoPadraoValido().hashCode(), dtoPadraoValido().hashCode());
+    }
+
+    @Test
+    @DisplayName("hashCode: não deve lançar exceção com campos nulos")
+    void hashCode_CamposNull_NaoDeveLancarExcecao() {
+        assertThatCode(() -> new ProdutoResponseDTO().hashCode())
+                .doesNotThrowAnyException();
+    }
+
+    // =========================================================
+    // toString
+    // =========================================================
+
+    @Test
+    @DisplayName("toString não deve lançar exceção")
+    void toString_NaoDeveLancarExcecao() {
+        assertThatCode(() -> dtoPadraoValido().toString()).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("toString não deve lançar exceção com campos nulos")
+    void toString_NaoDeveLancarExcecao_QuandoCamposNulos() {
+        assertThatCode(() -> new ProdutoResponseDTO().toString())
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("toString deve conter campos principais")
+    void toString_DeveConterCamposPrincipais() {
+        String result = dtoPadraoValido().toString();
+        assertAll("toString",
+                () -> assertTrue(result.contains("id")),
+                () -> assertTrue(result.contains("nome")),
+                () -> assertTrue(result.contains("descricao")),
+                () -> assertTrue(result.contains("preco")),
+                () -> assertTrue(result.contains("quantidadeEstoque")),
+                () -> assertTrue(result.contains("categoria"))
+        );
+    }
+
+    // =========================================================
+    // canEqual
+    // =========================================================
+
+    @Test
+    @DisplayName("canEqual deve retornar true para instância do mesmo tipo")
+    void canEqual_MesmoTipo_DeveRetornarTrue() {
+        ProdutoResponseDTO dto1 = dtoPadraoValido();
+        ProdutoResponseDTO dto2 = new ProdutoResponseDTO();
+        assertTrue(dto1.canEqual(dto2));
+    }
+
+    @Test
+    @DisplayName("canEqual deve retornar false para tipo diferente")
+    void canEqual_TipoDiferente_DeveRetornarFalse() {
+        ProdutoResponseDTO dto = dtoPadraoValido();
+        assertFalse(dto.canEqual("string"));
+        assertFalse(dto.canEqual(null));
+    }
 }

@@ -315,4 +315,241 @@ class EnderecoRequestDTOTest {
             "Violação esperada em '" + campo + "' mas não encontrada. Encontradas: " + violations
         );
     }
+    // -----------------------------------------------------------------------
+// equals — comparações especiais (branches: this==o, null, outro tipo)
+// -----------------------------------------------------------------------
+
+@Test
+void equals_deveSerVerdadeiro_comparandoConsigoProprio() {
+    EnderecoRequestDTO dto = dtoValido();
+    assertEquals(dto, dto);
+}
+
+@Test
+void equals_deveSerFalso_comparandoComNulo() {
+    EnderecoRequestDTO dto = dtoValido();
+    assertNotEquals(null, dto);
+}
+
+@Test
+void equals_deveSerFalso_comparandoComOutroTipo() {
+    EnderecoRequestDTO dto = dtoValido();
+    assertNotEquals("string", dto);
+}
+
+// -----------------------------------------------------------------------
+// equals — branches por campo individual (valor diferente)
+// -----------------------------------------------------------------------
+
+@Test
+void equals_deveSerFalso_quandoCepDiferente() {
+    EnderecoRequestDTO a = dtoValido();
+    EnderecoRequestDTO b = dtoValido();
+    b.setCep("99999999");
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoLogradouroDiferente() {
+    EnderecoRequestDTO a = dtoValido();
+    EnderecoRequestDTO b = dtoValido();
+    b.setLogradouro("Av. Brasil");
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoBairroDiferente() {
+    EnderecoRequestDTO a = dtoValido();
+    EnderecoRequestDTO b = dtoValido();
+    b.setBairro("Outro Bairro");
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoUfDiferente() {
+    EnderecoRequestDTO a = dtoValido();
+    EnderecoRequestDTO b = dtoValido();
+    b.setUf("SP");
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoTipoEnderecoDiferente() {
+    EnderecoRequestDTO a = dtoValido();
+    EnderecoRequestDTO b = dtoValido();
+    b.setTipoEndereco(TipoEndereco.COMERCIAL);
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoNumeroDiferente() {
+    EnderecoRequestDTO a = dtoValido();
+    EnderecoRequestDTO b = dtoValido();
+    b.setNumero("456");
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoComplementoDiferente() {
+    EnderecoRequestDTO a = dtoValido();
+    EnderecoRequestDTO b = dtoValido();
+    b.setComplemento("Casa");
+    assertNotEquals(a, b);
+}
+
+// -----------------------------------------------------------------------
+// equals/hashCode — null-check branches (campo null vs não-null)
+// -----------------------------------------------------------------------
+
+@Test
+void equals_deveSerVerdadeiro_quandoTodosOsCamposNulos() {
+    EnderecoRequestDTO a = new EnderecoRequestDTO();
+    EnderecoRequestDTO b = new EnderecoRequestDTO();
+    assertEquals(a, b);
+    assertEquals(a.hashCode(), b.hashCode());
+}
+
+@Test
+void equals_deveSerFalso_quandoCepNuloEmUmEPreenchidoNoOutro() {
+    EnderecoRequestDTO a = new EnderecoRequestDTO(); // cep = null
+    EnderecoRequestDTO b = dtoValido();
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoLogradouroNuloEmUmEPreenchidoNoOutro() {
+    EnderecoRequestDTO a = new EnderecoRequestDTO();
+    a.setCep("58700000");
+    // logradouro = null
+
+    EnderecoRequestDTO b = dtoValido();
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoBairroNuloEmUmEPreenchidoNoOutro() {
+    EnderecoRequestDTO a = new EnderecoRequestDTO();
+    a.setCep("58700000");
+    a.setLogradouro("Rua das Flores");
+    // bairro = null
+
+    EnderecoRequestDTO b = dtoValido();
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoCidadeNulaEmUmEPreenchidaNoOutro() {
+    EnderecoRequestDTO a = new EnderecoRequestDTO();
+    a.setCep("58700000");
+    a.setLogradouro("Rua das Flores");
+    a.setBairro("Centro");
+    // cidade = null
+
+    EnderecoRequestDTO b = dtoValido();
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoUfNulaEmUmEPreenchidaNoOutro() {
+    EnderecoRequestDTO a = new EnderecoRequestDTO();
+    a.setCep("58700000");
+    a.setLogradouro("Rua das Flores");
+    a.setBairro("Centro");
+    a.setCidade("Patos");
+    // uf = null
+
+    EnderecoRequestDTO b = dtoValido();
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoTipoEnderecoNuloEmUmEPreenchidoNoOutro() {
+    EnderecoRequestDTO a = new EnderecoRequestDTO();
+    a.setCep("58700000");
+    a.setLogradouro("Rua das Flores");
+    a.setBairro("Centro");
+    a.setCidade("Patos");
+    a.setUf("PB");
+    // tipoEndereco = null
+
+    EnderecoRequestDTO b = dtoValido();
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoNumeroNuloEmUmEPreenchidoNoOutro() {
+    EnderecoRequestDTO a = new EnderecoRequestDTO();
+    a.setCep("58700000");
+    a.setLogradouro("Rua das Flores");
+    a.setBairro("Centro");
+    a.setCidade("Patos");
+    a.setUf("PB");
+    a.setTipoEndereco(TipoEndereco.RESIDENCIAL);
+    // numero = null
+
+    EnderecoRequestDTO b = dtoValido(); // numero = "123"
+    assertNotEquals(a, b);
+}
+
+@Test
+void equals_deveSerFalso_quandoComplementoNuloEmUmEPreenchidoNoOutro() {
+    EnderecoRequestDTO a = new EnderecoRequestDTO();
+    a.setCep("58700000");
+    a.setLogradouro("Rua das Flores");
+    a.setBairro("Centro");
+    a.setCidade("Patos");
+    a.setUf("PB");
+    a.setTipoEndereco(TipoEndereco.RESIDENCIAL);
+    a.setNumero("123");
+    // complemento = null
+
+    EnderecoRequestDTO b = dtoValido(); // complemento = "Apto 01"
+    assertNotEquals(a, b);
+}
+
+// -----------------------------------------------------------------------
+// hashCode — diferente quando campos diferem
+// -----------------------------------------------------------------------
+
+@Test
+void hashCode_deveDiferir_quandoCamposDiferentes() {
+    EnderecoRequestDTO a = dtoValido();
+    EnderecoRequestDTO b = dtoValido();
+    b.setCep("11111111");
+    assertNotEquals(a.hashCode(), b.hashCode());
+}
+
+@Test
+void hashCode_naoDeveLancarExcecao_quandoCamposNulos() {
+    EnderecoRequestDTO dto = new EnderecoRequestDTO();
+    assertDoesNotThrow(dto::hashCode);
+}
+
+// -----------------------------------------------------------------------
+// toString — campos nulos não quebram
+// -----------------------------------------------------------------------
+
+@Test
+void toString_naoDeveRetornarNulo_quandoCamposNulos() {
+    EnderecoRequestDTO dto = new EnderecoRequestDTO();
+    String str = dto.toString();
+    assertNotNull(str);
+    assertTrue(str.contains("EnderecoRequestDTO"));
+}
+
+@Test
+void toString_deveConterValoresDosAtributos() {
+    EnderecoRequestDTO dto = dtoValido();
+    String str = dto.toString();
+    assertAll(
+        () -> assertTrue(str.contains("58700000")),
+        () -> assertTrue(str.contains("Rua das Flores")),
+        () -> assertTrue(str.contains("Centro")),
+        () -> assertTrue(str.contains("Patos")),
+        () -> assertTrue(str.contains("PB")),
+        () -> assertTrue(str.contains("RESIDENCIAL")),
+        () -> assertTrue(str.contains("123")),
+        () -> assertTrue(str.contains("Apto 01"))
+    );
+}
 }
