@@ -3,6 +3,7 @@ package acc.br.projetoFinal.Accenture.controller;
 import acc.br.projetoFinal.Accenture.dto.request.ClienteRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.request.EnderecoRequestDTO;
 import acc.br.projetoFinal.Accenture.dto.response.ClienteResponseDTO;
+import acc.br.projetoFinal.Accenture.dto.response.EnderecoResponseDTO;
 import acc.br.projetoFinal.Accenture.service.ClienteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,20 @@ public class ClienteController {
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         clienteService.deletar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Endereços ──────────────────────────────────────────────────────────────
+
+    @GetMapping("/{id}/enderecos")
+    public ResponseEntity<List<EnderecoResponseDTO>> listarEnderecos(@PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.listarEnderecos(id));
+    }
+
+    @GetMapping("/{id}/enderecos/{enderecoId}")
+    public ResponseEntity<EnderecoResponseDTO> buscarEnderecoPorId(
+            @PathVariable Long id,
+            @PathVariable Long enderecoId) {
+        return ResponseEntity.ok(clienteService.buscarEnderecoPorId(id, enderecoId));
     }
 
     @PostMapping("/{id}/enderecos")
